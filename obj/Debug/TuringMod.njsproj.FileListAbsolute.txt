@@ -1,0 +1,3 @@
+C:\Users\Tyler\source\repos\TuringMod\obj\Debug\TuringMod.njsproj.CoreCompileInputs.cache
+C:\Users\Tyler\source\repos\TuringMod\bin\Microsoft.NodejsTools.WebRole.dll
+C:\Users\Tyler\source\repos\TuringMod\obj\Debug\TuringMod.njsproj.AssemblyReference.cache

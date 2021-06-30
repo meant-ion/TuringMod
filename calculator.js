@@ -1,5 +1,5 @@
 const helper = require('./helper');
-//file that will hold the functions necessary to do basic (for now) calculations when typed into twitch chat
+//file that will hold the functions necessary to do somewhat complex calculations when typed into twitch chat
 
 //cleans up an array and removes indices with empty values
 Array.prototype.clean = function () {
@@ -20,6 +20,9 @@ const pi = Math.PI;
 function convertToRPN(infixEq) {
     var output = "";
     var operStack = [];
+
+    var lastCharChecked = ''
+    var isNegative = false;
 
     console.log(infixEq);
 
@@ -66,21 +69,32 @@ function convertToRPN(infixEq) {
 
         if (helper.isNumeric(token)) {
 
-            output += token + " ";
-
-        } else if ("^*/%!+-".indexOf(token) != -1) {
-
-            var o1 = token;
-            var o2 = operStack[operStack.length - 1];
-
-            while ("^*/%!+-".indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
-                operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
-                    operators[o1].precedence < operators[o2].precedence))) {
-                output += operStack.pop() + " ";
-                o2 = operStack[operStack.length - 1];
+            if (isNegative) {//if we detected a unary negation before hand, we make the number negative before we output it
+                token *= -1;
+                isNegative = false;
             }
 
-            operStack.push(o1);
+            output += token + " ";
+
+        } else if ("^*/%!+-".indexOf(token) != -1) {//the token is an operator we are looking for
+
+            //first, we see if the operator is a '-' and check for negations for it
+            if (token == '-' && (lastCharChecked == '' || "^*/%!+-".indexOf(lastCharChecked) != -1 || lastCharChecked == '(')) {
+                //check now to see if the last character checked was an operator or if this character is the first in the eq
+                isNegative = true;
+            } else {//no negations, so just go to the next part
+                var o1 = token;
+                var o2 = operStack[operStack.length - 1];
+
+                while ("^*/%!+-".indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
+                    operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
+                        operators[o1].precedence < operators[o2].precedence))) {
+                    output += operStack.pop() + " ";
+                    o2 = operStack[operStack.length - 1];
+                }
+
+                operStack.push(o1);
+            }
 
         } else if (token == "(") {
 
@@ -98,6 +112,7 @@ function convertToRPN(infixEq) {
         } else if (token.toLowerCase() == "pi" || token == "?") {
             output += pi.toString() + " ";
         }
+        lastCharChecked = token;
     }
     while (operStack.length > 0) {
         output += operStack.pop() + " ";
@@ -177,4 +192,5 @@ function factorial(cycleNum) {
 
 module.exports = {
     calculate: calculate,
+    convertToRPN: convertToRPN
 };

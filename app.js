@@ -16,51 +16,44 @@ const opts = {
 	connection: {
 		reconnect: true
 	},
-	channels: [
+	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here
 		"popepontus"
 	]
 };
 
+//for getting the access token from Helix
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
-const scope = "user:read:email"
+const scope = "user:read:email";
 
 var startTime = undefined;
+var streamTitle = '';
 
+const theStreamer = opts.channels[0];
+
+//get access to the Helix API for twitch and get all wanted chunks of info for it too
 Twitch.getToken(client_id, client_secret, scope).then(async result => {
 	var access_token = result.access_token;
 
-	let user = await Twitch.getUserInfo(access_token, client_id, "popepontus");
-	console.log(user)
+	let user = await Twitch.getUserInfo(access_token, client_id, theStreamer);
 	let user_id = user.data[0].id;
 
 	let stream_info = await Twitch.getStream(access_token, client_id, user_id);
 
 	startTime = new Date(stream_info.data[0].started_at);
+	streamTitle = stream_info.data[0].title;
 
-	console.log(stream_info.data[0]);
-
-	console.log(`Start time as gotten from helix: ${startTime}`);
 });
 
-const theStreamer = opts.channels[0];
+
 
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
 var linesCount = 0;
 
-//var startDate = undefined;
-
-//simple bool variable that will disable the use of certain commands by anyone that isnt me
-//(a.k.a.all commands except for !shitpost and maybe !lolrandom)
-
-var isNeutered = false;
-
 //vars for the !attention command
 var attnCountAtStart = 0;
 var lostAttention = 0;
-
-
 
 //interval setup to tell me how many lines of text are in testfile.txt roughly every 5 minutes or so
 //const linesCountInterval = 180000;
@@ -71,11 +64,11 @@ var client = new tmi.client(opts);
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
-//setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
-//const commandInterval = 540000;
-//setInterval(followMe('popepontus'), commandInterval);
-
 client.connect();
+
+//setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
+const commandInterval = 540000;
+setInterval(followMe, commandInterval);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -103,6 +96,14 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
 
 			postWikiPage(target);
+
+		} else if (cmdName == '!follow') {//to be run every so often to let people know to follow me
+
+			followMe(target);
+
+		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
+
+			getTitle(target, user);
 
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
@@ -167,7 +168,6 @@ function onConnectedHandler(addy, prt) {
 	//startDate = new Date();
 	console.log(`* Connected to ${addy}:${prt}`);
 
-	console.log(`Bot neutered for this session?: ${isNeutered}`);
 }
 
 //gets the lines written in testfile.txt and sets the counts into the linesCount variable
@@ -189,6 +189,7 @@ function readFileLines() {
 
 //small function to remind people to follow me if they enjoy me
 function followMe(target) {
+	console.log("Firing off followMe command");
 	client.say(target, `If you are enjoying the stream, feel free to follow @popepontus here on Twitch!`);
 }
 
@@ -244,13 +245,14 @@ function getUptime(target, user) {
 	client.say(target, `@${user.username}: ${flooredHours} hours ${mins % 60} minutes ${secs % 60} seconds`);
 }
 
+function getTitle(target, user) {//gets the title of the stream
+	client.say(target, `@${user.username}: Title is ${streamTitle}`);
+}
+
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber
 function getHelp(target, user) {
-	if (!user.mod) {
-		client.say(target, `Available commands: !shitpost, !isidore, !build, !attention, !wikirand, !smartass, !roll#d##, !calc, !calculate, !math`);
-	} else {
-		client.whisper(user.username, `In addition to the other commands, you have !permit and !bonk at your service`);
-	}
+	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo! 
+https://github.com/meant-ion/TuringMod/blob/master/README.md`)
 }
 
 //posts the wikipedia article for Isidore of Seville when command is input

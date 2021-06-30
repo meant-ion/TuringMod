@@ -13,6 +13,10 @@ COMMANDS:
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
 
+	- !follow: reminder command to have people in chat to follow the channel. Set up as an automatic posting as well
+
+	- !title: returns the current title of the current stream to the chatroom
+
 	- !build: posts specs of my current computer build
 
 	- !attention: simple counting command for how many times I have lost my train of thought due to my ADHD

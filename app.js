@@ -17,7 +17,7 @@ const opts = {
 		reconnect: true
 	},
 	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here
-		"popepontus"
+		"pope_pontus"
 	]
 };
 
@@ -26,8 +26,10 @@ const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
 const scope = "user:read:email";
 
-var startTime = undefined;
+var startTime = new Date();
 var streamTitle = '';
+
+var stream_info = undefined;
 
 const theStreamer = opts.channels[0];
 
@@ -38,7 +40,8 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 	let user = await Twitch.getUserInfo(access_token, client_id, theStreamer);
 	let user_id = user.data[0].id;
 
-	let stream_info = await Twitch.getStream(access_token, client_id, user_id);
+	stream_info = await Twitch.getStream(access_token, client_id, user_id);
+
 
 	startTime = new Date(stream_info.data[0].started_at);
 	streamTitle = stream_info.data[0].title;
@@ -61,13 +64,13 @@ var lostAttention = 0;
 
 var client = new tmi.client(opts);
 
+client.connect();
+
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
-client.connect();
-
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
-const commandInterval = 540000;
+const commandInterval = 900000;
 setInterval(followMe, commandInterval);
 
 //called every time a message gets sent in
@@ -87,7 +90,7 @@ function onMessageHandler(target, user, msg, self) {
 		//TODO: get the invite settled from OpenAI to use GPT-3
 		if (cmdName == '!post') {
 
-			//if (user.mod || user.username == theStreamer || user.username == 'popepontus') {
+			//if (user.mod || user.username == theStreamer || user.username == 'pope_pontus') {
 			//	generateShitpost(target, user);
 			//}
 
@@ -99,7 +102,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!follow') {//to be run every so often to let people know to follow me
 
-			followMe(target);
+			followMe();
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
@@ -118,7 +121,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
-			const url = `https://en.wikipedia.org/wiki/Wikipedia:Random`;
+			const url = `https://en.wikipedia.org/wiki/Special:Random`;
 			client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${url}`);
 
 		} else if (cmdName == '!help') {//sends a list of commands when the user needs them. Needs to be reworked to not be as garbo
@@ -131,8 +134,6 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
-			//TODO: figure out how to set the bot to start up on pressing start stream button on OBS
-			//this does not use the twitch API at all, so we have to run it on a bit of a scuffed manner. 
 			getUptime(target, user);
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
@@ -165,7 +166,6 @@ function onConnectedHandler(addy, prt) {
 		prompt = data.toString();
 	});
 
-	//startDate = new Date();
 	console.log(`* Connected to ${addy}:${prt}`);
 
 }
@@ -188,9 +188,8 @@ function readFileLines() {
 }
 
 //small function to remind people to follow me if they enjoy me
-function followMe(target) {
-	console.log("Firing off followMe command");
-	client.say(target, `If you are enjoying the stream, feel free to follow @popepontus here on Twitch!`);
+function followMe() {
+	client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
 }
 
 ////function to log out how many lines of text are in testfile.txt when called
@@ -230,7 +229,7 @@ function getCurrentTime(target, user) {
 	} else {
 		msg += ` P.M. `;
 	}
-	msg += `CST for the streamer`;
+	msg += `CDT for the streamer`;
 	client.say(target, msg);
 }
 
@@ -246,7 +245,7 @@ function getUptime(target, user) {
 }
 
 function getTitle(target, user) {//gets the title of the stream
-	client.say(target, `@${user.username}: Title is ${streamTitle}`);
+	client.say(target, `@${user.username} Title is: ${streamTitle}`);
 }
 
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber

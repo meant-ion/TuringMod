@@ -21,7 +21,7 @@ function convertToRPN(infixEq) {
     var output = "";
     var operStack = [];
 
-    var lastCharChecked = ''
+    var lastCharChecked = '';
     var isNegative = false;
 
     console.log(infixEq);
@@ -61,7 +61,7 @@ function convertToRPN(infixEq) {
 
     //remove all white space present and tokenize the equation
     infixEq = infixEq.replace(/\s+/g, "");
-    infixEq = infixEq.split(/([\+\-\!\*\/\^\(\)])/).clean();
+    infixEq = infixEq.split(/([\+\-\!\*\/\^\%\(\)])/).clean();
 
     //go through the whole eq array and compute from there
     for (var i = 0; i < infixEq.length; ++i) {

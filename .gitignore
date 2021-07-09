@@ -1,7 +1,9 @@
 .env
-attention.txt
-testfile.txt
+/data/attention.txt
+/data/testfile.txt
 TuringMod.njsproj
 TuringMod.njsproj.*
 TuringMod.sln
 Microsoft.NodejsTools.WebRole.dll
+/data/commands.json
+/data/suggestions.txt

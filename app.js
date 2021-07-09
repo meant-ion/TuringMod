@@ -7,6 +7,7 @@ const Twitch = require('simple-twitch-api');
 const calculator = require('./calculator');
 const dice = require('./dice');
 const helper = require('./helper');
+const loader = require('./command_loader.js');
 
 const opts = {
 	identity: {
@@ -48,8 +49,6 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 
 });
 
-
-
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
 var linesCount = 0;
@@ -72,6 +71,8 @@ client.on('connected', onConnectedHandler);
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
 const commandInterval = 900000;
 setInterval(followMe, commandInterval);
+
+let commands_holder = new loader(theStreamer);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -103,6 +104,20 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!follow') {//to be run every so often to let people know to follow me
 
 			followMe();
+
+		} else if (cmdName == '!addcommand') {//for mods to add a custom command
+
+			commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
+
+		} else if (cmdName == '!customlist') {//gets a list of all custom commands on the channel
+
+			commands_holder.postListOfCreatedCommands(client, target, user);
+
+		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
+
+			if (writeSuggestionToFile(inputMsg)) {
+				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
+            }
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
@@ -146,8 +161,14 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 			getCurrentTime(target, user);
 
 		} else {
-			//this is not a command line, so we just gather the comment into a file
-			writeMsgToFile(user, msg);
+			//check to see if the message is a custom command
+			var msg = commands_holder.searchForCommand(cmdName);
+			if (msg != null) {
+				client.say(target, msg);
+			} else {
+				//this is not a command line, so we just gather the comment into a file
+				writeMsgToFile(user, msg);
+            }
 		}
 	}
 }
@@ -168,6 +189,24 @@ function onConnectedHandler(addy, prt) {
 
 	console.log(`* Connected to ${addy}:${prt}`);
 
+}
+
+//appends a suggestion from a viewer to a suggestions file for later consideration
+function writeSuggestionToFile(inputMsg) {
+
+	//compile the message into a single string for better insertion into file
+	let compiledMsg = ""
+	for (var i = 1; i < inputMsg.length; ++i) {
+		compiledMsg += inputMsg[i] + " ";
+	}
+
+	fs.appendFile('./data/suggestions.txt', compiledMsg + '\n', (err) => {
+		if (err) {
+			console.error(err);
+        }
+	});
+
+	return true;
 }
 
 //gets the lines written in testfile.txt and sets the counts into the linesCount variable

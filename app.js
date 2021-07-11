@@ -4,6 +4,7 @@ const tmi = require('tmi.js');
 const fs = require('fs');
 const readline = require('readline');
 const Twitch = require('simple-twitch-api');
+const axios = require('axios');
 const calculator = require('./calculator');
 const dice = require('./dice');
 const helper = require('./helper');
@@ -136,8 +137,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
-			const url = `https://en.wikipedia.org/wiki/Special:Random`;
-			client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${url}`);
+			getRandWikipediaArticle(target, user);
 
 		} else if (cmdName == '!help') {//sends a list of commands when the user needs them. Needs to be reworked to not be as garbo
 
@@ -270,6 +270,21 @@ function getCurrentTime(target, user) {
 	}
 	msg += `CDT for the streamer`;
 	client.say(target, msg);
+}
+
+//gets a random wikipedia article from the wikimedia API and delivers it to chat
+async function getRandWikipediaArticle(target, user) {
+
+	const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
+
+	try {
+		const response = await axios.get(wikiUrl);
+		const pageTitle = response.data.query.random[0].title.replace(/ /g, "_");
+		const wikiPageURL = "https://en.wikipedia.org/wiki/" + pageTitle;
+		client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wikiPageURL}`);
+	} catch (err) {
+		console.error(err);
+    }
 }
 
 //uptime command that gets how long the streamer has been live

@@ -17,6 +17,8 @@ COMMANDS:
 
 	- !title: returns the current title of the current stream to the chatroom
 
+	- !roulette: determines randomly if the asking user will be banned or not on chance
+
 	- !build: posts specs of my current computer build
 
 	- !attention: simple counting command for how many times I have lost my train of thought due to my ADHD
@@ -50,8 +52,14 @@ COMMANDS:
 	- !suggestion: gets a viewer's suggestion on what should be added to the bot/improved upon and writes it to file to be read
 				   and considered later on, probably after stream. 
 
+	- !followage: returns the amount of time that a user has been following the stream. Currently says it in the chatroom, not whispers. 
+				  Would need to have the bot verified as a bot on Twitch to do so.
+				  * Verification currently in progress
+
 
 MOD/STREAMER ONLY COMMANDS:
 
 	- !addcommand: allows for the creation of custom message commands on the fly, with the command's name being first and then the
 				   message. 
+
+	- !so: gives a shoutout to a specified user into the chatroom

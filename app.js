@@ -4,6 +4,7 @@ const tmi = require('tmi.js');
 const fs = require('fs');
 const readline = require('readline');
 const Twitch = require('simple-twitch-api');
+const fetch = require('node-fetch');
 const axios = require('axios');
 const calculator = require('./calculator');
 const dice = require('./dice');
@@ -35,6 +36,8 @@ var stream_info = undefined;
 
 const theStreamer = opts.channels[0];
 
+var outside_token = undefined;
+
 //get access to the Helix API for twitch and get all wanted chunks of info for it too
 Twitch.getToken(client_id, client_secret, scope).then(async result => {
 	var access_token = result.access_token;
@@ -44,10 +47,12 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 
 	stream_info = await Twitch.getStream(access_token, client_id, user_id);
 
-
 	startTime = new Date(stream_info.data[0].started_at);
 	streamTitle = stream_info.data[0].title;
 
+	outside_token = access_token;
+
+	console.log(`* Token generated for Helix API`);
 });
 
 //we want at least 5 lines of text to be able to make Turing-Bot
@@ -114,15 +119,28 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.postListOfCreatedCommands(client, target, user);
 
+		} else if (cmdName == '!followage') {//user wants to know how long they've followed the stream
+
+			getFollowAge(target, user);
+
+		} else if (cmdName == '!so') {//streamer/moderators wish to give a shoutout to a user in chat
+			if (inputMsg.length > 1 && (user.mod || user.username == theStreamer)) {
+				client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
+            }
+
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
 			if (writeSuggestionToFile(inputMsg)) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
-            }
+			}
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
 			getTitle(target, user);
+
+		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
+
+			takeAChanceAtBeingBanned(target, user);
 
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
@@ -272,6 +290,16 @@ function getCurrentTime(target, user) {
 	client.say(target, msg);
 }
 
+function takeAChanceAtBeingBanned(target, user) {
+	const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
+	if (willTheyBeBanned >= 990) {
+		client.say(target, `How very unfortunate`);
+		client.timeout(target, user.username, 10);
+	} else {
+		client.say(target, `Lucky you!`);
+    }
+}
+
 //gets a random wikipedia article from the wikimedia API and delivers it to chat
 async function getRandWikipediaArticle(target, user) {
 
@@ -287,6 +315,43 @@ async function getRandWikipediaArticle(target, user) {
     }
 }
 
+//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
+//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
+async function getFollowAge(target, user) {
+	const data = {
+		'method': 'GET',
+		'headers': {
+			'client-id': `${client_id}`,
+			'Authorization': `Bearer ${outside_token}`
+		}
+	};
+
+	var follower_list = undefined;
+
+	await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
+		.then(body => {
+			follower_list = body;
+			for (var i = 0; i < follower_list.data.length; ++i) {
+				if (follower_list.data[i].from_login == user.username) {
+					var followedDate = new Date(follower_list.data[i].followed_at);
+					var curTime = new Date();
+					var followed_time = (curTime - followedDate) / 1000;
+					const unflooredHours = followed_time / 3600;
+					const flooredHours = Math.floor(unflooredHours);
+					const days = flooredHours / 24;
+					const mins = Math.round((unflooredHours - flooredHours) * 60);
+					const secs = Math.round((unflooredHours - flooredHours) * 3600);
+					client.say(target,
+						`@${user.username} has been following for: ${days} days ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`)
+						.catch(function (err) {
+							console.log('Uh oh');
+						});
+                }
+            }
+
+		});
+}
+
 //uptime command that gets how long the streamer has been live
 function getUptime(target, user) {
 	const currentDate = new Date();
@@ -295,7 +360,7 @@ function getUptime(target, user) {
 	const flooredHours = Math.floor(unflooredHours);
 	const mins = Math.round((unflooredHours - flooredHours) * 60);
 	const secs = Math.round((unflooredHours - flooredHours) * 3600);
-	client.say(target, `@${user.username}: ${flooredHours} hours ${mins % 60} minutes ${secs % 60} seconds`);
+	client.say(target, `@${user.username}: ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`);
 }
 
 function getTitle(target, user) {//gets the title of the stream

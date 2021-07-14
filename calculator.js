@@ -17,6 +17,7 @@ const pi = Math.PI;
 
 //converts an expression to a Reverse Polish Notation (RPN) format so a calculator can better compute the math problem
 //allows for the calculator function to solve more complex mathematical formulas when entered
+//implementation of Djikstra's Shunting Yard algorithm
 function convertToRPN(infixEq) {
     var output = "";
     var operStack = [];
@@ -182,7 +183,6 @@ function calculate(mathProblem) {
 
 function factorial(cycleNum) {
     var answer = 1;
-
     for (var i = 2; i < cycleNum + 1; ++i) {
         answer *= i;
     }

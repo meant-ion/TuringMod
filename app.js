@@ -10,6 +10,7 @@ const calculator = require('./calculator');
 const dice = require('./dice');
 const helper = require('./helper');
 const loader = require('./command_loader.js');
+const lrk = require('./lurker_list.js');
 
 const opts = {
 	identity: {
@@ -78,7 +79,9 @@ client.on('connected', onConnectedHandler);
 const commandInterval = 900000;
 setInterval(followMe, commandInterval);
 
+//generate the custom objects for the special commands and the !lurk/!unlurk features
 let commands_holder = new loader(theStreamer);
+let lurk_list = new lrk();
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -111,6 +114,14 @@ function onMessageHandler(target, user, msg, self) {
 
 			followMe();
 
+		} else if (cmdName == '!lurk') {
+
+			client.say(target, lurk_list.addLurker(user));
+
+		} else if (cmdName == '!unlurk') {
+
+			client.say(target, lurk_list.removeLurker(user));
+
 		} else if (cmdName == '!addcommand') {//for mods to add a custom command
 
 			commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
@@ -136,7 +147,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
-			getTitle(target, user);
+			client.say(target, `@${user.username} Title is: ${streamTitle}`);
 
 		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
 
@@ -249,11 +260,6 @@ function followMe() {
 	client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
 }
 
-////function to log out how many lines of text are in testfile.txt when called
-//function printLinesCount() {
-//	console.log(`Lines now in testfile.txt: ${linesCount}`);
-//}
-
 //gets the current time in Central Standard Time in AM/PM configuration
 function getCurrentTime(target, user) {
 	const curTime = new Date();
@@ -290,6 +296,7 @@ function getCurrentTime(target, user) {
 	client.say(target, msg);
 }
 
+//like Russian Roulette, but with timeouts instead of actual bullets
 function takeAChanceAtBeingBanned(target, user) {
 	const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
 	if (willTheyBeBanned >= 990) {
@@ -334,18 +341,7 @@ async function getFollowAge(target, user) {
 			for (var i = 0; i < follower_list.data.length; ++i) {
 				if (follower_list.data[i].from_login == user.username) {
 					var followedDate = new Date(follower_list.data[i].followed_at);
-					var curTime = new Date();
-					var followed_time = (curTime - followedDate) / 1000;
-					const unflooredHours = followed_time / 3600;
-					const flooredHours = Math.floor(unflooredHours);
-					const days = flooredHours / 24;
-					const mins = Math.round((unflooredHours - flooredHours) * 60);
-					const secs = Math.round((unflooredHours - flooredHours) * 3600);
-					client.say(target,
-						`@${user.username} has been following for: ${days} days ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`)
-						.catch(function (err) {
-							console.log('Uh oh');
-						});
+					client.say(target, `@${user.username} has been following for: ${helper.getTimePassed(followedDate, true)}`);
                 }
             }
 
@@ -354,17 +350,8 @@ async function getFollowAge(target, user) {
 
 //uptime command that gets how long the streamer has been live
 function getUptime(target, user) {
-	const currentDate = new Date();
-	var difference = (currentDate.getTime() - startTime.getTime()) / 1000;
-	const unflooredHours = difference / 3600;
-	const flooredHours = Math.floor(unflooredHours);
-	const mins = Math.round((unflooredHours - flooredHours) * 60);
-	const secs = Math.round((unflooredHours - flooredHours) * 3600);
-	client.say(target, `@${user.username}: ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`);
-}
-
-function getTitle(target, user) {//gets the title of the stream
-	client.say(target, `@${user.username} Title is: ${streamTitle}`);
+	let timeMsg = helper.getTimePassed(startTime, false);
+	client.say(target, `@${user.username}: ${timeMsg}`);
 }
 
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber

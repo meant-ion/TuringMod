@@ -23,6 +23,22 @@ function combineInput(inputMsg) {
     return combinedMsg;
 }
 
+function getTimePassed(startTime, needDay) {
+
+    const curTime = new Date();
+    const difference = (curTime.getTime() - startTime.getTime()) / 1000;
+    const unflooredHours = difference / 3600;
+    const flooredHours = Math.floor(unflooredHours);
+    const days = flooredHours / 24;
+    const mins = Math.round((unflooredHours - flooredHours) * 60);
+    const secs = Math.round((unflooredHours - flooredHours) * 3600);
+    if (!needDay) {
+        return `${flooredHours} hours ${mins % 60} minutes ${secs % 60} seconds`;
+    }
+    return `${days} days ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
+    
+}
+
 //helper function to see if a character is a letter (english only I think)
 function isLetter(charToCheck) {
     return charToCheck.match(/[a-z]/i);
@@ -38,4 +54,5 @@ module.exports = {
     isLetter: isLetter,
     isNumeric: isNumeric,
     combineInput: combineInput,
+    getTimePassed: getTimePassed,
 };

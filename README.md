@@ -1,7 +1,8 @@
 # TuringMod
 
 
-This is my own interpretation of a twitch.tv chat bot, spceifically using OpenAI's GPT3 API to mimic the members in the chatroom, along with a handful of other functions
+This is my own interpretation of a twitch.tv chat bot, spceifically using OpenAI's GPT3 API to mimic the members in the chatroom, 
+along with a large handful of other functions.
 
 NOTE: Due to a lack of reading comprehension for OpenAI's TOS, The mimicry is now dead until further notice. 
 	  I apologize for any problems that this may have caused. 
@@ -10,6 +11,9 @@ COMMANDS:
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			 note: nerfed and killed until further notice.
+			 * Most likely to be redone as a interval-set function rather than a user-called one. 
+			   Fired off most likely by a certain amount of time passing or with a certain number of messages being 
+			   sent successfully by other user in the chat
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
 
@@ -28,9 +32,9 @@ COMMANDS:
 	- !help: posts a link to this very readme file
 
 	- !roll: generates a dice roll for the user. User can specify:
-				1. The number of dice to roll
-				2. The number of sides on each dice to be rolled
-				3. The minimum roll that can be given on the roll
+				1. The number of dice to roll (not required, defaults to 1)
+				2. The number of sides on each dice to be rolled (required)
+				3. The minimum roll that can be given on the roll (not required, defaults to no minimum roll)
 			* format: !roll(numDice)d(numSidesOnDice)r(MinimumRoll)
 
 	- !uptime: gets the uptime of the streamer since they have been live
@@ -56,6 +60,10 @@ COMMANDS:
 				  Would need to have the bot verified as a bot on Twitch to do so.
 				  * Verification currently in progress
 
+	- !lurk: sets a user as a "lurker" where they will be gone for a bit. Complementary with !unlurk
+
+	- !unlurk: removes a user from the list of lurkers and returns the time they were "lurking" to the chatroom. Complementary to !lurk
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -63,3 +71,12 @@ MOD/STREAMER ONLY COMMANDS:
 				   message. 
 
 	- !so: gives a shoutout to a specified user into the chatroom
+
+
+PLANNED FUNCTIONALITIES/FEATURES:
+
+	- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
+	  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
+			* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
+
+	- turn the dice.js and calculator.js files from a collection of functions into actual classes

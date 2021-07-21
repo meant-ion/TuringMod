@@ -64,11 +64,16 @@ COMMANDS:
 
 	- !unlurk: removes a user from the list of lurkers and returns the time they were "lurking" to the chatroom. Complementary to !lurk
 
+	- !commands: prints a list of all commands (excluding this one) to the chatroom. Does not say what they do or how to invoke, just 
+				 the names. 
+
 
 MOD/STREAMER ONLY COMMANDS:
 
 	- !addcommand: allows for the creation of custom message commands on the fly, with the command's name being first and then the
 				   message. 
+
+	- !removecommand: allows a moderator or the streamer to remove a custom command from the list of commands
 
 	- !so: gives a shoutout to a specified user into the chatroom
 

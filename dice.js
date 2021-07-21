@@ -2,7 +2,7 @@
 const helper = require('./helper');
 
 //handles validation, error checking, and calculating what to roll how many times
-function getDiceRoll(target, user, cmdName, client) {
+async function getDiceRoll(target, user, cmdName, client) {
 	//first things first, we check the command to see if they wanted to roll more than 1 die
 	//copy out the character
 	var checkerChar = cmdName.substring(5, 6);

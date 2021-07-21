@@ -72,6 +72,31 @@ class CommandArray {
 		}
 	}
 
+	//removes a command from the list of custom commands
+	removeCommand(client, target, user, command) {
+		if (user.mod || user.username == theStreamer) {
+			if (this.searchForCommand(command) != null) {
+
+				this.commandArray = this.commandArray.filter(item => item.name != command);
+				const data = JSON.stringify(this.commandArray, null, 4);
+
+				fs.truncate('./data/commands.json', 0, function () {
+					fs.writeFile('./data/commands.json', data, 'utf8', function (err) {
+						if (err) {
+							console.error(err);
+							client.say(target, `@${user.username} failed to remove command`);
+						} else {
+							client.say(target, `@${user.username} command removed successfully`);
+						}
+					});
+				});
+			}
+		} else {
+			client.say(target, `@${user.username}: You must be a moderator or the streamer to delete a command`);
+        }
+		
+    }
+
 	//prints out a list of all custom created commands for use
 	postListOfCreatedCommands(client, target, user) {
 		console.log(this.commandArray);

@@ -29,7 +29,7 @@ function getTimePassed(startTime, needDay) {
     const difference = (curTime.getTime() - startTime.getTime()) / 1000;
     const unflooredHours = difference / 3600;
     const flooredHours = Math.floor(unflooredHours);
-    const days = flooredHours / 24;
+    const days = Math.round(flooredHours / 24);
     const mins = Math.round((unflooredHours - flooredHours) * 60);
     const secs = Math.round((unflooredHours - flooredHours) * 3600);
     if (!needDay) {

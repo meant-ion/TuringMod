@@ -25,7 +25,7 @@ COMMANDS:
 
 	- !build: posts specs of my current computer build
 
-	- !attention: simple counting command for how many times I have lost my train of thought due to my ADHD
+	- !voice: simple counting command for how many times my voice has cracked while on stream. 
 
 	- !wikirand: posts a link to a random wikipedia article
 
@@ -56,11 +56,14 @@ COMMANDS:
 	- !suggestion: gets a viewer's suggestion on what should be added to the bot/improved upon and writes it to file to be read
 				   and considered later on, probably after stream. 
 
+	= !suggestionlist: gets a comma separated list of all suggestions made to improve the bot and posts them in chat
+
 	- !followage: returns the amount of time that a user has been following the stream. Currently says it in the chatroom, not whispers. 
 				  Would need to have the bot verified as a bot on Twitch to do so.
 				  * Verification currently in progress
 
-	- !lurk: sets a user as a "lurker" where they will be gone for a bit. Complementary with !unlurk
+	- !lurk: sets a user as a "lurker" where they will be gone for a bit along with holding a messgae for 
+			 why they were lurking. Complementary with !unlurk
 
 	- !unlurk: removes a user from the list of lurkers and returns the time they were "lurking" to the chatroom. Complementary to !lurk
 

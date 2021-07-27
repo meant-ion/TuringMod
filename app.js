@@ -9,7 +9,6 @@ const dice = require('./dice');
 const helper = require('./helper');
 const loader = require('./command_loader.js');
 const lrk = require('./lurker_list.js');
-const asy = require('./asyncer.js');
 const AsyncHolder = require('./asyncer.js');
 
 const opts = {
@@ -60,9 +59,9 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 //be able to emulate chat the best it can
 var linesCount = 0;
 
-//vars for the !attention command
-var attnCountAtStart = 0;
-var lostAttention = 0;
+//vars for the !voice command
+var vCrackCountAtStart = 0;
+var voiceCrack = 0;
 
 //interval setup to tell me how many lines of text are in testfile.txt roughly every 5 minutes or so
 //const linesCountInterval = 180000;
@@ -78,6 +77,7 @@ client.on('connected', onConnectedHandler);
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
 const commandInterval = 900000;
 setInterval(followMe, commandInterval);
+setInterval(suggestToMe, commandInterval + 100000);
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features
 let commands_holder = new loader(theStreamer);
@@ -150,6 +150,10 @@ function onMessageHandler(target, user, msg, self) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
 			}
 
+		} else if (cmdName == '!suggestionlist') {//the user wants to see all of the current suggestions for the bot
+
+			printAllSuggestions(target, user);
+
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
 			client.say(target, `@${user.username} Title is: ${streamTitle}`);
@@ -164,10 +168,10 @@ function onMessageHandler(target, user, msg, self) {
 netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
 			client.say(target, `@${user.username}: ` + buildMsg);
 
-		} else if (cmdName == '!attention') {//dumb little command for my ADHD riddled self; counts how many times I lose focus
+		} else if (cmdName == '!voice') {//dumb little command for my ADHD riddled self; counts how many times I lose focus
 
-			lostAttention++;
-			client.say(target, `Streamer has fucked around ${lostAttention} times. :(`);
+			voiceCrack++;
+			client.say(target, `Streamer's voice has cracked ${lostAttention} times.`);
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
@@ -217,7 +221,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 //lets me know that the script has connected to twitch servers for their API
 function onConnectedHandler(addy, prt) {
-	loadAttention();
+	loadVoiceCrack();
 
 	readFileLines();
 
@@ -260,6 +264,23 @@ function writeSuggestionToFile(inputMsg) {
 	return true;
 }
 
+async function printAllSuggestions(target, user) {
+	fs.readFile('./data/suggestions.txt', function (err, data) {
+		if (err) {
+			console.error(err);
+		}
+
+		var allSuggestions = data.toString();
+		var suggs = allSuggestions.split('\n');
+		var msg = "";
+		for (var i = 0; i < suggs.length; ++i) {
+			msg += suggs[i] + ', ';
+			console.log(suggs[i]);
+        }
+		client.say(target, `@${user.username}: ${msg}`);
+	});
+}
+
 //gets the lines written in testfile.txt and sets the counts into the linesCount variable
 function readFileLines() {
 	var rl = readline.createInterface({
@@ -280,6 +301,11 @@ function readFileLines() {
 //small function to remind people to follow me if they enjoy me
 function followMe() {
 	client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
+}
+
+function suggestToMe() {
+	client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion and then
+what you think is a good idea. Thank you!`);
 }
 
 //gets the current time in Central Standard Time in AM/PM configuration
@@ -361,10 +387,10 @@ function writeMsgToFile(user, msg) {
 			//linesCount += 1;
 			//check to see if the counts for the !attention command has changed at all
 			//if so, write it to file. Otherwise, do nothing
-			if (lostAttention > attnCountAtStart) {
+			if (voiceCrack > vCrackCountAtStart) {
 				//truncate and then write to file to overwrite the old contents
 				fs.truncate('./data/attention.txt', 0, function () {
-					fs.writeFile('./data/attention.txt', lostAttention.toString(),
+					fs.writeFile('./data/attention.txt', voiceCrack.toString(),
 						{ flag: 'a+' }, err => { });
 				});
 			}
@@ -375,7 +401,7 @@ function writeMsgToFile(user, msg) {
 }
 
 //when the bot is connected, we call this function to write in the attention counts to memory
-function loadAttention() {
+function loadVoiceCrack() {
 	try {
 		//check to make sure that the file actually exists at the specified path first before we attempt to read it
 		if (fs.existsSync('./data/attention.txt', (exists) => {
@@ -385,14 +411,14 @@ function loadAttention() {
 			const attentionFileContents = fs.readFileSync('./data/attention.txt', 'utf8');
 			//set the counts before anyone increases them
 			//for the beginning counts, if the file had nothing in it, set the starting count at 0
-			if (attentionFileContents.length == 0) {
+			if (vCrackCountAtStart.length == 0) {
 				attnCountAtStart = 0;
 			} else {//otherwise, parse the string value from the file as an int
 				attnCountAtStart = parseInt(attentionFileContents);
 			}
 			//now set the editable counts
-			lostAttention = attnCountAtStart;
-			console.log(`* Attention counts loaded and ready for modification on stream :)`);
+			voiceCrack = attnCountAtStart;
+			console.log(`* Voice Crack counts loaded and ready for modification on stream :)`);
 		}
 	} catch (err) {
 		console.error(err);

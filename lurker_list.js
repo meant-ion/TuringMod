@@ -28,7 +28,8 @@ class LurkList {
         if (index != -1) {
 
             let timeMsg = helper.getTimePassed(this.lurker_list[index].getValue(), false);
-            const msg = `Welcome back @${user.username}! You were gone for ${timeMsg}`;
+            let lurkMsg = this.lurker_list[index].getMsg();
+            const msg = `Welcome back @${user.username}! You were gone for ${timeMsg} because of "${lurkMsg}"`;
 
             this.lurker_list.splice(index, 1);
             return msg;
@@ -54,13 +55,16 @@ class Lurker_Item {
     //Lurker_Item structure is pretty much gonna be a key/value pair
     //Key: the username of the person lurking
     //Value: the time the lurker was inserted into the LurkList; generated at creation
+    //Msg: what message that the lurker decided to lurk with
 
     #key;
     #value;
+    #msg;
 
-    constructor(username) {
+    constructor(username, msg) {
         this.#key = username;
         this.#value = new Date();
+        this.#msg = msg;
     }
 
     getKey() {
@@ -69,6 +73,10 @@ class Lurker_Item {
 
     getValue() {
         return this.#value;
+    }
+
+    getMsg() {
+        return this.#msg;
     }
 
 }

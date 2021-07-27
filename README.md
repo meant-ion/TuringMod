@@ -87,4 +87,4 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
 			* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
 
-	- turn the dice.js and calculator.js files from a collection of functions into actual classes
+	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS.

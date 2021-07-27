@@ -4,6 +4,7 @@
 const fetch = require('node-fetch');
 const axios = require('axios');
 const helper = require('./helper.js');
+const fs = require('fs');
 
 class AsyncHolder {
 
@@ -51,6 +52,21 @@ class AsyncHolder {
 				}
 
 		});
+	}
+
+	//returns a list of all suggestions sent into the bot as a message in chat
+	async printAllSuggestions(user) {
+		var msg = "";
+		fs.readFile('./data/suggestions.txt', function (err, data) {
+			if (err) { console.error(err); }
+
+			var suggs = data.toString();
+			var sugg = suggs.split('\n');
+			for (var i = 0; i < sugg.length; ++i) {
+				msg += sugg[i] + ', ';
+			}
+		});
+		this.client.say(this.target, `@${user.username}: ${msg}`);
 	}
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy

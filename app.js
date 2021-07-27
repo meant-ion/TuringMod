@@ -4,12 +4,12 @@ const tmi = require('tmi.js');
 const fs = require('fs');
 const readline = require('readline');
 const Twitch = require('simple-twitch-api');
-const calculator = require('./calculator');
-const dice = require('./dice');
+const calculator = require('./calculator.js');
 const helper = require('./helper');
 const loader = require('./command_loader.js');
 const lrk = require('./lurker_list.js');
 const AsyncHolder = require('./asyncer.js');
+const dicee = require('./dice.js');
 
 const opts = {
 	identity: {
@@ -79,10 +79,12 @@ const commandInterval = 900000;
 setInterval(followMe, commandInterval);
 setInterval(suggestToMe, commandInterval + 100000);
 
-//generate the custom objects for the special commands and the !lurk/!unlurk features
+//generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 let commands_holder = new loader(theStreamer);
 let lurk_list = new lrk();
 let async_functions = new AsyncHolder(client, theStreamer);
+let dice = new dicee(theStreamer, client);
+let Calculator = new calculator();
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -115,11 +117,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			followMe();
 
-		} else if (cmdName == '!lurk') {
+		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
 			client.say(target, lurk_list.addLurker(user));
 
-		} else if (cmdName == '!unlurk') {
+		} else if (cmdName == '!unlurk') {//the user wishes to exit lurk mode
 
 			client.say(target, lurk_list.removeLurker(user));
 
@@ -127,7 +129,7 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
 
-		} else if (cmdName == '!removecommand') {
+		} else if (cmdName == '!removecommand') {//for mods to remove a custom command
 
 			commands_holder.removeCommand(client, target, user, inputMsg[1]);
 
@@ -152,7 +154,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!suggestionlist') {//the user wants to see all of the current suggestions for the bot
 
-			printAllSuggestions(target, user);
+			async_functions.printAllSuggestions(user);
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
@@ -168,7 +170,7 @@ function onMessageHandler(target, user, msg, self) {
 netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
 			client.say(target, `@${user.username}: ` + buildMsg);
 
-		} else if (cmdName == '!voice') {//dumb little command for my ADHD riddled self; counts how many times I lose focus
+		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
 			voiceCrack++;
 			client.say(target, `Streamer's voice has cracked ${lostAttention} times.`);
@@ -177,14 +179,13 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 			async_functions.getRandWikipediaArticle(user);
 
-
 		} else if (cmdName == '!help') {//sends a list of commands when the user needs them. Needs to be reworked to not be as garbo
 
 			getHelp(target, user);
 
 		} else if (cmdName.substring(0, 5) == '!roll') {//simple dice rolling command. Can do many sided dice, not just a d20 or d6
 
-			dice.getDiceRoll(target, user, cmdName, client);
+			dice.getDiceRoll(cmdName, user);
 
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
@@ -192,7 +193,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
 
-			const msg = `@${user.username}: ` + ` ` + calculator.calculate(calculator.convertToRPN(helper.combineInput(inputMsg)));
+			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(inputMsg));
 			client.say(target, msg);
 
 		} else if (cmdName == "!streamertime") {//gets the current time in Central Standard Time (CST)
@@ -264,23 +265,6 @@ function writeSuggestionToFile(inputMsg) {
 	return true;
 }
 
-async function printAllSuggestions(target, user) {
-	fs.readFile('./data/suggestions.txt', function (err, data) {
-		if (err) {
-			console.error(err);
-		}
-
-		var allSuggestions = data.toString();
-		var suggs = allSuggestions.split('\n');
-		var msg = "";
-		for (var i = 0; i < suggs.length; ++i) {
-			msg += suggs[i] + ', ';
-			console.log(suggs[i]);
-        }
-		client.say(target, `@${user.username}: ${msg}`);
-	});
-}
-
 //gets the lines written in testfile.txt and sets the counts into the linesCount variable
 function readFileLines() {
 	var rl = readline.createInterface({
@@ -303,6 +287,7 @@ function followMe() {
 	client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
 }
 
+//small function to let viewers know that they can suggest edits to the bot at any time the stream is up
 function suggestToMe() {
 	client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion and then
 what you think is a good idea. Thank you!`);

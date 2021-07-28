@@ -63,10 +63,6 @@ var linesCount = 0;
 var vCrackCountAtStart = 0;
 var voiceCrack = 0;
 
-//interval setup to tell me how many lines of text are in testfile.txt roughly every 5 minutes or so
-//const linesCountInterval = 180000;
-//setInterval(printLinesCount, linesCountInterval);
-
 var client = new tmi.client(opts);
 
 client.connect();
@@ -98,18 +94,7 @@ function onMessageHandler(target, user, msg, self) {
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {
-		//the interesting command; when called, and with enough messages posted in chat, turingbot will generate 
-		//a string that should very closely mimic the average chatter's messages
-		//TODO: get the invite settled from OpenAI to use GPT-3
-		if (cmdName == '!post') {
-
-			//if (user.mod || user.username == theStreamer || user.username == 'pope_pontus') {
-			//	generateShitpost(target, user);
-			//}
-
-			client.say(target, `Due to my developer's incompetence, I no longer have an API key for shitposting! So this is what you get. Sorry`);
-
-		} else if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
+		if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
 
 			postWikiPage(target);
 
@@ -173,7 +158,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
 			voiceCrack++;
-			client.say(target, `Streamer's voice has cracked ${lostAttention} times.`);
+			client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
@@ -215,7 +200,9 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 				//this is not a command line, so we just gather the comment into a file
 				lurkerHasTypedMsg(target, user);
 				writeMsgToFile(user, msg);
-            }
+				prompt += msg + '\n';
+			}
+			generatePost(user);
 		}
 	}
 }
@@ -236,6 +223,14 @@ function onConnectedHandler(addy, prt) {
 
 	console.log(`* Connected to ${addy}:${prt}`);
 
+}
+
+async function generatePost(user) {
+	if (linesCount >= 150) {
+		async_functions.generateShitpost(user, linesCount);
+		linesCount = 0;
+		prompt = "";
+    }
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

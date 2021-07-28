@@ -1,5 +1,6 @@
 // file that holds all async functions that the bot will be using
 //i.e. !followage, !post, etc...
+require('dotenv').config({ path: './.env' });
 
 const fetch = require('node-fetch');
 const axios = require('axios');
@@ -73,46 +74,46 @@ class AsyncHolder {
 	//due to my own incompetence and lack of reading comprehension, this function no longer has an API key
 	//for most likely an indefinite period, this will no longer work. The code will still work with a valid key, but
 	//I no longer possess one. Apologies for the inconvenience
-	//async generateShitpost(user) {
-	//	if (linesCount >= 5) {//we have enough lines of text to prompt GPT-3
+	async generateShitpost(user, linesCount) {
+		if (linesCount >= 5) {//we have enough lines of text to prompt GPT-3
 
-	//		//the url for GPT-3 for the model level; we will use the most powerful, Davinci
-	//		const url = 'https://api.openai.com/v1/engines/curie/completions';
+			//the url for GPT-3 for the model level; we will use the most powerful, Davinci
+			const url = 'https://api.openai.com/v1/engines/curie/completions';
 
-	//		//we are getting access to the model through simple https requests, so we will use the Got library to do so
-	//		try {
+			//we are getting access to the model through simple https requests, so we will use the Got library to do so
+			try {
 
-	//			//set up the parameters for the model, which will be:
-	//			//  - prompt: input text (so just the logs from the chat)
-	//			//  - max_tokens: how long the response is 
-	//			//  - temperature: the level of creative freedom for responses
-	//			//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
-	//			//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
-	//			const params = {
-	//				"prompt": prompt,
-	//				"max_tokens": 20,
-	//				"temperature": 0.7,
-	//				"frequency_penalty": 0.3,
-	//				"presence_penalty": 0.3,
-	//				"stop": ['.', '!', '?']
-	//			};
+				//set up the parameters for the model, which will be:
+				//  - prompt: input text (so just the logs from the chat)
+				//  - max_tokens: how long the response is 
+				//  - temperature: the level of creative freedom for responses
+				//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
+				//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
+				const params = {
+					"prompt": prompt,
+					"max_tokens": 20,
+					"temperature": 0.7,
+					"frequency_penalty": 0.3,
+					"presence_penalty": 0.3,
+					"stop": ['.', '!', '?']
+				};
 
-	//			//the headers, which is effectively the APi key for GPT-3 to be sent for model access
-	//			const headers = {
-	//				'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-	//			};
+				//the headers, which is effectively the APi key for GPT-3 to be sent for model access
+				const headers = {
+					'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+				};
 
-	//			client.say(target, `@${user.username}: ${(await got.post(url, { json: params, headers: headers }).json()).choices[0].text}`);
-	//		} catch (err) {//in case of a screwup, post an error message to chat and print error
-	//			client.say(target, `Error in text generation`);
-	//			console.error(err);
-	//		}
+				this.client.say(this.target, `@${user.username}: ${(await got.post(url, { json: params, headers: headers }).json()).choices[0].text}`);
+			} catch (err) {//in case of a screwup, post an error message to chat and print error
+				this.client.say(this.target, `Error in text generation`);
+				console.error(err);
+			}
 
-	//	} else {
-	//		client.say(target, `Sorry, Not Enough Comments Yet :(`);
-	//	}
+		} else {
+			this.client.say(this.target, `Sorry, Not Enough Comments Yet :(`);
+		}
 
-	//}
+	}
 
 }
 

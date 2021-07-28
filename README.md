@@ -14,6 +14,7 @@ COMMANDS:
 			 * Most likely to be redone as a interval-set function rather than a user-called one. 
 			   Fired off most likely by a certain amount of time passing or with a certain number of messages being 
 			   sent successfully by other user in the chat
+			**DEPRECIATED IN FAVOR OF AN AUTOMATICALLY CALLED FUNCTION RATHER THAN USER CALLED
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
 

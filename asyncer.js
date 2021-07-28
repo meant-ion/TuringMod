@@ -6,6 +6,8 @@ const fetch = require('node-fetch');
 const axios = require('axios');
 const helper = require('./helper.js');
 const fs = require('fs');
+const got = require('got');
+let { PythonShell } = require('python-shell');
 
 class AsyncHolder {
 
@@ -70,13 +72,24 @@ class AsyncHolder {
 		this.client.say(this.target, `@${user.username}: ${msg}`);
 	}
 
+	//generates an insult and tells it to the streamer, because my self-esteem is not low enough already
+	async insultTheStreamer() {
+		PythonShell.run('main.py', null, function (err) {
+			if (err) {
+				console.error(err);
+			}
+			console.log("TTS script executed");
+		});
+		
+    }
+
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
 	//due to my own incompetence and lack of reading comprehension, this function no longer has an API key
 	//for most likely an indefinite period, this will no longer work. The code will still work with a valid key, but
 	//I no longer possess one. Apologies for the inconvenience
-	async generateShitpost(user, linesCount) {
-		if (linesCount >= 5) {//we have enough lines of text to prompt GPT-3
-
+	async generateShitpost(user, prompt, linesCount) {
+		//check first if minimum posting requirements have been met (enough comments made to post)
+		if (linesCount >= 150) {
 			//the url for GPT-3 for the model level; we will use the most powerful, Davinci
 			const url = 'https://api.openai.com/v1/engines/curie/completions';
 
@@ -95,7 +108,8 @@ class AsyncHolder {
 					"temperature": 0.7,
 					"frequency_penalty": 0.3,
 					"presence_penalty": 0.3,
-					"stop": ['.', '!', '?']
+					"stop": ['.', '!', '?'],
+					"logprobs": 10
 				};
 
 				//the headers, which is effectively the APi key for GPT-3 to be sent for model access
@@ -104,15 +118,15 @@ class AsyncHolder {
 				};
 
 				this.client.say(this.target, `@${user.username}: ${(await got.post(url, { json: params, headers: headers }).json()).choices[0].text}`);
+				return true;
 			} catch (err) {//in case of a screwup, post an error message to chat and print error
 				this.client.say(this.target, `Error in text generation`);
 				console.error(err);
+				return false;
 			}
-
-		} else {
-			this.client.say(this.target, `Sorry, Not Enough Comments Yet :(`);
 		}
-
+		return false;
+		
 	}
 
 }

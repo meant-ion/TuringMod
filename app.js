@@ -63,6 +63,8 @@ var linesCount = 0;
 var vCrackCountAtStart = 0;
 var voiceCrack = 0;
 
+var prompt = "";
+
 var client = new tmi.client(opts);
 
 client.connect();
@@ -71,9 +73,10 @@ client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
-const commandInterval = 900000;
-setInterval(followMe, commandInterval);
-setInterval(suggestToMe, commandInterval + 100000);
+setInterval(intervalMessages, 600000);
+
+//separate variable to tell the program which function gets called
+var callThisFunctionNumber = 0;
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 let commands_holder = new loader(theStreamer);
@@ -202,7 +205,8 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 				writeMsgToFile(user, msg);
 				prompt += msg + '\n';
 			}
-			generatePost(user);
+			//uncomment below when the OpenAI Going Live App is accepted
+			//generatePost(user);
 		}
 	}
 }
@@ -210,24 +214,34 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 //lets me know that the script has connected to twitch servers for their API
 function onConnectedHandler(addy, prt) {
 	loadVoiceCrack();
-
-	readFileLines();
-
-	//read in the contents of testfile.txt as soon as the bot is up and running
-	fs.readFile('./data/testfile.txt', 'utf8', function (err, data) {
-		if (err) {
-			console.error(err);
-		}
-		prompt = data.toString();
-	});
-
 	console.log(`* Connected to ${addy}:${prt}`);
-
 }
 
-async function generatePost(user) {
-	if (linesCount >= 150) {
-		async_functions.generateShitpost(user, linesCount);
+//sends out a message every so often, following through a list of possible messages/functions. 
+function intervalMessages() {
+	switch (callThisFunctionNumber) {
+		case 0://follow message
+			client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
+			break;
+		case 1://messgae for suggesting features/fixes for the bot
+			client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion and then
+what you think is a good idea. Thank you!`);
+			break;
+		case 2://insults the streamer through TTS
+			async_functions.insultTheStreamer();
+			break;
+
+	}
+	if (callThisFunctionNumber >= 2) {
+		callThisFunctionNumber = 0;
+	} else {
+		++callThisFunctionNumber;
+    }
+}
+
+//handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
+function generatePost(user) {
+	if (async_functions.generateShitpost(user, prompt, linesCount)) {
 		linesCount = 0;
 		prompt = "";
     }
@@ -258,34 +272,6 @@ function writeSuggestionToFile(inputMsg) {
 	});
 
 	return true;
-}
-
-//gets the lines written in testfile.txt and sets the counts into the linesCount variable
-function readFileLines() {
-	var rl = readline.createInterface({
-		input: fs.createReadStream('./data/testfile.txt'),
-		output: process.stdout,
-		terminal: false
-	});
-
-	rl.on('line', function (line) {
-		linesCount++;
-	});
-	rl.on('close', function (line) {
-		console.log(`* File contained ${linesCount} lines of text!`);
-		fs.close(0);
-	});
-}
-
-//small function to remind people to follow me if they enjoy me
-function followMe() {
-	client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
-}
-
-//small function to let viewers know that they can suggest edits to the bot at any time the stream is up
-function suggestToMe() {
-	client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion and then
-what you think is a good idea. Thank you!`);
 }
 
 //gets the current time in Central Standard Time in AM/PM configuration
@@ -357,16 +343,10 @@ function postWikiPage(target) {
 }
 
 //function to handle the various non-command messages on chat for storing and using with !shitpost
-function writeMsgToFile(user, msg) {
+function writeMsgToFile(user) {
 	 if (user.username != theStreamer) { //the text was not typed by the streamer, so we store their command
 		 try {
-			//4 lines commented out b/c useless w/o working shitpost function
-			//fs.writeFile('./data/testfile.txt', msg + '\n',
-			//	{ flag: 'a+' }, err => { });
-			//prompt += msg + '\n';
-			//linesCount += 1;
-			//check to see if the counts for the !attention command has changed at all
-			//if so, write it to file. Otherwise, do nothing
+			//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing
 			if (voiceCrack > vCrackCountAtStart) {
 				//truncate and then write to file to overwrite the old contents
 				fs.truncate('./data/attention.txt', 0, function () {

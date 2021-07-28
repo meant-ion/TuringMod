@@ -23,6 +23,7 @@ function combineInput(inputMsg) {
     return combinedMsg;
 }
 
+//function to get the time passed from one point to another
 function getTimePassed(startTime, needDay) {
 
     const curTime = new Date();
@@ -49,10 +50,16 @@ function isNumeric(charToCheck) {
     return !isNaN(parseFloat(charToCheck)) && isFinite(charToCheck);
 }
 
+//simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
+function checkIfModOrStreamer(user, theStreamer) {
+    return user.mod || user.username == theStreamer;
+}
+
 module.exports = {
     isOperator: isOperator,
     isLetter: isLetter,
     isNumeric: isNumeric,
     combineInput: combineInput,
     getTimePassed: getTimePassed,
+    checkIfModOrStreamer: checkIfModOrStreamer,
 };

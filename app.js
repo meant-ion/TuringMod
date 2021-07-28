@@ -130,8 +130,15 @@ function onMessageHandler(target, user, msg, self) {
 			async_functions.getFollowAge(client_id, outside_token, user);
 
 		} else if (cmdName == '!so') {//streamer/moderators wish to give a shoutout to a user in chat
-			if (inputMsg.length > 1 && (user.mod || user.username == theStreamer)) {
+			if (inputMsg.length > 1 && helper.checkIfModOrStreamer(user, theStreamer)) {
 				client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
+			}
+
+		} else if (cmdName == '!flush') {//a moderator or the streamer wishes to flush the bot's posting prompt
+
+			if (helper.checkIfModOrStreamer(user, theStreamer)) {
+				resetPrompt();
+				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
 			}
 
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
@@ -239,11 +246,16 @@ what you think is a good idea. Thank you!`);
     }
 }
 
+//resets the prompt message and sets the line count down to zero
+function resetPrompt() {
+	linesCount = 0;
+	prompt = "";
+}
+
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
 function generatePost(user) {
 	if (async_functions.generateShitpost(user, prompt, linesCount)) {
-		linesCount = 0;
-		prompt = "";
+		resetPrompt();
     }
 }
 

@@ -81,6 +81,9 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !so: gives a shoutout to a specified user into the chatroom
 
+	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of lines
+			  posted so far. 
+
 
 PLANNED FUNCTIONALITIES/FEATURES:
 

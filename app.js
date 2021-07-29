@@ -2,7 +2,6 @@ require('dotenv').config({ path: './.env' });
 
 const tmi = require('tmi.js');
 const fs = require('fs');
-const readline = require('readline');
 const Twitch = require('simple-twitch-api');
 const calculator = require('./calculator.js');
 const helper = require('./helper');
@@ -107,7 +106,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
-			client.say(target, lurk_list.addLurker(user));
+			client.say(target, lurk_list.addLurker(user, inputMsg));
 
 		} else if (cmdName == '!unlurk') {//the user wishes to exit lurk mode
 
@@ -188,12 +187,16 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
 
-			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(inputMsg));
+			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(inputMsg, false));
 			client.say(target, msg);
 
 		} else if (cmdName == "!streamertime") {//gets the current time in Central Standard Time (CST)
 
 			getCurrentTime(target, user);
+
+		} else if (cmdName == '!schedule') {//returns a link to the stream schedule
+
+			async_functions.getChannelSchedule(client_id, outside_token, user);
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
@@ -254,7 +257,7 @@ function resetPrompt() {
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
 function generatePost(user) {
-	if (async_functions.generateShitpost(user, prompt, linesCount)) {
+	if (async_functions.generatePost(user, prompt, linesCount)) {
 		resetPrompt();
     }
 }

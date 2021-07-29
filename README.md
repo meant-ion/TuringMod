@@ -70,6 +70,8 @@ COMMANDS:
 
 	- !commands: prints a list of all commands (excluding this one) to the chatroom. Does not say what they do or how to invoke, just 
 				 the names. 
+	
+	- !schedule: returns a schedule for the next week starting the day after the command is called in a readable format
 
 
 MOD/STREAMER ONLY COMMANDS:

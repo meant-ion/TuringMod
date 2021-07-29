@@ -13,9 +13,9 @@ class LurkList {
         this.lurker_list = [];
     }
 
-    addLurker(user) {
+    addLurker(user, msg) {
         if (this.isLurking(user) == -1) {
-            this.lurker_list.push(new Lurker_Item(user.username));
+            this.lurker_list.push(new Lurker_Item(user.username, msg));
             return `See you whenever you get back @${user.username}`;
         }
         return `You're already lurking @${user.username}`
@@ -64,7 +64,7 @@ class Lurker_Item {
     constructor(username, msg) {
         this.#key = username;
         this.#value = new Date();
-        this.#msg = msg;
+        this.#msg = helper.combineInput(msg, true);
     }
 
     getKey() {

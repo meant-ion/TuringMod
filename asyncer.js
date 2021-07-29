@@ -81,13 +81,43 @@ class AsyncHolder {
 			console.log("TTS script executed");
 		});
 		
+	}
+
+	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
+	async getChannelSchedule(client_id, access_token, user) {
+		const data = {
+			'method': 'GET',
+			'headers': {
+				'client-id': `${client_id}`,
+				'Authorization': `Bearer ${access_token}`
+			}
+		};
+
+		var schedule = undefined;
+
+		await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
+			.then(body => {
+
+				schedule = body;
+				let streamDates = "";
+				for (var i = 1; i < schedule.data.segments.length; ++i) {
+					let curDate = new Date(schedule.data.segments[i].start_time);
+					if (i + 1 == schedule.data.segments.length) {
+						streamDates += curDate.toDateString();
+					} else {
+						streamDates += curDate.toDateString() + ", ";
+                    }
+					
+				}
+				this.client.say(this.target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
+		});
     }
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
 	//due to my own incompetence and lack of reading comprehension, this function no longer has an API key
 	//for most likely an indefinite period, this will no longer work. The code will still work with a valid key, but
 	//I no longer possess one. Apologies for the inconvenience
-	async generateShitpost(user, prompt, linesCount) {
+	async generatePost(user, prompt, linesCount) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
 		if (linesCount >= 150) {
 			//the url for GPT-3 for the model level; we will use the most powerful, Davinci
@@ -95,7 +125,6 @@ class AsyncHolder {
 
 			//we are getting access to the model through simple https requests, so we will use the Got library to do so
 			try {
-
 				//set up the parameters for the model, which will be:
 				//  - prompt: input text (so just the logs from the chat)
 				//  - max_tokens: how long the response is 
@@ -125,8 +154,7 @@ class AsyncHolder {
 				return false;
 			}
 		}
-		return false;
-		
+		return false;	
 	}
 
 }

@@ -12,12 +12,15 @@ function isOperator(charToCheck) {
     return false;
 }
 
-//combines the input into a single string without whitespaces
-function combineInput(inputMsg) {
+//combines the input into a single string
+function combineInput(inputMsg, needWhiteSpace) {
     var combinedMsg = '';
     for (var i = 0; i < inputMsg.length; ++i) {
         if (i != 0) {
             combinedMsg += inputMsg[i];
+        }
+        if (needWhiteSpace) {
+            combinedMsg += ' ';
         }
     }
     return combinedMsg;

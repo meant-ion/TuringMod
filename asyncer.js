@@ -7,6 +7,7 @@ const axios = require('axios');
 const helper = require('./helper.js');
 const fs = require('fs');
 const got = require('got');
+const readline = require('readline');
 let { PythonShell } = require('python-shell');
 
 class AsyncHolder {
@@ -33,14 +34,8 @@ class AsyncHolder {
 
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
-	async getFollowAge(client_id, outside_token, user) {
-		const data = {
-			'method': 'GET',
-			'headers': {
-				'client-id': `${client_id}`,
-				'Authorization': `Bearer ${outside_token}`
-			}
-		};
+	async getFollowAge(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		var follower_list = undefined;
 
@@ -85,13 +80,7 @@ class AsyncHolder {
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
 	async getChannelSchedule(client_id, access_token, user) {
-		const data = {
-			'method': 'GET',
-			'headers': {
-				'client-id': `${client_id}`,
-				'Authorization': `Bearer ${access_token}`
-			}
-		};
+		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		var schedule = undefined;
 
@@ -111,6 +100,105 @@ class AsyncHolder {
 				}
 				this.client.say(this.target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
 		});
+	}
+
+	//gets and returns the channel owner's summary/bio
+	async getChannelSummary(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
+			let description = body.data[0].description;
+			this.client.say(this.target, `@${user.username}: ${description}`);
+		});
+	}
+
+	//gets and returns the total time the stream has been live
+	async getStreamUptime(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+			let startTime = new Date(body.data[0].started_at);
+			let timeMsg = helper.getTimePassed(startTime, false);
+			this.client.say(this.target, `@${user.username}: ${timeMsg}`);
+        })
+	}
+
+	//gets and returns the title of the stream
+	async getStreamTitle(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+			let streamTitle = body.data[0].title;
+			this.client.say(this.target, `@${user.username} Title is: ${streamTitle}`);
+		});
+	}
+
+	//gets an account's creation date, calculates its age, and then returns it to the chatroom
+	async getUserAcctAge(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
+
+		await fetch(url, data).then(result => result.json()).then(body => {
+			let acctCreateDate = new Date(body.data[0].created_at);
+			let timePassed = helper.getTimePassed(acctCreateDate, true);
+			this.client.say(this.target, `@${user.username}, your account is ${timePassed} old`);
+		});
+    }
+
+	//edits the channel category/game to one specified by a moderator
+	//currently benched until I can wrap my mind around getting the correct token for editing a stream from a bot
+	async editChannelCategory(client_id, access_token, user, gameName) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		gameName = gameName.slice(1);
+		gameName = gameName.replace(/&/g, "%26");
+
+		//first, we need to get the category id to change the channel's category
+		const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
+
+		var responseStatus;
+
+		var gameID = "";
+		var editChannelURL = "";
+
+		await fetch(gameIdURL, data).then(result => result.json()).then(body => {
+			gameID = body.data[0].id;
+			editChannelURL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+		});
+
+		//now that we have the game id, we can make the patch request and go from there
+		var res;
+
+		//secondary data structure is meant for the editing, since we have to use PATCH and not GET
+		const editData = {
+			'method': 'PATCH',
+			'headers': {
+				'Authorization': `Bearer ${access_token}`,
+				'Client-Id': `${client_id}`,
+				'Content-Type': 'application/json'
+			},
+			'body': JSON.stringify({
+				"game_id": gameID,
+            }),
+		};
+
+		console.log(gameID);
+		console.log(editData);
+
+		await fetch(editChannelURL, editData).then((result) => {
+			responseStatus = result.status;
+			res = result;
+			return result.json();
+		}).then(body => {
+			if (responseStatus == "204") {
+				console.log("successfully updated category");
+			}
+			console.log(res);
+			console.log(responseStatus);
+		});
+
+		
     }
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
@@ -120,7 +208,7 @@ class AsyncHolder {
 	async generatePost(user, prompt, linesCount) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
 		if (linesCount >= 150) {
-			//the url for GPT-3 for the model level; we will use the most powerful, Davinci
+			//the url for GPT-3 for the model level; we will use the the content filter to keep compliance with OpenAI's TOS
 			const url = 'https://api.openai.com/v1/engines/curie/completions';
 
 			//we are getting access to the model through simple https requests, so we will use the Got library to do so
@@ -135,6 +223,7 @@ class AsyncHolder {
 					"prompt": prompt,
 					"max_tokens": 20,
 					"temperature": 0.7,
+					"top_p": 1,
 					"frequency_penalty": 0.3,
 					"presence_penalty": 0.3,
 					"stop": ['.', '!', '?'],
@@ -146,7 +235,25 @@ class AsyncHolder {
 					'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
 				};
 
-				this.client.say(this.target, `@${user.username}: ${(await got.post(url, { json: params, headers: headers }).json()).choices[0].text}`);
+				var output_text = await got.post(url, { json: params, headers: headers }).json().choices[0].text;
+
+				//using the readline library in order to control if the message can be posted or not via the console
+				var rl = readline.createInterface({
+					input: process.stdin,
+					output: process.stdout
+				});
+
+				//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
+				rl.question(`Text is ${output_text}, do you wish to publish this? `, function (answer) {
+
+					if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
+						this.client.say(this.target, `@${user.username}: MrDestructoid ${output_text}`);
+					} else {
+						console.log("Post will be discarded then. Thank you!");
+					}
+					rl.close();
+				});
+
 				return true;
 			} catch (err) {//in case of a screwup, post an error message to chat and print error
 				this.client.say(this.target, `Error in text generation`);
@@ -156,6 +263,16 @@ class AsyncHolder {
 		}
 		return false;	
 	}
+
+	#createTwitchDataHeader(client_id, access_token) {
+		return {
+			'method': 'GET',
+			'headers': {
+				'client-id': `${client_id}`,
+				'Authorization': `Bearer ${access_token}`
+			}
+		};
+    }
 
 }
 

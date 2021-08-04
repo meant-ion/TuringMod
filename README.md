@@ -73,6 +73,10 @@ COMMANDS:
 	
 	- !schedule: returns a schedule for the next week starting the day after the command is called in a readable format
 
+	- !accountage: says the age of the account of the user asking
+
+	- !who: reiterates the streamer's bio/summary
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -84,7 +88,9 @@ MOD/STREAMER ONLY COMMANDS:
 	- !so: gives a shoutout to a specified user into the chatroom
 
 	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of lines
-			  posted so far. 
+			  posted so far.
+			  
+	- !game: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)
 
 
 PLANNED FUNCTIONALITIES/FEATURES:

@@ -19,7 +19,7 @@ function combineInput(inputMsg, needWhiteSpace) {
         if (i != 0) {
             combinedMsg += inputMsg[i];
         }
-        if (needWhiteSpace) {
+        if (needWhiteSpace && (i + 1 != inputMsg.length)) {
             combinedMsg += ' ';
         }
     }

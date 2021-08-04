@@ -2,6 +2,7 @@ require('dotenv').config({ path: './.env' });
 
 const tmi = require('tmi.js');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const Twitch = require('simple-twitch-api');
 const calculator = require('./calculator.js');
 const helper = require('./helper');
@@ -26,12 +27,7 @@ const opts = {
 //for getting the access token from Helix
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
-const scope = "user:read:email";
-
-var startTime = new Date();
-var streamTitle = '';
-
-var stream_info = undefined;
+const scope = "user:read:email user:edit:broadcast";
 
 const theStreamer = opts.channels[0];
 
@@ -40,14 +36,6 @@ var outside_token = undefined;
 //get access to the Helix API for twitch and get all wanted chunks of info for it too
 Twitch.getToken(client_id, client_secret, scope).then(async result => {
 	var access_token = result.access_token;
-
-	let user = await Twitch.getUserInfo(access_token, client_id, theStreamer);
-	let user_id = user.data[0].id;
-
-	stream_info = await Twitch.getStream(access_token, client_id, user_id);
-
-	startTime = new Date(stream_info.data[0].started_at);
-	streamTitle = stream_info.data[0].title;
 
 	outside_token = access_token;
 
@@ -152,7 +140,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
-			client.say(target, `@${user.username} Title is: ${streamTitle}`);
+			async_functions.getStreamTitle(client_id, outside_token, user);
 
 		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
 
@@ -183,7 +171,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
-			getUptime(target, user);
+			async_functions.getStreamUptime(client_id, outside_token, user);
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
 
@@ -197,6 +185,26 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 		} else if (cmdName == '!schedule') {//returns a link to the stream schedule
 
 			async_functions.getChannelSchedule(client_id, outside_token, user);
+
+		} else if (cmdName == '!who') {//returns the bio of the streamer
+
+			async_functions.getChannelSummary(client_id, outside_token, user);
+
+		} else if (cmdName == '!accountage') {//returns the age of the account asking
+
+			async_functions.getUserAcctAge(client_id, outside_token, user);
+
+			//} else if (cmdName == '!changegame') {
+
+			//	if (helper.checkIfModOrStreamer(user, theStreamer)) {
+			//		async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
+			//          }
+
+		} else if (cmdName == "!post") {//activates GPT-3 for a post. Heavily controlled and only callable by mods & streamer
+
+			if (helper.checkIfModOrStreamer(user, theStreamer)) {
+				//generatePost(user);
+            }
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
@@ -334,12 +342,6 @@ function takeAChanceAtBeingBanned(target, user) {
 	} else {
 		client.say(target, `Lucky you!`);
     }
-}
-
-//uptime command that gets how long the streamer has been live
-function getUptime(target, user) {
-	let timeMsg = helper.getTimePassed(startTime, false);
-	client.say(target, `@${user.username}: ${timeMsg}`);
 }
 
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber

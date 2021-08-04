@@ -144,6 +144,19 @@ class AsyncHolder {
 			let timePassed = helper.getTimePassed(acctCreateDate, true);
 			this.client.say(this.target, `@${user.username}, your account is ${timePassed} old`);
 		});
+	}
+
+	//gets and returns the stream's category (what we are playing/doing for stream)
+	async getCategory(client_id, access_token, user) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+
+		await fetch(url, data).then(result => result.json()).then(body => {
+			let streamCategory = vody.data[0].game_name;
+			let msg = `@${user.username}: Current category is ${streamCategory}`;
+			this.client.say(this.target, msg);
+		});
     }
 
 	//edits the channel category/game to one specified by a moderator

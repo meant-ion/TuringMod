@@ -22,6 +22,8 @@ COMMANDS:
 
 	- !title: returns the current title of the current stream to the chatroom
 
+	- !game: returns the current category of the stream
+
 	- !roulette: determines randomly if the asking user will be banned or not on chance
 
 	- !build: posts specs of my current computer build

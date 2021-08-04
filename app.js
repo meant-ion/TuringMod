@@ -142,6 +142,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getStreamTitle(client_id, outside_token, user);
 
+		} else if (cmdName == '!game') {//tells user what category stream is under
+
+			async_functions.getCategory(client_id, outside_token, user);
+
 		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
 
 			takeAChanceAtBeingBanned(target, user);
@@ -203,6 +207,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 		} else if (cmdName == "!post") {//activates GPT-3 for a post. Heavily controlled and only callable by mods & streamer
 
 			if (helper.checkIfModOrStreamer(user, theStreamer)) {
+				//uncomment below when the OpenAI Going Live App is accepted
 				//generatePost(user);
             }
 
@@ -223,8 +228,6 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 				writeMsgToFile(user, msg);
 				prompt += msg + '\n';
 			}
-			//uncomment below when the OpenAI Going Live App is accepted
-			//generatePost(user);
 		}
 	}
 }

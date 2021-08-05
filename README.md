@@ -1,20 +1,12 @@
 # TuringMod
 
-
 This is my own interpretation of a twitch.tv chat bot, spceifically using OpenAI's GPT3 API to mimic the members in the chatroom, 
 along with a large handful of other functions.
 
-NOTE: Due to a lack of reading comprehension for OpenAI's TOS, The mimicry is now dead until further notice. 
-	  I apologize for any problems that this may have caused. 
+NOTE: Negotiations for getting approved for live testing the mimicry by OpenAI are ongoing, so currently !post does not work
+	  How !post will work will most likely change in the future to keep the bot in line with OpenAI's TOS
 
 COMMANDS: 
-
-	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
-			 note: nerfed and killed until further notice.
-			 * Most likely to be redone as a interval-set function rather than a user-called one. 
-			   Fired off most likely by a certain amount of time passing or with a certain number of messages being 
-			   sent successfully by other user in the chat
-			**DEPRECIATED IN FAVOR OF AN AUTOMATICALLY CALLED FUNCTION RATHER THAN USER CALLED
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
 
@@ -93,6 +85,12 @@ MOD/STREAMER ONLY COMMANDS:
 			  posted so far.
 			  
 	- !game: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)
+
+	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
+			note: disabled until approved for release by OpenAI.
+			* Most likely to be redone as a interval-set function rather than a user-called one. 
+			Fired off most likely by a certain amount of time passing or with a certain number of messages being 
+			sent successfully by other user in the chat
 
 
 PLANNED FUNCTIONALITIES/FEATURES:

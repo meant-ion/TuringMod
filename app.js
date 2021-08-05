@@ -198,11 +198,11 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 			async_functions.getUserAcctAge(client_id, outside_token, user);
 
-			//} else if (cmdName == '!changegame') {
+		//} else if (cmdName == '!changegame') {
 
-			//	if (helper.checkIfModOrStreamer(user, theStreamer)) {
-			//		async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
-			//          }
+		//	if (helper.checkIfModOrStreamer(user, theStreamer)) {
+		//		async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
+		//    }
 
 		} else if (cmdName == "!post") {//activates GPT-3 for a post. Heavily controlled and only callable by mods & streamer
 

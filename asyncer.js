@@ -214,15 +214,14 @@ class AsyncHolder {
     }
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
-	//due to my own incompetence and lack of reading comprehension, this function no longer has an API key
-	//for most likely an indefinite period, this will no longer work. The code will still work with a valid key, but
-	//I no longer possess one. Apologies for the inconvenience
 	async generatePost(user, prompt, linesCount) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
-		if (linesCount >= 150) {
+		if (linesCount >= 50) {
 			//the url for GPT-3 for the model level; we will use the the content filter to keep compliance with OpenAI's TOS
 			const gen_url = 'https://api.openai.com/v1/engines/curie/completions';
 			const testing_url = 'https://api.openai.com/v1/engines/content-filter-alpha-c4/completions';
+
+			console.log(`Number of lines read into as prompt: ${linesCount}`);
 
 			//we are getting access to the model through simple https requests, so we will use the Got library to do so
 			try {
@@ -238,7 +237,6 @@ class AsyncHolder {
 					"temperature": 0.7,
 					"frequency_penalty": 0.3,
 					"presence_penalty": 0.3,
-					"stop": ['.', '!', '?'],
 					"logprobs": 10
 				};
 
@@ -253,21 +251,21 @@ class AsyncHolder {
 				//now, we construct the vars necessary to test the response for naughtiness
 
 				var toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
-				var prompt_to_test = "<|endoftext|>" + prompt + "\n--\nLabel:";
+
+				let token_list = output_text.choices[0].logprobs.tokens;
 
 				//how we will call the content filter
-				const testing_params = {
-					"prompt": prompt_to_test,
+				var testing_params = {
+					"prompt": token_list[0],
 					"max_tokens": 1,
 					"temperature": 0.0,
 					"top_p": 1,
 					"frequency_penalty": 0.3,
 					"presence_penalty": 0.3,
-					"stop": ['.', '!', '?'],
 					"logprobs": 10
 				};
 
-				let token_list = output_text.choices[0].logprobs.tokens;
+				
 				let tested_output = "";
 
 				//loop through each token and see if we can include it in the final output
@@ -281,7 +279,7 @@ class AsyncHolder {
 					if (output_label == "2") {
 						let logprobs = probs_output.choices[0].logprobs.top_logprobs[0];
 
-						if ((logprobs || "2") < toxic_threshold) {
+						if (logprobs["2"] < toxic_threshold) {
 							let logprob_0 = logprobs || "0";
 							let logprob_1 = logprobs || "1";
 
@@ -309,6 +307,8 @@ class AsyncHolder {
 					if (output_label != "2") {
 						tested_output += token_list[i];
 					}
+
+					testing_params.prompt = token_list[i];
                 }
 
 				//using the readline library in order to control if the message can be posted or not via the console
@@ -324,6 +324,7 @@ class AsyncHolder {
 						this.client.say(this.target, `@${user.username}: MrDestructoid ${output_text}`);
 					} else {
 						console.log("Post will be discarded then. Thank you!");
+						this.client.say(this.target, `@${user.username}: bot response rejected by bot admin`);
 					}
 					rl.close();
 				});

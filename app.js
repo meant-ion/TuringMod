@@ -2,7 +2,6 @@ require('dotenv').config({ path: './.env' });
 
 const tmi = require('tmi.js');
 const fs = require('fs');
-const fetch = require('node-fetch');
 const Twitch = require('simple-twitch-api');
 const calculator = require('./calculator.js');
 const helper = require('./helper');
@@ -60,6 +59,7 @@ client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
+//note to self: when testing this for other channels, turn this function OFF to avoid getting called a shill for my own stuff
 setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
@@ -206,7 +206,8 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == "!post") {//activates GPT-3 for a post. Heavily controlled and only callable by mods & streamer
 
-			if (helper.checkIfModOrStreamer(user, theStreamer)) {
+			//so I can use it while not on my channel
+			if (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus") {
 				//uncomment below when the OpenAI Going Live App is accepted
 				//generatePost(user);
             }
@@ -222,7 +223,7 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 			var msg = commands_holder.searchForCommand(cmdName);
 			if (msg != null) {
 				client.say(target, msg);
-			} else {
+			} else if (!detectSymbolSpam(helper.combineInput(inputMsg, true))) {
 				//this is not a command line, so we just gather the comment into a file
 				lurkerHasTypedMsg(target, user);
 				writeMsgToFile(user, msg);
@@ -351,6 +352,36 @@ function takeAChanceAtBeingBanned(target, user) {
 function getHelp(target, user) {
 	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo! 
 https://github.com/meant-ion/TuringMod/blob/master/README.md`)
+}
+
+//very rudimentary symbol spam detector. To be worked on and improved as time goes on
+//currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
+//(i.e. "Hello there! Y'all'd've done that, if you'd've been smarter"could get caught as spam)
+//Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
+function detectSymbolSpam(inputMsg, target) {
+
+	let symbolCount = 0;
+
+	//the regex that we will use to detect the symbol spam in a message
+	var symList = "[]{}()\`~!@#$%^&*;:'\",<.>\/?-_+=".split('');
+
+	var splitMsg = inputMsg.split('');
+
+	//search the whole message for the symbols
+	for (var i = 0; i < symList.length; ++i) {
+		for (var j = 0; j < splitMsg.length; ++j) {
+			if (splitMsg[j].indexOf(symList[i]) > -1) {
+				symbolCount++;
+            }
+        }
+    }
+
+	//if enough are found, remove the message for spam
+	if (symbolCount > 15) {
+		client.timeout(target, user.username, 10, "No symbol spam in chat please");
+		return true;
+    }
+	return false;
 }
 
 //posts the wikipedia article for Isidore of Seville when command is input

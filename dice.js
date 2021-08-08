@@ -121,11 +121,26 @@ class Dice {
 		}
 	}
 
+	//simple function that flips a "coin" and returns the side (Heads = 0, Tails = 1)
+	//it's here in the Dice class since it's just a probability function
+	flipCoin(user) {
+		let coinFlip = this.#rollDice(1, 2, '');
+
+		let side = "";
+
+		if (coinFlip == 0) {
+			side = "Heads"
+		} else {
+			side = "Tails";
+		}
+
+		this.client.say(this.target, `@${user.username}: ${side}`);
+    }
+
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
 	#rollDice(numDice, sides, minRoll) {
 		const diceCount = parseInt(numDice);//number of times we will roll
 		const sidesCount = parseInt(sides);//number of sides on the die that will be rolled
-		console.log(sidesCount);
 		var minimumCount = 0;
 		console.log(minRoll);
 		if (minRoll == '') {

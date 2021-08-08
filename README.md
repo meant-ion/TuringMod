@@ -32,6 +32,8 @@ COMMANDS:
 				3. The minimum roll that can be given on the roll (not required, defaults to no minimum roll)
 			* format: !roll(numDice)d(numSidesOnDice)r(MinimumRoll)
 
+	- !flip: simple command that flips a coin and returns either heads or tails. Not much else really
+
 	- !uptime: gets the uptime of the streamer since they have been live
 
 	- !calc: a twitch chat calculator. Users can put in somewhat complex calculations and get answers. Currently supports:
@@ -88,9 +90,10 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			note: disabled until approved for release by OpenAI.
-			* Most likely to be redone as a interval-set function rather than a user-called one. 
-			Fired off most likely by a certain amount of time passing or with a certain number of messages being 
-			sent successfully by other user in the chat
+			* Called either by myself, the stream's moderators, or the streamer proper. When called, response from API
+			  is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
+			  and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
+			  - Most likely to try to make this process approvable by the moderators of the channel as well
 
 
 PLANNED FUNCTIONALITIES/FEATURES:

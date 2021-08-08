@@ -173,6 +173,10 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 			dice.getDiceRoll(cmdName, user);
 
+		} else if (cmdName == "!flip") {
+
+			dice.flipCoin(user);
+
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
 			async_functions.getStreamUptime(client_id, outside_token, user);
@@ -356,7 +360,7 @@ https://github.com/meant-ion/TuringMod/blob/master/README.md`)
 
 //very rudimentary symbol spam detector. To be worked on and improved as time goes on
 //currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
-//(i.e. "Hello there! Y'all'd've done that, if you'd've been smarter"could get caught as spam)
+//(i.e. "Hello there! Y'all'd've done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
 //Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
 function detectSymbolSpam(inputMsg, target) {
 

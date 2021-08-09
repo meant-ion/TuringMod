@@ -86,7 +86,7 @@ MOD/STREAMER ONLY COMMANDS:
 	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of lines
 			  posted so far.
 			  
-	- !game: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)
+	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			note: disabled until approved for release by OpenAI.
@@ -94,12 +94,40 @@ MOD/STREAMER ONLY COMMANDS:
 			  is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
 			  and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
 			  - Most likely to try to make this process approvable by the moderators of the channel as well
+				Just need to find out the best way of actually going about this really
 
 
 PLANNED FUNCTIONALITIES/FEATURES:
 
 	- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
 	  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
+	  (or see long-term list below)
 			* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
 
+	- Adding the ability to edit a custom command thru chat itself
+
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS.
+
+	- A Clip/Link collection function: 
+			* Toggleable with two commands(ish) (maybe !startcollect and !endcollect?)
+			* Writes suggestion to file (for later viewing) (setting for the bot)
+			* Displays list to console with a command
+				- Do this in the chat itself or through the console altogether?
+
+	- !steamlink or !steampage: gets the category name and searches for it thru Steam API and returns a link to it
+
+	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
+			* Half baked; need to think this out more and get it more concrete
+
+	- !song: simple command that gets the song from Spotify API and returns name + link to song on Spotify
+			* Need to get Spotify API for this, maybe a way to link a Spotify acct to the bot?
+
+	- Incredibly long term/highly unlikely goal: making this into something that can actually make money
+			* Needs a website and such for this (hyper security)
+			* change the custom commands from a .json file (fine for 1 dude) to a real db (for multiple dudes)
+			* Need to get linking set up for this stuff as well:
+					- Spotify (!song)
+					- Twitch (any command that pulls from it)
+					- Steam API (may be able to get away with just using a special acct for this)
+			* Would definitly require getting into contact with OpenAI to stay on their good side with TOS
+					- Probs main selling point, CANNOT LOSE THIS FEATURE OR I WILL BE VERY SAD

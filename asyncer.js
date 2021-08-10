@@ -112,14 +112,21 @@ class AsyncHolder {
 		});
 	}
 
-	//gets and returns the total time the stream has been live
+	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
 	async getStreamUptime(client_id, access_token, user) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-			let startTime = new Date(body.data[0].started_at);
-			let timeMsg = helper.getTimePassed(startTime, false);
-			this.client.say(this.target, `@${user.username}: ${timeMsg}`);
+			//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
+			if (body.data[0].started_at == undefined) {
+				this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
+					` the next stream is. Thank you! :)`);
+			} else {
+				let startTime = new Date(body.data[0].started_at);
+				let timeMsg = helper.getTimePassed(startTime, false);
+				this.client.say(this.target, `@${user.username}: ${timeMsg}`);
+            }
+			
         })
 	}
 
@@ -156,6 +163,21 @@ class AsyncHolder {
 			let streamCategory = vody.data[0].game_name;
 			let msg = `@${user.username}: Current category is ${streamCategory}`;
 			this.client.say(this.target, msg);
+		});
+	}
+
+	async getClipInformation(client_id, access_token, clip_id) {
+		const data = this.#createTwitchDataHeader(client_id, access_token);
+
+		const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
+
+		await fetch(url, data).then(result => result.json()).then(body => {
+			//console.log(body);
+			if (body.data[0].url != undefined) {
+				return body.data[0].url;
+			} else {
+				return "";
+            }
 		});
     }
 

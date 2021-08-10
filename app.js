@@ -9,6 +9,7 @@ const loader = require('./command_loader.js');
 const lrk = require('./lurker_list.js');
 const AsyncHolder = require('./asyncer.js');
 const dicee = require('./dice.js');
+const collector = require('./clipcollector.js');
 
 const opts = {
 	identity: {
@@ -18,7 +19,7 @@ const opts = {
 	connection: {
 		reconnect: true
 	},
-	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here
+	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here (for now anyway)
 		"pope_pontus"
 	]
 };
@@ -71,6 +72,7 @@ let lurk_list = new lrk();
 let async_functions = new AsyncHolder(client, theStreamer);
 let dice = new dicee(theStreamer, client);
 let Calculator = new calculator();
+let ClipCollector = new collector();
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -150,10 +152,17 @@ function onMessageHandler(target, user, msg, self) {
 
 			takeAChanceAtBeingBanned(target, user);
 
+		} else if (cmdName == '!testlink') {
+
+			let x = ClipCollector.validateAndStoreClipLink(client_id, outside_token, 'https://clips.twitch.tv/FunBlindingGarlicOneHand-RnjjoL7dxO4urYVR');
+			console.log(x);
+			let y = ClipCollector.validateAndStoreClipLink(client_id, outside_token, 'https://clips.twitch.tv/FunBlindingGarlicOneHand-Rn56456131');
+			console.log(y);
+
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
-			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage, 
-netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
+			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +  
+							 ` netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
 			client.say(target, `@${user.username}: ` + buildMsg);
 
 		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
@@ -218,8 +227,10 @@ netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
-			var msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand, !roll, 
-!uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk. For what they do, type !help for the command descriptions`;
+			var msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
+				` !game, !buiild, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
+				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand. For specifics on these commands, ` +
+				`use !help and follow the link provided. Thank you!`;
 			client.say(target, msg);
 
 		} else {
@@ -250,8 +261,8 @@ function intervalMessages() {
 			client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
 			break;
 		case 1://messgae for suggesting features/fixes for the bot
-			client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion and then
-what you think is a good idea. Thank you!`);
+			client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion` + 
+				` and then what you think is a good idea. Thank you!`);
 			break;
 		case 2://insults the streamer through TTS
 			async_functions.insultTheStreamer();
@@ -354,13 +365,13 @@ function takeAChanceAtBeingBanned(target, user) {
 
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber
 function getHelp(target, user) {
-	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo! 
-https://github.com/meant-ion/TuringMod/blob/master/README.md`)
+	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo!` +
+		`https://github.com/meant-ion/TuringMod/blob/master/README.md`);
 }
 
 //very rudimentary symbol spam detector. To be worked on and improved as time goes on
 //currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
-//(i.e. "Hello there! Y'all'd've done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
+//(i.e. "Hello there! Y'all'd've ain't done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
 //Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
 function detectSymbolSpam(inputMsg, target) {
 

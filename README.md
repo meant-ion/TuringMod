@@ -86,7 +86,8 @@ MOD/STREAMER ONLY COMMANDS:
 	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of lines
 			  posted so far.
 			  
-	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)
+	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)\
+				 * most likely to become a similar block of code to change the title/tags for a stream
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			note: disabled until approved for release by OpenAI.
@@ -123,11 +124,11 @@ PLANNED FUNCTIONALITIES/FEATURES:
 			* Need to get Spotify API for this, maybe a way to link a Spotify acct to the bot?
 
 	- Incredibly long term/highly unlikely goal: making this into something that can actually make money
-			* Needs a website and such for this (hyper security)
+			* Needs a website and such for this (hyper security needed, user accts and all that)
 			* change the custom commands from a .json file (fine for 1 dude) to a real db (for multiple dudes)
 			* Need to get linking set up for this stuff as well:
 					- Spotify (!song)
 					- Twitch (any command that pulls from it)
 					- Steam API (may be able to get away with just using a special acct for this)
 			* Would definitly require getting into contact with OpenAI to stay on their good side with TOS
-					- Probs main selling point, CANNOT LOSE THIS FEATURE OR I WILL BE VERY SAD
+					- Probs main selling point, CANNOT LOSE THIS FEATURE OR I WILL BE VERY SAD & WILL UGLY CRY

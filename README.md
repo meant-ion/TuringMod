@@ -90,7 +90,7 @@ MOD/STREAMER ONLY COMMANDS:
 				 * most likely to become a similar block of code to change the title/tags for a stream
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
-			note: disabled until approved for release by OpenAI.
+			NOW FULLY ENABLED AS OF AUGUST 10, 2021
 			* Called either by myself, the stream's moderators, or the streamer proper. When called, response from API
 			  is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
 			  and into the chat. Afterwards, I must read the response and approve it before it can be posted. 

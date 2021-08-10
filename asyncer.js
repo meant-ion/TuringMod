@@ -236,6 +236,8 @@ class AsyncHolder {
     }
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
+	//As of August 01, 2021, I have received approval from OpenAI to use GPT-3 for this bot
+	//Officially, this function is now live and I cannot be happier about it
 	async generatePost(user, prompt, linesCount) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
 		if (linesCount >= 50) {

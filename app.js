@@ -61,7 +61,8 @@ client.on('connected', onConnectedHandler);
 
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
 //note to self: when testing this for other channels, turn this function OFF to avoid getting called a shill for my own stuff
-setInterval(intervalMessages, 600000);
+//uncomment when not testing on other's streams
+//setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
 var callThisFunctionNumber = 0;
@@ -152,13 +153,6 @@ function onMessageHandler(target, user, msg, self) {
 
 			takeAChanceAtBeingBanned(target, user);
 
-		} else if (cmdName == '!testlink') {
-
-			let x = ClipCollector.validateAndStoreClipLink(client_id, outside_token, 'https://clips.twitch.tv/FunBlindingGarlicOneHand-RnjjoL7dxO4urYVR');
-			console.log(x);
-			let y = ClipCollector.validateAndStoreClipLink(client_id, outside_token, 'https://clips.twitch.tv/FunBlindingGarlicOneHand-Rn56456131');
-			console.log(y);
-
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
 			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +  
@@ -211,6 +205,7 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getUserAcctAge(client_id, outside_token, user);
 
+		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
 
 		//	if (helper.checkIfModOrStreamer(user, theStreamer)) {
@@ -222,7 +217,7 @@ function onMessageHandler(target, user, msg, self) {
 			//so I can use it while not on my channel
 			if (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus") {
 				//uncomment below when the OpenAI Going Live App is accepted
-				//generatePost(user);
+				generatePost(user);
             }
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page

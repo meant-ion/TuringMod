@@ -3,9 +3,6 @@
 This is my own interpretation of a twitch.tv chat bot, spceifically using OpenAI's GPT3 API to mimic the members in the chatroom, 
 along with a large handful of other functions.
 
-NOTE: Negotiations for getting approved for live testing the mimicry by OpenAI are ongoing, so currently !post does not work
-	  How !post will work will most likely change in the future to keep the bot in line with OpenAI's TOS
-
 COMMANDS: 
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
@@ -38,7 +35,7 @@ COMMANDS:
 
 	- !calc: a twitch chat calculator. Users can put in somewhat complex calculations and get answers. Currently supports:
 				* Basic operators (+, -, *, /)
-				* More complex operators (!(factorial), %(modulo), ^(exponents))
+				* More complex operators (!(factorial), %(modulo/remainder), ^(exponents))
 				* Parentheses in the problems (i.e. 4 + (3-1))
 				* Values for Euler's Number (e) and Pi
 				* Negative numbers and decimals
@@ -81,10 +78,16 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !removecommand: allows a moderator or the streamer to remove a custom command from the list of commands
 
+	- !editcommand: allows a moderator or the streamer to edit a custom command on the list of commands
+
 	- !so: gives a shoutout to a specified user into the chatroom
 
 	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of lines
 			  posted so far.
+
+	- !startcollect: tells the bot to start collecting any and all twitch clip links and store them into file for the streamer
+
+	- !endcollect: tells the bot to stop collecting twitch clip links
 			  
 	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)\
 				 * most likely to become a similar block of code to change the title/tags for a stream
@@ -100,22 +103,33 @@ MOD/STREAMER ONLY COMMANDS:
 
 PLANNED FUNCTIONALITIES/FEATURES:
 
-	- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
-	  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
-	  (or see long-term list below)
-			* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
+	*FOR IF/WHEN THE STREAM BECOMES BIG ENOUGH TO WARRANT THESE*
+	------------------------------------------------------------
 
-	- Adding the ability to edit a custom command thru chat itself
+		- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
+		  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
+		  (or see long-term list below)
+				* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
+
+		- a "quiet mode" for the stream
+				* will automatically remove all messages trying to directly @ the streamer from chat
+
+		- link permitting and removing
+				* a !permit command that will allow for one user to post one link
+				* automatically removes all links that are not permittied
+					- will need to make compatible with !startcollect and !endcollect
+
+		- The ability to add interval commands to be automatically called during the bot's execution
+				* i.e. a command to remind about twitch prime, etc...
+
+	------------------------------------------------------------
 
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS.
 
-	- A Clip/Link collection function: 
-			* Toggleable with two commands(ish) (maybe !startcollect and !endcollect?)
-			* Writes suggestion to file (for later viewing) (setting for the bot)
-			* Displays list to console with a command
-				- Do this in the chat itself or through the console altogether?
+	- The clip collection function can be seen through a web page
 
 	- !steamlink or !steampage: gets the category name and searches for it thru Steam API and returns a link to it
+			* Need to do more research, first glance looks like it may cost a little to get the Steam API key
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete

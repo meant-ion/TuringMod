@@ -7,15 +7,15 @@ class LurkList {
     //the list that will hold all lurkers in the chatroom. Lurkers are added with the !lurk command and removed with the 
     //!unlurk command. Firing off the !unlurk command will return from here how long the lurker has been lurking for 
 
-    lurker_list;
+    #lurker_list;
 
     constructor() {
-        this.lurker_list = [];
+        this.#lurker_list = [];
     }
 
     addLurker(user, msg) {
         if (this.isLurking(user) == -1) {
-            this.lurker_list.push(new Lurker_Item(user.username, msg));
+            this.#lurker_list.push(new Lurker_Item(user.username, msg));
             return `See you whenever you get back @${user.username}`;
         }
         return `You're already lurking @${user.username}`
@@ -27,8 +27,8 @@ class LurkList {
         let index = this.isLurking(user);//ensures that we know if there's an issue
         if (index != -1) {
 
-            let timeMsg = helper.getTimePassed(this.lurker_list[index].getValue(), false);
-            let lurkMsg = this.lurker_list[index].getMsg();
+            let timeMsg = helper.getTimePassed(this.#lurker_list[index].getValue(), false);
+            let lurkMsg = this.#lurker_list[index].getMsg();
             const msg = `Welcome back @${user.username}! You were gone for ${timeMsg} because of "${lurkMsg}"`;
 
             this.lurker_list.splice(index, 1);
@@ -40,8 +40,8 @@ class LurkList {
 
     //find the index of the lurker in the list if present
     isLurking(user) {
-        for (var i = 0; i < this.lurker_list.length; ++i) {
-            if (this.lurker_list[i].getKey() == user.username) {
+        for (var i = 0; i < this.#lurker_list.length; ++i) {
+            if (this.#lurker_list[i].getKey() == user.username) {
                 return i;
             }
         }

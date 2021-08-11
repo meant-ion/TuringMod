@@ -1,5 +1,7 @@
 //file to hold our helper functions so that we can use them across files in the project
 
+const url = require('url').URL;
+
 //helper function to tell if a character is an operator that we want
 function isOperator(charToCheck) {
     const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!'];
@@ -58,6 +60,47 @@ function checkIfModOrStreamer(user, theStreamer) {
     return user.mod || user.username == theStreamer;
 }
 
+//checks the whole of a message to tell if there is a URL present. If so, it will return the url
+function checkIfURL(inputMsg) {
+    for (var i = 0; i < inputMsg.length; ++i) {
+        try {
+            new url(inputMsg[i]);
+            return inputMsg[i];
+        } catch (err) {}
+    }
+    return "";
+}
+
+//very rudimentary symbol spam detector. To be worked on and improved as time goes on
+//currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
+//(i.e. "Hello there! Y'all'd've ain't done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
+//Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
+function detectSymbolSpam(inputMsg, target) {
+
+    let symbolCount = 0;
+
+    //the regex that we will use to detect the symbol spam in a message
+    var symList = "[]{}()\`~!@#$%^&*;:'\",<.>\/?-_+=".split('');
+
+    var splitMsg = inputMsg.split('');
+
+    //search the whole message for the symbols
+    for (var i = 0; i < symList.length; ++i) {
+        for (var j = 0; j < splitMsg.length; ++j) {
+            if (splitMsg[j].indexOf(symList[i]) > -1) {
+                symbolCount++;
+            }
+        }
+    }
+
+    //if enough are found, remove the message for spam
+    if (symbolCount > 15) {
+        client.timeout(target, user.username, 10, "No symbol spam in chat please");
+        return true;
+    }
+    return false;
+}
+
 module.exports = {
     isOperator: isOperator,
     isLetter: isLetter,
@@ -65,4 +108,6 @@ module.exports = {
     combineInput: combineInput,
     getTimePassed: getTimePassed,
     checkIfModOrStreamer: checkIfModOrStreamer,
+    checkIfURL: checkIfURL,
+    detectSymbolSpam: detectSymbolSpam,
 };

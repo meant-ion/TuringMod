@@ -1,5 +1,5 @@
 // rewrite of dice.js, specifically to shove it into a class for better use. Same functionality, but as a class
-// rather than a pile of functions
+// rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
 const helper = require('./helper');
 
@@ -134,8 +134,19 @@ class Dice {
 			side = "Tails";
 		}
 
-		this.client.say(this.target, `@${user.username}: ${side}`);
-    }
+		this.#client.say(this.#target, `@${user.username}: ${side}`);
+	}
+
+	//like Russian Roulette, but with timeouts instead of actual bullets
+	takeAChanceAtBeingBanned(user) {
+		const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
+		if (willTheyBeBanned >= 990) {
+			this.#client.say(this.#target, `How very unfortunate`);
+			this.#client.timeout(this.#target, user.username, 10);
+		} else {
+			this.#client.say(this.#target, `Lucky you!`);
+		}
+	}
 
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
 	#rollDice(numDice, sides, minRoll) {

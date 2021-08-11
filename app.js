@@ -45,12 +45,14 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
 var linesCount = 0;
+var prompt = "";
 
 //vars for the !voice command
 var vCrackCountAtStart = 0;
 var voiceCrack = 0;
 
-var prompt = "";
+//what we set when we want to collect clips to be seen later
+var collectClips = false;
 
 var client = new tmi.client(opts);
 
@@ -62,13 +64,13 @@ client.on('connected', onConnectedHandler);
 //setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
 //note to self: when testing this for other channels, turn this function OFF to avoid getting called a shill for my own stuff
 //uncomment when not testing on other's streams
-//setInterval(intervalMessages, 600000);
+setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
 var callThisFunctionNumber = 0;
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
-let commands_holder = new loader(theStreamer);
+let commands_holder = new loader();
 let lurk_list = new lrk();
 let async_functions = new AsyncHolder(client, theStreamer);
 let dice = new dicee(theStreamer, client);
@@ -87,7 +89,44 @@ function onMessageHandler(target, user, msg, self) {
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {
-		if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
+		//check to see if the command is one that can only be accessed by the streamer, their mods, or myself (pope_pontus)
+		if (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus") {
+
+			if (cmdName == '!so' && inputMsg.length > 1) {//mods/streamer wish to give a shoutout to a chat member/streamer
+
+				client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
+
+			} else if (cmdName == '!flush') {//a moderator or the streamer wishes to flush the bot's posting prompt
+
+				resetPrompt();
+				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
+
+			} else if (cmdName == '!startcollect' && !collectClips) {//starts clip collection services
+
+				collectClips = true;
+
+			} else if (cmdName == '!endcollect' && collectClips) {//ends clip collection services
+
+				collectClips = false;
+
+			} else if (cmdName == '!post') {//activates GPT-3 for a post. Heavily controlled
+
+				generatePost(user);
+
+			} else if (cmdName == '!addcommand') {//for mods/streamer to add a custom command
+
+				commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
+
+			} else if (cmdName == '!removecommand') {//for mods/streamer to remove a custom command
+
+				commands_holder.removeCommand(client, target, user, inputMsg[1]);
+
+			} else if (cmdName == '!editcommand') {//for mods/streamer to edit a custom command
+
+				commands_holder.editCommand(client, target, user, inputMsg);
+			}
+
+		} else if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
 
 			postWikiPage(target);
 
@@ -103,14 +142,6 @@ function onMessageHandler(target, user, msg, self) {
 
 			client.say(target, lurk_list.removeLurker(user));
 
-		} else if (cmdName == '!addcommand') {//for mods to add a custom command
-
-			commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
-
-		} else if (cmdName == '!removecommand') {//for mods to remove a custom command
-
-			commands_holder.removeCommand(client, target, user, inputMsg[1]);
-
 		} else if (cmdName == '!customlist') {//gets a list of all custom commands on the channel
 
 			commands_holder.postListOfCreatedCommands(client, target, user);
@@ -118,18 +149,6 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!followage') {//user wants to know how long they've followed the stream
 
 			async_functions.getFollowAge(client_id, outside_token, user);
-
-		} else if (cmdName == '!so') {//streamer/moderators wish to give a shoutout to a user in chat
-			if (inputMsg.length > 1 && helper.checkIfModOrStreamer(user, theStreamer)) {
-				client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
-			}
-
-		} else if (cmdName == '!flush') {//a moderator or the streamer wishes to flush the bot's posting prompt
-
-			if (helper.checkIfModOrStreamer(user, theStreamer)) {
-				resetPrompt();
-				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
-			}
 
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
@@ -151,12 +170,12 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
 
-			takeAChanceAtBeingBanned(target, user);
+			dice.takeAChanceAtBeingBanned(user);
 
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
-			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +  
-							 ` netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
+			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +
+				` netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
 			client.say(target, `@${user.username}: ` + buildMsg);
 
 		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
@@ -212,33 +231,44 @@ function onMessageHandler(target, user, msg, self) {
 		//		async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
 		//    }
 
-		} else if (cmdName == "!post") {//activates GPT-3 for a post. Heavily controlled and only callable by mods & streamer
-
-			//so I can use it while not on my channel
-			if (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus") {
-				//uncomment below when the OpenAI Going Live App is accepted
-				generatePost(user);
-            }
-
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
 			var msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
-				` !game, !buiild, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
-				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand. For specifics on these commands, ` +
-				`use !help and follow the link provided. Thank you!`;
+				` !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
+				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect.` + 
+				`For specifics on these commands, use !help and follow the link provided. Thank you!`;
 			client.say(target, msg);
 
 		} else {
 			//check to see if the message is a custom command
 			var msg = commands_holder.searchForCommand(cmdName);
 			if (msg != null) {
+
 				client.say(target, msg);
-			} else if (!detectSymbolSpam(helper.combineInput(inputMsg, true))) {
-				//this is not a command line, so we just gather the comment into a file
+
+			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true))) {//check to see if the msg is spam
+
 				lurkerHasTypedMsg(target, user);
 				writeMsgToFile(user, msg);
-				prompt += msg + '\n';
-			}
+
+			} else if (collectClips) {//if enabled, check to see if it's a clip
+
+				//verify that the message has no URLs in it
+				var possibleClipURL = helper.checkIfURL(inputMsg);
+
+				//if it does, pass it into the collector for processing
+				if (possibleClipURL != "") {
+					ClipCollector.validateAndStoreClipLink(client_id, outside_token, possibleClipURL);
+				}
+
+			} else {
+
+				//this is not a command line, so we just gather the comment into the prompt
+				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
+				linesCount++;
+
+            }
+			
 		}
 	}
 }
@@ -291,7 +321,6 @@ function lurkerHasTypedMsg(target, user) {
 		client.say(target, lurkMsg);
     }
 }
-
 
 //appends a suggestion from a viewer to a suggestions file for later consideration
 function writeSuggestionToFile(inputMsg) {
@@ -347,51 +376,10 @@ function getCurrentTime(target, user) {
 	client.say(target, msg);
 }
 
-//like Russian Roulette, but with timeouts instead of actual bullets
-function takeAChanceAtBeingBanned(target, user) {
-	const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
-	if (willTheyBeBanned >= 990) {
-		client.say(target, `How very unfortunate`);
-		client.timeout(target, user.username, 10);
-	} else {
-		client.say(target, `Lucky you!`);
-    }
-}
-
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber
 function getHelp(target, user) {
 	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo!` +
 		`https://github.com/meant-ion/TuringMod/blob/master/README.md`);
-}
-
-//very rudimentary symbol spam detector. To be worked on and improved as time goes on
-//currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
-//(i.e. "Hello there! Y'all'd've ain't done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
-//Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
-function detectSymbolSpam(inputMsg, target) {
-
-	let symbolCount = 0;
-
-	//the regex that we will use to detect the symbol spam in a message
-	var symList = "[]{}()\`~!@#$%^&*;:'\",<.>\/?-_+=".split('');
-
-	var splitMsg = inputMsg.split('');
-
-	//search the whole message for the symbols
-	for (var i = 0; i < symList.length; ++i) {
-		for (var j = 0; j < splitMsg.length; ++j) {
-			if (splitMsg[j].indexOf(symList[i]) > -1) {
-				symbolCount++;
-            }
-        }
-    }
-
-	//if enough are found, remove the message for spam
-	if (symbolCount > 15) {
-		client.timeout(target, user.username, 10, "No symbol spam in chat please");
-		return true;
-    }
-	return false;
 }
 
 //posts the wikipedia article for Isidore of Seville when command is input

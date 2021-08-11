@@ -5,7 +5,7 @@
 // In the future, maybe it will be stored on a personal page for an actual website and handle YT links also
 
 const s = require('./asyncer.js');
-const html = require('html');
+const fs = require('fs');
 
 class ClipCollector {
 
@@ -31,12 +31,25 @@ class ClipCollector {
         }
     }
 
+    //when called, writes the list of collected twitch clips to file for the streamer's viewing
+    //currently just does this with a .txt file, hope to be able to get this onto an actual html file
+    //so that the links are actually hyperlinks and they dont have to be copy/pasted to see them
     writeClipsToHTMLFile() {
-
+        fs.truncate('./data/clip_links.txt', 0, function () {
+            for (var i = 0; i < this.#clip_list.length; ++i) {
+                fs.writeFile('./data/clip_links.txt', this.#clip_list[i].toString(),
+                    { flag: 'a+' }, err => { });
+            }
+        });
     }
 
-
-
+    //simple function that dumps the list of clips to console
+    //really just a debug function, but maybe useful somewhere else?
+    dumpClipListToCLI() {
+        for (var i = 0; i < this.#clip_list.length; ++i) {
+            console.log(this.#clip_list[i]);
+        }
+    }
 }
 
 module.exports = ClipCollector;

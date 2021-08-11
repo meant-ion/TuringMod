@@ -7,7 +7,8 @@ const axios = require('axios');
 const helper = require('./helper.js');
 const fs = require('fs');
 const got = require('got');
-const readline = require('readline');
+//using the readline-sync library in order to control if the message can be posted or not via the console
+var readline = require('readline-sync');
 let { PythonShell } = require('python-shell');
 
 class AsyncHolder {
@@ -240,7 +241,7 @@ class AsyncHolder {
 	//Officially, this function is now live and I cannot be happier about it
 	async generatePost(user, prompt, linesCount) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
-		if (linesCount >= 50) {
+		if (linesCount >= 10) {
 			//the url for GPT-3 for the model level; we will use the the content filter to keep compliance with OpenAI's TOS
 			const gen_url = 'https://api.openai.com/v1/engines/curie/completions';
 			const testing_url = 'https://api.openai.com/v1/engines/content-filter-alpha-c4/completions';
@@ -270,7 +271,7 @@ class AsyncHolder {
 					'Content-Type': 'application/json',
 				};
 
-				var output_text = await got.post(gen_url, { json: content_params, headers: headers }).json().choices[0].text;
+				var output_text = await got.post(gen_url, { json: content_params, headers: headers }).json();
 
 				//now, we construct the vars necessary to test the response for naughtiness
 
@@ -280,7 +281,7 @@ class AsyncHolder {
 
 				//how we will call the content filter
 				var testing_params = {
-					"prompt": token_list[0],
+					"prompt": "<|endoftext|>" + token_list[0] + "\n--\nLabel:",
 					"max_tokens": 1,
 					"temperature": 0.0,
 					"top_p": 1,
@@ -288,7 +289,6 @@ class AsyncHolder {
 					"presence_penalty": 0.3,
 					"logprobs": 10
 				};
-
 				
 				let tested_output = "";
 
@@ -332,34 +332,37 @@ class AsyncHolder {
 						tested_output += token_list[i];
 					}
 
-					testing_params.prompt = token_list[i];
-                }
-
-				//using the readline library in order to control if the message can be posted or not via the console
-				var rl = readline.createInterface({
-					input: process.stdin,
-					output: process.stdout
-				});
+					testing_params.prompt = "<|endoftext|>" + token_list[i] + "\n--\nLabel:";
+				}
 
 				//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
-				rl.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
+				var isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
 
 					if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
-						this.client.say(this.target, `@${user.username}: MrDestructoid ${output_text}`);
+						isPostable = true;
 					} else {
 						console.log("Post will be discarded then. Thank you!");
-						this.client.say(this.target, `@${user.username}: bot response rejected by bot admin`);
+						isPostable = false;
 					}
+
 					rl.close();
 				});
 
-				return true;
+				if (!isPostable) {
+					this.client.say(this.target, `@${user.username}: bot response rejected by bot admin`);
+					return false;
+				} else {
+					this.client.say(this.target, `@${user.username}: MrDestructoid ${tested_output}`);
+					return true;
+                }
+
 			} catch (err) {//in case of a screwup, post an error message to chat and print error
 				this.client.say(this.target, `Error in text generation`);
 				console.error(err);
 				return false;
 			}
 		}
+		this.client.say(this.target, `Not enough comments yet :(`);
 		return false;	
 	}
 

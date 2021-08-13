@@ -70,6 +70,10 @@ COMMANDS:
 
 	- !who: reiterates the streamer's bio/summary
 
+	- !song: returns the name and artist of the song currently playing on stream through Spotify
+
+	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -91,6 +95,9 @@ MOD/STREAMER ONLY COMMANDS:
 			  
 	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)\
 				 * most likely to become a similar block of code to change the title/tags for a stream
+
+	- !botlinks: allows channel moderators/streamer to control if the bot can post links in chat or not
+				* useful to avoid conflicts with NightBot/StreamLabs/StreamElements/etc.
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			NOW FULLY ENABLED AS OF AUGUST 10, 2021
@@ -133,9 +140,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete
-
-	- !song: simple command that gets the song from Spotify API and returns name + link to song on Spotify
-			* Need to get Spotify API for this, maybe a way to link a Spotify acct to the bot?
 
 	- Incredibly long term/highly unlikely goal: making this into something that can actually make money
 			* Needs a website and such for this (hyper security needed, user accts and all that)

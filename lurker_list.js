@@ -1,6 +1,6 @@
 // holds the classes necessary to make the lurker list for the !lurk and !unlurk commands
 
-const helper = require('./helper');
+const h = require('./helper');
 
 class LurkList {
 
@@ -8,6 +8,7 @@ class LurkList {
     //!unlurk command. Firing off the !unlurk command will return from here how long the lurker has been lurking for 
 
     #lurker_list;
+    helper = new h();
 
     constructor() {
         this.#lurker_list = [];
@@ -27,7 +28,7 @@ class LurkList {
         let index = this.isLurking(user);//ensures that we know if there's an issue
         if (index != -1) {
 
-            let timeMsg = helper.getTimePassed(this.#lurker_list[index].getValue(), false);
+            let timeMsg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
             let lurkMsg = this.#lurker_list[index].getMsg();
             const msg = `Welcome back @${user.username}! You were gone for ${timeMsg} because of "${lurkMsg}"`;
 
@@ -64,7 +65,7 @@ class Lurker_Item {
     constructor(username, msg) {
         this.#key = username;
         this.#value = new Date();
-        this.#msg = helper.combineInput(msg, true);
+        this.#msg = this.helper.combineInput(msg, true);
     }
 
     getKey() {

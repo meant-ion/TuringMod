@@ -11,13 +11,14 @@ Array.prototype.clean = function () {
     return this;
 }
 
-const helper = require('./helper');
+const h = require('./helper');
 
 class Calculator {
 
     //mathematical constants for the calculator
     e = Math.E;
     pi = Math.PI;
+    helper = new h();
 
     constructor() {}
 
@@ -74,7 +75,7 @@ class Calculator {
         for (var i = 0; i < infixEq.length; ++i) {
             var token = infixEq[i];
 
-            if (helper.isNumeric(token)) {
+            if (this.helper.isNumeric(token)) {
 
                 if (isNegative) {//if we detected a unary negation before hand, we make the number negative before we output it
                     token *= -1;
@@ -139,9 +140,9 @@ class Calculator {
         console.log(mathProblem);
 
         for (var i = 0; i < mathProblem.length; ++i) {
-            if (helper.isNumeric(mathProblem[i])) {
+            if (this.helper.isNumeric(mathProblem[i])) {
                 resultStack.push(parseFloat(mathProblem[i]));
-            } else if (helper.isOperator(mathProblem[i])) {
+            } else if (this.helper.isOperator(mathProblem[i])) {
                 var a = resultStack.pop();
                 if (resultStack.length != 0) {
                     var b = resultStack.pop();

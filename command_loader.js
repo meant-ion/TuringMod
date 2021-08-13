@@ -10,6 +10,9 @@ class CommandArray {
 	#commandTemplate;
 
 	constructor() {
+
+		this.#commandArray = [];
+
 		//write in relevant data into commandArray
 		fs.readFile('./data/commands.json', 'utf8', (err, data) => {
 

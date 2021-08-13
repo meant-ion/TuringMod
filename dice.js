@@ -1,20 +1,19 @@
 // rewrite of dice.js, specifically to shove it into a class for better use. Same functionality, but as a class
 // rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
-const helper = require('./helper');
+const h = require('./helper');
 
 class Dice {
 
-    #target;
-    #client;
+	client = undefined;
+	helper = new h();
 
-    constructor(target, client) {
-        this.#target = target;
-        this.#client = client;
+    constructor(c) {
+        this.client = c;
     }
 
     //handles validation, error checking, and calculating what to roll how many times
-	async getDiceRoll(cmdName, user) {
+	async getDiceRoll(cmdName, user, target) {
 		//first things first, we check the command to see if they wanted to roll more than 1 die
 		//copy out the character
 		var checkerChar = cmdName.substring(5, 6);
@@ -47,9 +46,9 @@ class Dice {
 		var i;
 		for (i = cmdName.substring(0, 5).length; i < cmdName.length; ++i) {
 			checkerChar = cmdName.substring(i, i + 1);
-			if (helper.isNumeric(checkerChar)) {//the character was a number, so append it to the list
+			if (this.helper.isNumeric(checkerChar)) {//the character was a number, so append it to the list
 				numDiceToRoll += checkerChar;
-			} else if (helper.isLetter(checkerChar)) {//the character was a letter
+			} else if (this.helper.isLetter(checkerChar)) {//the character was a letter
 				//check to make sure that the alphabetical character is a d for the roll to go through
 				if (checkerChar.toLowerCase() == 'd') {
 					hasD = true;
@@ -76,7 +75,7 @@ class Dice {
 				} else {
 					checkerChar = cmdName.substring(i, i + 1);
 				}
-				if (helper.isNumeric(checkerChar)) {//if it is a number, add it to the numSides var
+				if (this.helper.isNumeric(checkerChar)) {//if it is a number, add it to the numSides var
 					numSides += checkerChar;
 				} else if (checkerChar.toLowerCase() == 'r') {
 					hasR = true;
@@ -97,7 +96,7 @@ class Dice {
 					} else {
 						checkerChar = cmdName.substring(j, j + 1);
 					}
-					if (helper.isNumeric(checkerChar)) {
+					if (this.helper.isNumeric(checkerChar)) {
 						minRoll += checkerChar;
 					} else {
 						client.say(target, `Invalid minimum roll requirment, please try again`);
@@ -111,9 +110,9 @@ class Dice {
 			if (isValidCmd) {
 				const total = this.#rollDice(numDiceToRoll, numSides, minRoll);
 				if (total != null) {
-					this.#client.say(this.#target, `@${user.username} You rolled ${numDiceToRoll} d${numSides} and got ${total}`);
+					this.client.say(target, `@${user.username} You rolled ${numDiceToRoll} d${numSides} and got ${total}`);
 				} else {
-					this.#client.say(this.#target, `@${user.username} Minimum roll was higher than possible highest roll`);
+					this.client.say(target, `@${user.username} Minimum roll was higher than possible highest roll`);
 				}
 
 			}
@@ -123,28 +122,28 @@ class Dice {
 
 	//simple function that flips a "coin" and returns the side (Heads = 0, Tails = 1)
 	//it's here in the Dice class since it's just a probability function
-	flipCoin(user) {
+	flipCoin(user, target) {
 		let coinFlip = this.#rollDice(1, 2, '');
 
 		let side = "";
 
-		if (coinFlip == 0) {
+		if (coinFlip == 1) {
 			side = "Heads"
 		} else {
 			side = "Tails";
 		}
 
-		this.#client.say(this.#target, `@${user.username}: ${side}`);
+		this.client.say(target, `@${user.username}: ${side}`);
 	}
 
 	//like Russian Roulette, but with timeouts instead of actual bullets
-	takeAChanceAtBeingBanned(user) {
+	takeAChanceAtBeingBanned(user, target) {
 		const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
 		if (willTheyBeBanned >= 990) {
-			this.#client.say(this.#target, `How very unfortunate`);
-			this.#client.timeout(this.#target, user.username, 10);
+			this.client.say(target, `How very unfortunate`);
+			this.client.timeout(target, user.username, 10);
 		} else {
-			this.#client.say(this.#target, `Lucky you!`);
+			this.client.say(target, `Lucky you!`);
 		}
 	}
 
@@ -153,7 +152,6 @@ class Dice {
 		const diceCount = parseInt(numDice);//number of times we will roll
 		const sidesCount = parseInt(sides);//number of sides on the die that will be rolled
 		var minimumCount = 0;
-		console.log(minRoll);
 		if (minRoll == '') {
 			minimumCount = 0;
 		} else {

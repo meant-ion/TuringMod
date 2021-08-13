@@ -4,38 +4,27 @@ require('dotenv').config({ path: './.env' });
 
 const fetch = require('node-fetch');
 const axios = require('axios');
-const helper = require('./helper.js');
+const h = require('./helper.js');
 const fs = require('fs');
 const got = require('got');
 //using the readline-sync library in order to control if the message can be posted or not via the console
 var readline = require('readline-sync');
 let { PythonShell } = require('python-shell');
+const SpotifyWebApi = require('spotify-web-api-node');
 
 class AsyncHolder {
 
 	constructor(c, t) {
 		this.client = c;
-        this.target = t;
+		this.helper = new h();
+		this.spotifyApi = this.#initSpotifyStuff();
     }
 
-    //gets a random wikipedia article from the wikimedia API and delivers it to chat
-	async getRandWikipediaArticle(user) {
-
-		const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
-
-		try {
-			const response = await axios.get(wikiUrl);
-			const pageTitle = response.data.query.random[0].title.replace(/ /g, "_");
-			const wikiPageURL = "https://en.wikipedia.org/wiki/" + pageTitle;
-			this.client.say(this.target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wikiPageURL}`);
-		} catch (err) {
-			console.error(err);
-		}
-	}
+//--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
 
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
-	async getFollowAge(client_id, access_token, user) {
+	async getFollowAge(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		var follower_list = undefined;
@@ -46,41 +35,16 @@ class AsyncHolder {
 				for (var i = 0; i < follower_list.data.length; ++i) {
 					if (follower_list.data[i].from_login == user.username) {
 						var followedDate = new Date(follower_list.data[i].followed_at);
-						this.client.say(this.target, `@${user.username} has been following for: ${helper.getTimePassed(followedDate, true)}`);
+						this.client.say(target, `@${user.username} has been following for:` 
+							+ `${this.helper.getTimePassed(followedDate, true)}`);
 					}
 				}
 
 		});
 	}
 
-	//returns a list of all suggestions sent into the bot as a message in chat
-	async printAllSuggestions(user) {
-		var msg = "";
-		fs.readFile('./data/suggestions.txt', function (err, data) {
-			if (err) { console.error(err); }
-
-			var suggs = data.toString();
-			var sugg = suggs.split('\n');
-			for (var i = 0; i < sugg.length; ++i) {
-				msg += sugg[i] + ', ';
-			}
-		});
-		this.client.say(this.target, `@${user.username}: ${msg}`);
-	}
-
-	//generates an insult and tells it to the streamer, because my self-esteem is not low enough already
-	async insultTheStreamer() {
-		PythonShell.run('main.py', null, function (err) {
-			if (err) {
-				console.error(err);
-			}
-			console.log("TTS script executed");
-		});
-		
-	}
-
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
-	async getChannelSchedule(client_id, access_token, user) {
+	async getChannelSchedule(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		var schedule = undefined;
@@ -99,22 +63,22 @@ class AsyncHolder {
                     }
 					
 				}
-				this.client.say(this.target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
+				this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
 		});
 	}
 
 	//gets and returns the channel owner's summary/bio
-	async getChannelSummary(client_id, access_token, user) {
+	async getChannelSummary(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
 			let description = body.data[0].description;
-			this.client.say(this.target, `@${user.username}: ${description}`);
+			this.client.say(target, `@${user.username}: ${description}`);
 		});
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
-	async getStreamUptime(client_id, access_token, user) {
+	async getStreamUptime(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
@@ -124,46 +88,46 @@ class AsyncHolder {
 					` the next stream is. Thank you! :)`);
 			} else {
 				let startTime = new Date(body.data[0].started_at);
-				let timeMsg = helper.getTimePassed(startTime, false);
-				this.client.say(this.target, `@${user.username}: ${timeMsg}`);
+				let timeMsg = this.helper.getTimePassed(startTime, false);
+				this.client.say(target, `@${user.username}: ${timeMsg}`);
             }
 			
         })
 	}
 
 	//gets and returns the title of the stream
-	async getStreamTitle(client_id, access_token, user) {
+	async getStreamTitle(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
 			let streamTitle = body.data[0].title;
-			this.client.say(this.target, `@${user.username} Title is: ${streamTitle}`);
+			this.client.say(target, `@${user.username} Title is: ${streamTitle}`);
 		});
 	}
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
-	async getUserAcctAge(client_id, access_token, user) {
+	async getUserAcctAge(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
 
 		await fetch(url, data).then(result => result.json()).then(body => {
 			let acctCreateDate = new Date(body.data[0].created_at);
-			let timePassed = helper.getTimePassed(acctCreateDate, true);
-			this.client.say(this.target, `@${user.username}, your account is ${timePassed} old`);
+			let timePassed = this.helper.getTimePassed(acctCreateDate, true);
+			this.client.say(target, `@${user.username}, your account is ${timePassed} old`);
 		});
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
-	async getCategory(client_id, access_token, user) {
+	async getCategory(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
 		const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 
 		await fetch(url, data).then(result => result.json()).then(body => {
-			let streamCategory = vody.data[0].game_name;
+			let streamCategory = body.data[0].game_name;
 			let msg = `@${user.username}: Current category is ${streamCategory}`;
-			this.client.say(this.target, msg);
+			this.client.say(target, msg);
 		});
 	}
 
@@ -231,37 +195,106 @@ class AsyncHolder {
 			}
 			console.log(res);
 			console.log(responseStatus);
+		});	
+	}
+
+//---------------------------------------------------------------------------------------------------------------
+//-----------------------------SPOTIFY API FUNCTIONS-------------------------------------------------------------
+
+	//gets and returns the song title and name from the streamer's currently playing songs
+	async getCurrentSongTitleFromSpotify(client, target, user) {
+
+		(await this.spotifyApi).getMyCurrentPlayingTrack()
+			.then(function (data) {
+				let songTitle = data.body.item.name;
+				let artistName = data.body.item.artists[0].name;
+				let fullMsg = "Now Playing \"" + songTitle + "\" by " + artistName;
+				client.say(target, `@${user.username}: ${fullMsg}`);
+			}, function (err) { console.error(err); });
+	}
+
+	//skips the current song playing on spotify and advances to next one; tells chatroom what song is
+	async skipToNextSong(client, target, user) {
+		(await this.spotifyApi).skipToNext()
+			.then(function () {
+				console.log("Skipped to next song");
+			}, function (err) {
+				console.error(err);
+			});
+		this.getCurrentSongTitleFromSpotify(client, target, user);
+    }
+
+//-----------------------------------------------------------------------------------------------------
+//-------------------------MISC API/ASYNC FUNCTIONS----------------------------------------------------
+
+	//returns a list of all suggestions sent into the bot as a message in chat
+	async printAllSuggestions(user) {
+		var msg = "";
+		fs.readFile('./data/suggestions.txt', function (err, data) {
+			if (err) { console.error(err); }
+
+			var suggs = data.toString();
+			var sugg = suggs.split('\n');
+			for (var i = 0; i < sugg.length; ++i) {
+				msg += sugg[i] + ', ';
+			}
+		});
+		this.client.say(this.target, `@${user.username}: ${msg}`);
+	}
+
+	//gets a random wikipedia article from the wikimedia API and delivers it to chat
+	async getRandWikipediaArticle(user, target) {
+
+		const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
+
+		try {
+			const response = await axios.get(wikiUrl);
+			const pageTitle = response.data.query.random[0].title.replace(/ /g, "_");
+			const wikiPageURL = "https://en.wikipedia.org/wiki/" + pageTitle;
+			this.client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wikiPageURL}`);
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
+	//generates an insult and tells it to the streamer, because my self-esteem is not low enough already
+	async insultTheStreamer() {
+		PythonShell.run('main.py', null, function (err) {
+			if (err) {
+				console.error(err);
+			}
+			console.log("TTS script executed");
 		});
 
-		
-    }
+	}
 
 	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
 	//As of August 01, 2021, I have received approval from OpenAI to use GPT-3 for this bot
 	//Officially, this function is now live and I cannot be happier about it
-	async generatePost(user, prompt, linesCount) {
+	async generatePost(user, prompt, linesCount, target) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
-		if (linesCount >= 10) {
+		if (linesCount >= 25) {
 			//the url for GPT-3 for the model level; we will use the the content filter to keep compliance with OpenAI's TOS
-			const gen_url = 'https://api.openai.com/v1/engines/curie/completions';
+			const gen_url = 'https://api.openai.com/v1/engines/davinci/completions';
 			const testing_url = 'https://api.openai.com/v1/engines/content-filter-alpha-c4/completions';
-
-			console.log(`Number of lines read into as prompt: ${linesCount}`);
 
 			//we are getting access to the model through simple https requests, so we will use the Got library to do so
 			try {
 				//set up the parameters for the model, which will be:
 				//  - prompt: input text (so just the logs from the chat)
-				//  - max_tokens: how long the response is 
+				//  - max_tokens: how long the response is (1 token = ~4 characters)
 				//  - temperature: the level of creative freedom for responses
 				//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
 				//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
+				//  - stop: what the API will stop generation when it sees these (punctuation for this one)
+				//  - logprobs: many functions, use it here to get a list of all tokens
 				const content_params = {
 					"prompt": prompt,
-					"max_tokens": 20,
+					"max_tokens": 80,
 					"temperature": 0.7,
 					"frequency_penalty": 0.3,
 					"presence_penalty": 0.3,
+					"stop": ["!", "?", ".", "\n"],
 					"logprobs": 10
 				};
 
@@ -277,7 +310,7 @@ class AsyncHolder {
 
 				var toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
 
-				let token_list = output_text.choices[0].logprobs.tokens;
+				let token_list = output_text.choices[0].logprobs.tokens;//list of all tokens generated from original prompt
 
 				//how we will call the content filter
 				var testing_params = {
@@ -348,23 +381,28 @@ class AsyncHolder {
 					rl.close();
 				});
 
-				if (!isPostable) {
-					this.client.say(this.target, `@${user.username}: bot response rejected by bot admin`);
+				console.log("IsPostable: " + isPostable);
+
+				if (isPostable == "no") {
+					this.client.say(target, `@${user.username}: bot response rejected by bot admin`);
 					return false;
 				} else {
-					this.client.say(this.target, `@${user.username}: MrDestructoid ${tested_output}`);
+					this.client.say(target, `@${user.username}: MrDestructoid ${tested_output}`);
 					return true;
                 }
 
 			} catch (err) {//in case of a screwup, post an error message to chat and print error
-				this.client.say(this.target, `Error in text generation`);
+				this.client.say(target, `Error in text generation`);
 				console.error(err);
 				return false;
 			}
 		}
-		this.client.say(this.target, `Not enough comments yet :(`);
+		this.client.say(target, `Not enough comments yet :(`);
 		return false;	
 	}
+
+//---------------------------------------------------------------------------------------------------------------
+//------------------------------------INITIALIZERS---------------------------------------------------------------
 
 	//simple helper function for setting up a basic Helix API header using provided values
 	//made so I have to do less typing/make less redundant code
@@ -376,8 +414,69 @@ class AsyncHolder {
 				'Authorization': `Bearer ${access_token}`
 			}
 		};
-    }
+	}
 
+	//initializes all spotify stuff that we will need when we do calls to its API
+	async #initSpotifyStuff() {
+
+		var refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
+		var access_token = process.env.SPOTIFY_TOKEN;
+
+		//first, we get an access token from the API
+		var spotifyData = new SpotifyWebApi({
+			redirectUri: process.env.SPOTIFY_REDIRECT_URL,
+			clientId: process.env.SPOTIFY_CLIENT_ID,
+			clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+		});
+
+		//when need new access token, uncomment and roll
+		//var scopes = ['user-read-private', 'user-read-currently-playing', 'user-modify-playback-state'];
+		//var state = "some-type-of-creature";
+		//var auth_url = spotifyData.createAuthorizeURL(scopes, state);
+
+		//try {
+		//	console.log(auth_url);
+		//	const response = await axios.get(auth_url);
+		//	console.log(response);
+		//	var code = response.code;
+		//	console.log(code);
+
+		//} catch (err) { console.error(err); }
+
+
+
+		//spotifyData.authorizationCodeGrant(code).then(
+		//	function (data) {
+		//		console.log('The token expires in ' + data.body['expires_in']);
+		//		console.log('The access token is ' + data.body['access_token']);
+		//		console.log('The refresh token is ' + data.body['refresh_token']);
+
+		//		// Set the access token on the API object to use it in later calls
+		//		spotifyData.setAccessToken(data.body['access_token']);
+		//		spotifyData.setRefreshToken(data.body['refresh_token']);
+		//	},
+		//	function (err) {
+		//		console.log('Something went wrong!', err);
+		//	}
+		//);
+
+		spotifyData.setRefreshToken(refresh_token);
+
+		spotifyData.refreshAccessToken().then(
+			function (data) {
+				//console.log('The access token has been refreshed!');
+
+				// Save the access token so that it's used in future calls
+				spotifyData.setAccessToken(data.body['access_token']);
+			},
+			function (err) {
+				console.log('Could not refresh access token', err);
+			}
+		);
+
+		return spotifyData;
+	}
+//--------------------------------------------------------------------------------------------------------
 }
 
 module.exports = AsyncHolder;

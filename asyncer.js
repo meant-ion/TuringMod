@@ -6,18 +6,18 @@ const fetch = require('node-fetch');
 const axios = require('axios');
 const h = require('./helper.js');
 const fs = require('fs');
-const got = require('got');
-//using the readline-sync library in order to control if the message can be posted or not via the console
-var readline = require('readline-sync');
-let { PythonShell } = require('python-shell');
 const SpotifyWebApi = require('spotify-web-api-node');
 
 class AsyncHolder {
 
-	constructor(c, t) {
+	#clip_list;
+
+	constructor(c, c_i, c_s, s, r_u, s_s) {
 		this.client = c;
 		this.helper = new h();
+		this.#clip_list = [];
 		this.spotifyApi = this.#initSpotifyStuff();
+		//this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
     }
 
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
@@ -137,14 +137,14 @@ class AsyncHolder {
 		const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
 
 		await fetch(url, data).then(result => result.json()).then(body => {
-			//console.log(body);
 			if (body.data[0].url != undefined) {
-				return body.data[0].url;
-			} else {
-				return "";
-            }
+				let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
+				this.#clip_list.push(u);
+			}
 		});
-    }
+	}
+
+	getClipList() { return this.#clip_list; }
 
 	//edits the channel category/game to one specified by a moderator
 	//currently benched until I can wrap my mind around getting the correct token for editing a stream from a bot
@@ -182,6 +182,8 @@ class AsyncHolder {
 				"game_id": gameID,
             }),
 		};
+
+		console.log(editData);
 
 		//send out the info and edit the channel's category
 		//TODO: get this to not 401 me whenever I try to edit my own channel
@@ -257,149 +259,67 @@ class AsyncHolder {
 		}
 	}
 
-	//generates an insult and tells it to the streamer, because my self-esteem is not low enough already
-	async insultTheStreamer() {
-		PythonShell.run('main.py', null, function (err) {
-			if (err) {
-				console.error(err);
+	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
+	async getRandomWordFromDictionary(user, target) {
+
+		const merrWebAPIKey = process.env.DICTIONARY_API_KEY;
+
+		//we can't get a random word through the dictionary API, so we get it through a different, free API
+		const randomWordURL = `https://random-words-api.herokuapp.com/w?n=1`;
+
+		var grAbbrev = "";//the abbreviation of the grammatical function of the word
+
+		try {
+			//get the word, and then use it to get the other parts of the message from Merriam-Webster
+			const wordResponse = await axios.get(randomWordURL);
+			const word = wordResponse.data[0];
+			const dictionaryURL = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${merrWebAPIKey}`;
+			const response = await axios.get(dictionaryURL);
+			const definition = response.data[0].shortdef[0];
+			const grammarFunction = response.data[0].fl;
+
+			//now we get the abbreviation of the grammar function to shorten the chat message
+			switch (grammarFunction) {
+				case "verb":
+					grAbbrev = "v";
+					break;
+				case "noun":
+					grAbbrev = "n";
+					break;
+				case "adjective":
+					grAbbrev = "adj";
+					break;
+				case "adverb":
+					grAbbrev = "adv";
+					break;
+				case "pronoun":
+					grAbbrev = "prn";
+					break;
+				case "trademark":
+					grAbbrev = "®";
+					break;
+				case "abbreviation":
+					grAbbrev = "abbrev";
+					break;
+				case "preposition":
+					grAbbrev = "prep";
+					break;
+				case "conjunction":
+					grAbbrev = "conj";
+					break;
+				case "interjection":
+					grAbbrev = "intj";
+					break;
+				default://need to see what pops out through here to get the abbreviaiton correct for this
+					grAbbrev == grammarFunction;
+					break;
 			}
-			console.log("TTS script executed");
-		});
 
-	}
+			this.client.say(target, `@${user.username}: ${word}: ${grAbbrev}; ${definition}`);
 
-	//soon to be fully implemented function that will shitpost and prove that a robot can emulate twitch chat easy
-	//As of August 01, 2021, I have received approval from OpenAI to use GPT-3 for this bot
-	//Officially, this function is now live and I cannot be happier about it
-	async generatePost(user, prompt, linesCount, target) {
-		//check first if minimum posting requirements have been met (enough comments made to post)
-		if (linesCount >= 25) {
-			//the url for GPT-3 for the model level; we will use the the content filter to keep compliance with OpenAI's TOS
-			const gen_url = 'https://api.openai.com/v1/engines/davinci/completions';
-			const testing_url = 'https://api.openai.com/v1/engines/content-filter-alpha-c4/completions';
+		} catch (err) { console.error(err); }
 
-			//we are getting access to the model through simple https requests, so we will use the Got library to do so
-			try {
-				//set up the parameters for the model, which will be:
-				//  - prompt: input text (so just the logs from the chat)
-				//  - max_tokens: how long the response is (1 token = ~4 characters)
-				//  - temperature: the level of creative freedom for responses
-				//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
-				//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
-				//  - stop: what the API will stop generation when it sees these (punctuation for this one)
-				//  - logprobs: many functions, use it here to get a list of all tokens
-				const content_params = {
-					"prompt": prompt,
-					"max_tokens": 80,
-					"temperature": 0.7,
-					"frequency_penalty": 0.3,
-					"presence_penalty": 0.3,
-					"stop": ["!", "?", ".", "\n"],
-					"logprobs": 10
-				};
-
-				//the headers, which is effectively the APi key for GPT-3 to be sent for model access
-				const headers = {
-					'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-					'Content-Type': 'application/json',
-				};
-
-				var output_text = await got.post(gen_url, { json: content_params, headers: headers }).json();
-
-				//now, we construct the vars necessary to test the response for naughtiness
-
-				var toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
-
-				let token_list = output_text.choices[0].logprobs.tokens;//list of all tokens generated from original prompt
-
-				//how we will call the content filter
-				var testing_params = {
-					"prompt": "<|endoftext|>" + token_list[0] + "\n--\nLabel:",
-					"max_tokens": 1,
-					"temperature": 0.0,
-					"top_p": 1,
-					"frequency_penalty": 0.3,
-					"presence_penalty": 0.3,
-					"logprobs": 10
-				};
-				
-				let tested_output = "";
-
-				//loop through each token and see if we can include it in the final output
-				for (var i = 0; i < token_list.length; ++i) {
-					//get the rating of the token from the content filter engine
-					var probs_output = await got.post(testing_url, { json: testing_params, headers: headers }).json();
-					let output_label = probs_output.choices[0].text;
-
-					//if the output label is 2 (meaning a risky output), we test it to confirm a high level of 
-					//confidence in the rating and substitute the token as needed
-					if (output_label == "2") {
-						let logprobs = probs_output.choices[0].logprobs.top_logprobs[0];
-
-						if (logprobs["2"] < toxic_threshold) {
-							let logprob_0 = logprobs || "0";
-							let logprob_1 = logprobs || "1";
-
-							if ((logprob_0 != null) && (logprob_1 != null)) {
-								if (logprob_0 >= logprob_1) {
-									output_label = "0";
-								} else {
-									output_label = "1";
-								}
-							} else if (logprob_0 != null) {
-								output_label = "0";
-							} else if (logprob_1 != null) {
-								output_label = "1";
-							}
-						}
-					}
-
-					//if the output is not 0, 1, or 2, we set it as 2 for safety
-					if ((output_label != "0") && (output_label != "1") && (output_label != "2")) {
-						output_label = "2";
-					}
-
-					//if the token has been proven to not fall into a bad area/level of toxicity, 
-					//we add it to the output text and send that out for approval for the bot's administrator
-					if (output_label != "2") {
-						tested_output += token_list[i];
-					}
-
-					testing_params.prompt = "<|endoftext|>" + token_list[i] + "\n--\nLabel:";
-				}
-
-				//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
-				var isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
-
-					if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
-						isPostable = true;
-					} else {
-						console.log("Post will be discarded then. Thank you!");
-						isPostable = false;
-					}
-
-					rl.close();
-				});
-
-				console.log("IsPostable: " + isPostable);
-
-				if (isPostable == "no") {
-					this.client.say(target, `@${user.username}: bot response rejected by bot admin`);
-					return false;
-				} else {
-					this.client.say(target, `@${user.username}: MrDestructoid ${tested_output}`);
-					return true;
-                }
-
-			} catch (err) {//in case of a screwup, post an error message to chat and print error
-				this.client.say(target, `Error in text generation`);
-				console.error(err);
-				return false;
-			}
-		}
-		this.client.say(target, `Not enough comments yet :(`);
-		return false;	
-	}
+    }
 
 //---------------------------------------------------------------------------------------------------------------
 //------------------------------------INITIALIZERS---------------------------------------------------------------
@@ -416,11 +336,40 @@ class AsyncHolder {
 		};
 	}
 
+	//understand that the functions below are meant for my own personal use and will most likely not make an
+	//appearance in the version of the repo that gets used in multiple channels
+
+	//gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
+	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
+		//first, we get the auth code to get the request token
+		let data = {
+			'method': 'GET'
+		};
+		let url = `https://id.twitch.tv/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&scope=${scopes}&state=${state}`;
+
+		console.log(url);
+
+		await fetch(url, data).then(result => result.json()).then(body => {
+			console.log(body);
+		});
+
+		let code = process.env.TWITCH_CODE;
+
+		let post_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&code=${code}&grant_type=authorization_code&redirect_uri=${redirect_url}`;
+		let post_data = {
+			'method': 'POST'
+		};
+
+		await fetch(post_url, post_data).then(result => result.json()).then(body => {
+			console.log(body);
+		});
+    }
+
 	//initializes all spotify stuff that we will need when we do calls to its API
 	async #initSpotifyStuff() {
 
 		var refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
-		var access_token = process.env.SPOTIFY_TOKEN;
+		//var access_token = process.env.SPOTIFY_TOKEN;
 
 		//first, we get an access token from the API
 		var spotifyData = new SpotifyWebApi({

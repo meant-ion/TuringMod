@@ -32,8 +32,6 @@ class Calculator {
         var lastCharChecked = '';
         var isNegative = false;
 
-        console.log(infixEq);
-
         //our list of operators that we will be dealing with
         //may add the special operators 'x' and ':' that were mentioned by a viewer
         var operators = {
@@ -119,7 +117,7 @@ class Calculator {
                 output += e.toString() + " ";
             } else if (token.toLowerCase() == "pi" || token == "?") {
                 output += pi.toString() + " ";
-            }
+            } 
             lastCharChecked = token;
         }
         while (operStack.length > 0) {

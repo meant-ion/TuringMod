@@ -10,6 +10,7 @@ const lrk = require('./lurker_list.js');
 const AsyncHolder = require('./asyncer.js');
 const dicee = require('./dice.js');
 const collector = require('./clipcollector.js');
+const poster_class = require('./post.js');
 
 const opts = {
 	identity: {
@@ -21,14 +22,15 @@ const opts = {
 	},
 	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here (for now anyway)
 		"pope_pontus",
-		"saint_isidore_bot"
 	]
 };
 
 //for getting the access token from Helix
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
-const scope = "user:read:email user:edit:broadcast";
+const scope = "user:read:email channel:manage:broadcast";
+const redirect_url = process.env.REDIRECT_URL;
+const session_secret = process.env.SESSION_SECRET;
 
 const theStreamer = opts.channels[0];
 
@@ -55,14 +57,6 @@ var voiceCrack = 0;
 //what we set when we want to collect clips to be seen later
 var collectClips = false;
 
-//what we use to see if we can post links to the chat or not
-//relevant commands: !isidore, !help, !wikirand
-var canPostLinks = true;
-
-//what we use to safeguard against the bot trying to moderate when it's not supposed to
-//relevant commands: !roulette
-var isModerator = true;
-
 //what we use to measure how many viewers/commenters wish to change the song currently playing (needs to be 5 and over)
 //relevant command: !skipsong
 var skipThreshold = 0;
@@ -82,14 +76,22 @@ setInterval(intervalMessages, 600000);
 //separate variable to tell the program which function gets called
 var callThisFunctionNumber = 0;
 
+//array to hold who voted to skip a song, helps to prevent someone voting more than once per song
+var skip_list = [];
+
+//array that holds the prompt per streamer. I.E. key == target, value == prompt for !post
+var prompt_list = [];
+for (i in opts.channels) { prompt_list.push(i); }
+
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 let commands_holder = new loader();
 let helper = new h();
 let lurk_list = new lrk();
-let async_functions = new AsyncHolder(client, theStreamer);
+let async_functions = new AsyncHolder(client, client_id, client_secret, scope, redirect_url, session_secret);
 let dice = new dicee(client);
 let Calculator = new calculator();
 let ClipCollector = new collector();
+let post = new poster_class(client);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -111,7 +113,7 @@ function onMessageHandler(target, user, msg, self) {
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
 
 			//a moderator or the streamer wishes to flush the bot's posting prompt
-		} else if (cmdName == '!flush' && (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus")) {
+		} else if (cmdName == '!flush' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			resetPrompt();
 			client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
@@ -120,14 +122,17 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!startcollect' && !collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			collectClips = true;
+			client.say(target, "Clip collection is turned on!");
 
 			//ends clip collection services
 		} else if (cmdName == '!endcollect' && collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
 
+			ClipCollector.writeClipsToHTMLFile();
 			collectClips = false;
+			client.say(target, "All collected clips are written to file!");
 
 			//activates GPT-3 for a post. Heavily controlled
-		} else if (cmdName == '!post' && (helper.checkIfModOrStreamer(user, theStreamer) || user.username == "pope_pontus")) {
+		} else if (cmdName == '!post' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			generatePost(user, target);
 
@@ -139,24 +144,14 @@ function onMessageHandler(target, user, msg, self) {
 			//for mods/streamer to remove a custom command
 		} else if (cmdName == '!removecommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
-			commands_holder.removeCommand(client, target, user, inputMsg[1]);
+			commands_holder.removeCommand(client, target, user, inputMsg[2], inputMsg[1]);
 
 			//for mods/streamer to edit a custom command
 		} else if (cmdName == '!editcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			commands_holder.editCommand(client, target, user, inputMsg);
 
-			//mods/streamer wants to control if the bot can post links
-		} else if (cmdName == '!botlinks' && helper.checkIfModOrStreamer(user, theStreamer)) {
-
-			if (canPostLinks) { canPostLinks = false; } else { canPostLinks = true; }
-
-			//need to set the bot to not think it's a mod
-		} else if (cmdName == '!modperms' && helper.checkIfModOrStreamer(user, theStreamer)) {
-
-			if (isModerator) { isModerator = false; } else { isModerator = true; }
-
-		} else if (cmdName == '!isidore' && canPostLinks) {//someone wants to know who St. Isidore is
+		} else if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
 
 			postWikiPage(target);
 
@@ -209,7 +204,7 @@ function onMessageHandler(target, user, msg, self) {
 			client.say(target, `@${user.username}: ` + buildMsg);
 
 			//dumb little command for whenever my voice cracks, which is apparently often
-		} else if (cmdName == '!voice' && target == "pope_pontus") {
+		} else if (cmdName == '!voice') {
 
 			voiceCrack++;
 			client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
@@ -219,7 +214,7 @@ function onMessageHandler(target, user, msg, self) {
 			async_functions.getRandWikipediaArticle(user, target);
 
 			//sends a list of commands when the user needs them. Needs to be reworked to not be as garbo
-		} else if (cmdName == '!help' && canPostLinks) {
+		} else if (cmdName == '!help') {
 
 			getHelp(target, user);
 
@@ -240,7 +235,7 @@ function onMessageHandler(target, user, msg, self) {
 			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(inputMsg, false));
 			client.say(target, msg);
 
-		} else if (cmdName == "!streamertime") {//gets the current time in Central Standard Time (CST)
+		} else if (cmdName == "!time") {//gets the current time in Central Standard Time (CST)
 
 			helper.getCurrentTime(client, target, user);
 
@@ -263,21 +258,24 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
 			thresholdCalc(target, user);
-			
 
+		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
+
+			async_functions.getRandomWordFromDictionary(user, target);
+			
 		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
 
-		//	if (helper.checkIfModOrStreamer(user, theStreamer)) {
-		//		async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
-		//    }
+			//if (helper.checkIfModOrStreamer(user, theStreamer)) {
+			//	async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
+		    //}
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
 			var msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
 				` !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
 				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect,` + 
-				` !song, !skipsong, !botlinks, modperms.` +
+				` !song, !skipsong, !botlinks, !modperms.` +
 				`For specifics on these commands, use !help and follow the link provided. Thank you!`;
 			client.say(target, msg);
 
@@ -287,11 +285,6 @@ function onMessageHandler(target, user, msg, self) {
 			if (msg != null) {
 
 				client.say(target, msg);
-
-			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true))) {//check to see if the msg is spam
-
-				lurkerHasTypedMsg(target, user);
-				writeMsgToFile(user, msg);
 
 			} else if (collectClips) {//if enabled, check to see if it's a clip
 
@@ -303,14 +296,15 @@ function onMessageHandler(target, user, msg, self) {
 					ClipCollector.validateAndStoreClipLink(client_id, outside_token, possibleClipURL);
 				}
 
-			} else {
+			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true))) {//check to see if the msg is spam
 
-				//this is not a command line, so we just gather the comment into the prompt
+				//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
 				linesCount++;
+				lurkerHasTypedMsg(target, user);
+				writeMsgToFile(user, msg);
 
-            }
-			
+			}
 		}
 	}
 }
@@ -323,33 +317,27 @@ function onConnectedHandler(addy, prt) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 function intervalMessages() {
-	switch (callThisFunctionNumber) {
-		case 0://follow message
-			client.say(theStreamer, `If you are enjoying the stream, feel free to follow @pope_pontus here on Twitch!`);
-			break;
-		case 1://messgae for suggesting features/fixes for the bot
-			client.say(theStreamer, `If you have any suggestions on what should be added to me, send them over using !suggestion` + 
-				` and then what you think is a good idea. Thank you!`);
-			break;
-		case 2://insults the streamer through TTS
-			async_functions.insultTheStreamer();
-			break;
+	client.say(theStreamer, commands_holder.getIntervalCommand(callThisFunctionNumber));
+	++callThisFunctionNumber;
 
-	}
-	if (callThisFunctionNumber >= 2) {
+	if (commands_holder.getIntervalArrayLength() <= callThisFunctionNumber) {
 		callThisFunctionNumber = 0;
-	} else {
-		++callThisFunctionNumber;
     }
+
 }
 
+//hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
 function thresholdCalc(target, user) {
 	if (skipThreshold < 5) {
-		++skipThreshold;
-		client.say(target, `@${user.username}: Skip request recorded. ${skipThreshold}/5 requests put through`);
+		if (!skip_list.includes(user.username)) {
+			++skipThreshold;
+			skip_list.push(user.username);
+			client.say(target, `@${user.username}: Skip request recorded. ${skipThreshold}/5 requests put through`);
+        }
 	} else {
 		async_functions.skipToNextSong(client, target, user);
 		skipThreshold = 0;
+		skip_list = [];
 	}
 }
 
@@ -361,9 +349,16 @@ function resetPrompt() {
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
 function generatePost(user, target) {
-	if (async_functions.generatePost(user, prompt, linesCount, target) == true) {
+	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
+	//take the last 2000 characters for the prompt and discard all other characters.
+	//An overly-large prompt will cause the API to return a 400 error
+	if (prompt.length > 2000) { prompt = prompt.substr(prompt.length - 2000); }
+
+	if (post.generatePost(user, prompt, linesCount, target) == true) {
 		resetPrompt();
-    }
+	}
+
+	if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat
@@ -384,9 +379,7 @@ function writeSuggestionToFile(inputMsg) {
 	}
 
 	fs.appendFile('./data/suggestions.txt', compiledMsg + '\n', (err) => {
-		if (err) {
-			console.error(err);
-        }
+		if (err) { console.error(err); }
 	});
 
 	return true;
@@ -409,6 +402,7 @@ function postWikiPage(target) {
 
 //function to handle the various non-command messages on chat for storing and using with !shitpost
 function writeMsgToFile(user) {
+	let theStreamer = "DigitalVagrant";
 	 if (user.username != theStreamer) { //the text was not typed by the streamer, so we store their command
 		 try {
 			//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing
@@ -419,9 +413,7 @@ function writeMsgToFile(user) {
 						{ flag: 'a+' }, err => { });
 				});
 			}
-		} catch (err) {
-			console.error(err);
-		}
+		} catch (err) { console.error(err); }
 	}
 }
 

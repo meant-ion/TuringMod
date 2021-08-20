@@ -27,14 +27,14 @@ class AsyncHolder {
 	async getFollowAge(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
-		var follower_list = undefined;
+		let follower_list = undefined;
 
 		await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
 			.then(body => {
 				follower_list = body;
-				for (var i = 0; i < follower_list.data.length; ++i) {
+				for (let i = 0; i < follower_list.data.length; ++i) {
 					if (follower_list.data[i].from_login == user.username) {
-						var followedDate = new Date(follower_list.data[i].followed_at);
+						let followedDate = new Date(follower_list.data[i].followed_at);
 						this.client.say(target, `@${user.username} has been following for:` 
 							+ `${this.helper.getTimePassed(followedDate, true)}`);
 					}
@@ -47,14 +47,14 @@ class AsyncHolder {
 	async getChannelSchedule(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
-		var schedule = undefined;
+		let schedule = undefined;
 
 		await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
 			.then(body => {
 
 				schedule = body;
 				let streamDates = "";
-				for (var i = 1; i < schedule.data.segments.length; ++i) {
+				for (let i = 1; i < schedule.data.segments.length; ++i) {
 					let curDate = new Date(schedule.data.segments[i].start_time);
 					if (i + 1 == schedule.data.segments.length) {
 						streamDates += curDate.toDateString();
@@ -157,10 +157,10 @@ class AsyncHolder {
 		//first, we need to get the category id to change the channel's category
 		const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
 
-		var responseStatus;
+		let responseStatus;
 
-		var gameID = "";
-		var editChannelURL = "";
+		let gameID = "";
+		let editChannelURL = "";
 
 		await fetch(gameIdURL, data).then(result => result.json()).then(body => {
 			gameID = body.data[0].id;
@@ -168,7 +168,7 @@ class AsyncHolder {
 		});
 
 		//now that we have the game id, we can make the patch request and go from there
-		var res;
+		let res;
 
 		//secondary data structure is meant for the editing, since we have to use PATCH and not GET
 		const editData = {
@@ -231,13 +231,13 @@ class AsyncHolder {
 
 	//returns a list of all suggestions sent into the bot as a message in chat
 	async printAllSuggestions(user) {
-		var msg = "";
+		let msg = "";
 		fs.readFile('./data/suggestions.txt', function (err, data) {
 			if (err) { console.error(err); }
 
-			var suggs = data.toString();
-			var sugg = suggs.split('\n');
-			for (var i = 0; i < sugg.length; ++i) {
+			let suggs = data.toString();
+			let sugg = suggs.split('\n');
+			for (let i = 0; i < sugg.length; ++i) {
 				msg += sugg[i] + ', ';
 			}
 		});
@@ -267,7 +267,7 @@ class AsyncHolder {
 		//we can't get a random word through the dictionary API, so we get it through a different, free API
 		const randomWordURL = `https://random-words-api.herokuapp.com/w?n=1`;
 
-		var grAbbrev = "";//the abbreviation of the grammatical function of the word
+		let grAbbrev = "";//the abbreviation of the grammatical function of the word
 
 		try {
 			//get the word, and then use it to get the other parts of the message from Merriam-Webster
@@ -296,7 +296,7 @@ class AsyncHolder {
 					grAbbrev = "prn";
 					break;
 				case "trademark":
-					grAbbrev = "®";
+					grAbbrev = "ï¿½";
 					break;
 				case "abbreviation":
 					grAbbrev = "abbrev";
@@ -368,11 +368,11 @@ class AsyncHolder {
 	//initializes all spotify stuff that we will need when we do calls to its API
 	async #initSpotifyStuff() {
 
-		var refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
+		let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
 		//var access_token = process.env.SPOTIFY_TOKEN;
 
 		//first, we get an access token from the API
-		var spotifyData = new SpotifyWebApi({
+		let spotifyData = new SpotifyWebApi({
 			redirectUri: process.env.SPOTIFY_REDIRECT_URL,
 			clientId: process.env.SPOTIFY_CLIENT_ID,
 			clientSecret: process.env.SPOTIFY_CLIENT_SECRET,

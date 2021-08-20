@@ -20,7 +20,7 @@ const opts = {
 	connection: {
 		reconnect: true
 	},
-	channels: [//I'm really the only one going to use this tbh, so I'll just have the name be here (for now anyway)
+	channels: [//I'm really the only one going to use this version, so I'll just have the name be here (for now anyway)
 		"pope_pontus",
 	]
 };
@@ -34,7 +34,7 @@ const session_secret = process.env.SESSION_SECRET;
 
 const theStreamer = opts.channels[0];
 
-var outside_token = undefined;
+let outside_token = undefined;
 
 //get access to the Helix API for twitch and get all wanted chunks of info for it too
 Twitch.getToken(client_id, client_secret, scope).then(async result => {
@@ -47,21 +47,21 @@ Twitch.getToken(client_id, client_secret, scope).then(async result => {
 
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
-var linesCount = 0;
-var prompt = "";
+let linesCount = 0;
+let prompt = "";
 
 //vars for the !voice command
-var vCrackCountAtStart = 0;
-var voiceCrack = 0;
+let vCrackCountAtStart = 0;
+let voiceCrack = 0;
 
 //what we set when we want to collect clips to be seen later
-var collectClips = false;
+let collectClips = false;
 
 //what we use to measure how many viewers/commenters wish to change the song currently playing (needs to be 5 and over)
 //relevant command: !skipsong
-var skipThreshold = 0;
+let skipThreshold = 0;
 
-var client = new tmi.client(opts);
+let client = new tmi.client(opts);
 
 client.connect();
 
@@ -74,13 +74,13 @@ client.on('connected', onConnectedHandler);
 setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
-var callThisFunctionNumber = 0;
+let callThisFunctionNumber = 0;
 
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
-var skip_list = [];
+let skip_list = [];
 
 //array that holds the prompt per streamer. I.E. key == target, value == prompt for !post
-var prompt_list = [];
+let prompt_list = [];
 for (i in opts.channels) { prompt_list.push(i); }
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
@@ -272,7 +272,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
-			var msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
+			let msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
 				` !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
 				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect,` + 
 				` !song, !skipsong, !botlinks, !modperms.` +
@@ -281,7 +281,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-			var msg = commands_holder.searchForCommand(cmdName);
+			let msg = commands_holder.searchForCommand(cmdName);
 			if (msg != null) {
 
 				client.say(target, msg);
@@ -289,7 +289,7 @@ function onMessageHandler(target, user, msg, self) {
 			} else if (collectClips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
-				var possibleClipURL = helper.checkIfURL(inputMsg);
+				let possibleClipURL = helper.checkIfURL(inputMsg);
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
@@ -374,7 +374,7 @@ function writeSuggestionToFile(inputMsg) {
 
 	//compile the message into a single string for better insertion into file
 	let compiledMsg = ""
-	for (var i = 1; i < inputMsg.length; ++i) {
+	for (let i = 1; i < inputMsg.length; ++i) {
 		compiledMsg += inputMsg[i] + " ";
 	}
 
@@ -402,7 +402,6 @@ function postWikiPage(target) {
 
 //function to handle the various non-command messages on chat for storing and using with !shitpost
 function writeMsgToFile(user) {
-	let theStreamer = "DigitalVagrant";
 	 if (user.username != theStreamer) { //the text was not typed by the streamer, so we store their command
 		 try {
 			//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing

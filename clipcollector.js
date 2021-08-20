@@ -34,7 +34,7 @@ class ClipCollector {
         let rtf_body = `<body>\n<div>\n<p>\n`
         let list = this.#async_functions.getClipList();
 
-        for (var i = 0; i < list.length; ++i) {
+        for (let i = 0; i < list.length; ++i) {
             rtf_body += list[i] + '\n';
         }
 
@@ -45,16 +45,13 @@ class ClipCollector {
                 { flag: 'a+' }, err => { });
         });
 
-        //console.log(rtf_body);
-
-        //htmlToRtf.saveRtfInFile('./data/clip_links.rtf', htmlToRtf.convertHtmlToRtf(rtf_body));
     }
 
     //simple function that dumps the list of clips to console
     //really just a debug function, but maybe useful somewhere else?
     dumpClipListToCLI() {
         let list = this.#async_functions.getClipList();
-        for (var i = 0; i < list.length; ++i) {
+        for (let i = 0; i < list.length; ++i) {
             console.log(list[i]);
         }
     }

@@ -109,11 +109,9 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			NOW FULLY ENABLED AS OF AUGUST 10, 2021
-			* Called either by myself, the stream's moderators, or the streamer proper. When called, response from API
+			* Called either the stream's moderators or the streamer proper. When called, response from API
 			  is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
 			  and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
-			  - Most likely to try to make this process approvable by the moderators of the channel as well
-				Just need to find out the best way of actually going about this really
 
 
 PLANNED FUNCTIONALITIES/FEATURES:
@@ -124,7 +122,7 @@ PLANNED FUNCTIONALITIES/FEATURES:
 		- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
 		  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
 		  (or see long-term list below)
-				* will most likely have a .txt or .json file of all currently "banned" emotes for people to knwo what's banned or not
+				* will most likely have a .txt or .json file of all currently "banned" emotes for people to know what's banned or not
 
 		- a "quiet mode" for the stream
 				* will automatically remove all messages trying to directly @ the streamer from chat
@@ -133,9 +131,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 				* a !permit command that will allow for one user to post one link
 				* automatically removes all links that are not permittied
 					- will need to make compatible with !startcollect and !endcollect
-
-		- Make it so that the interval commands are called to a specific chatroom only (MAY NOT DO THIS AND MAKE FORK FOR !POST)
-				* Need to find a way to make it recognize what chatroom it was in somehow
 
 	------------------------------------------------------------
 
@@ -151,23 +146,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete
 
-	- somehow make it run on a server constantly and have me approve prompts through Discord messages
-
-	- separate the channel prompts to prevent messages from different chat rooms intermingling and making nonsense responses (lol)
-
-	- bell the bot like a cat (have it make a noise when it's ready to post a response from OpenAI)
-			* LITERAL HELL ON EARTH GETTING THIS TO RUN ON A WINDOWS MACHINE - benched until further notice
-				- Why does every library require Linux programs to work?!?!?!
-
 	- ensure that the prompt is reset after a certain constraint is met
 			* a character limit is reached for the channel (2000 character limit, need to test this on bigger channel)
 			* the !post command goes through sucessfully
-
-	- Incredibly long term/incredibly unlikely goal: making this into something that can actually make money
-			* Needs a website and such for this (hyper security needed, user accts and all that)
-			* change the custom commands from a .json file (fine for 1 dude) to a real db (for multiple dudes)
-			* Need to get linking set up for this stuff as well:
-					- Twitch (any command that pulls from it)
-					- Steam API (may be able to get away with just using a special acct for this)
-			* Would definitly require getting into contact with OpenAI to stay on their good side with TOS
-					- Probs main selling point, CANNOT LOSE THIS FEATURE OR I WILL BE VERY SAD & WILL UGLY CRY

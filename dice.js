@@ -16,34 +16,34 @@ class Dice {
 	async getDiceRoll(cmdName, user, target) {
 		//first things first, we check the command to see if they wanted to roll more than 1 die
 		//copy out the character
-		var checkerChar = cmdName.substring(5, 6);
+		let checkerChar = cmdName.substring(5, 6);
 
 		//set up a bool to see if the command was correct or not
-		var isValidCmd = true;
+		let isValidCmd = true;
 
 		//stash the first one into a var for safe keeping
-		var numDiceToRoll = '';
+		let numDiceToRoll = '';
 
 		//set up a bool to tell if we have found the 'd' character, meaning we can find the sides now
-		var hasD = false;
+		let hasD = false;
 
 		//get the index of the 'd' character if present
-		var dIndex = 0;
+		let dIndex = 0;
 
 		//to be used farther down, holding the number of sides on the die/dice
-		var numSides = '';
+		let numSides = '';
 
 		//to be used to tell the minimum number that can be rolled for a dice roll at a time
-		var minRoll = '';
+		let minRoll = '';
 
 		//set up bool to tell if we have a minimum roll requirement char 'r' to account for
-		var hasR = false;
+		let hasR = false;
 
 		//get the index of the 'r' character if present
-		var rIndex = 0;
+		let rIndex = 0;
 
 		//now, we see how many multiples they want to roll (numbers >= 10)
-		var i;
+		let i;
 		for (i = cmdName.substring(0, 5).length; i < cmdName.length; ++i) {
 			checkerChar = cmdName.substring(i, i + 1);
 			if (this.helper.isNumeric(checkerChar)) {//the character was a number, so append it to the list
@@ -68,7 +68,7 @@ class Dice {
 		//now that we have rolled through the rest of the string, we see if any conditions tripped or not
 		if (hasD && isValidCmd) {//this will mean is a valid command up to now
 			//now we see if the remaining characters are numbers or not, and add them to a new variable to act as the sides of the die
-			var i;
+			let i;
 			for (i = dIndex + 1; i < cmdName.length; ++i) {
 				if (i == cmdName.length) {
 					checkerChar = cmdName.substring(i);
@@ -90,7 +90,7 @@ class Dice {
 
 			//we have a minimum roll for this roll, so we are gonna see how low we can go
 			if (isValidCmd && hasR) {
-				for (var j = rIndex + 1; j < cmdName.length; ++j) {
+				for (let j = rIndex + 1; j < cmdName.length; ++j) {
 					if (j == cmdName.length) {
 						checkerChar = cmdName.substring(j);
 					} else {
@@ -151,7 +151,7 @@ class Dice {
 	#rollDice(numDice, sides, minRoll) {
 		const diceCount = parseInt(numDice);//number of times we will roll
 		const sidesCount = parseInt(sides);//number of sides on the die that will be rolled
-		var minimumCount = 0;
+		let minimumCount = 0;
 		if (minRoll == '') {
 			minimumCount = 0;
 		} else {
@@ -165,8 +165,8 @@ class Dice {
 		}
 
 		//and now we do the rolling
-		var totalRoll = 0;
-		var i;
+		let totalRoll = 0;
+		let i;
 		for (i = 0; i < diceCount; ++i) {
 			totalRoll += (Math.floor(Math.random() * sidesCount) + 1);
 		}

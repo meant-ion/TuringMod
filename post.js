@@ -61,16 +61,16 @@ class Post {
 					'Content-Type': 'application/json',
 				};
 
-				var output_text = await got.post(gen_url, { json: content_params, headers: headers }).json();
+				let output_text = await got.post(gen_url, { json: content_params, headers: headers }).json();
 
 				//now, we construct the vars necessary to test the response for naughtiness
 
-				var toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
+				const toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
 
 				let token_list = output_text.choices[0].logprobs.tokens;//list of all tokens generated from original prompt
 
 				//how we will call the content filter
-				var testing_params = {
+				let testing_params = {
 					"prompt": "<|endoftext|>" + token_list[0] + "\n--\nLabel:",
 					"max_tokens": 1,
 					"temperature": 0.0,
@@ -83,9 +83,9 @@ class Post {
 				let tested_output = "";
 
 				//loop through each token and see if we can include it in the final output
-				for (var i = 0; i < token_list.length; ++i) {
+				for (let i = 0; i < token_list.length; ++i) {
 					//get the rating of the token from the content filter engine
-					var probs_output = await got.post(testing_url, { json: testing_params, headers: headers }).json();
+					let probs_output = await got.post(testing_url, { json: testing_params, headers: headers }).json();
 					let output_label = probs_output.choices[0].text;
 
 					//if the output label is 2 (meaning a risky output), we test it to confirm a high level of 

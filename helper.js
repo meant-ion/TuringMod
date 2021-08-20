@@ -9,8 +9,7 @@ class Helper {
     //helper function to tell if a character is an operator that we want
     isOperator(charToCheck) {
         const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!'];
-        var i;
-        for (i = 0; i < operators.length; ++i) {
+        for (let i = 0; i < operators.length; ++i) {
             if (charToCheck == operators[i]) {
                 return true;
             }
@@ -20,8 +19,8 @@ class Helper {
 
     //combines the input into a single string
     combineInput(inputMsg, needWhiteSpace) {
-        var combinedMsg = '';
-        for (var i = 0; i < inputMsg.length; ++i) {
+        let combinedMsg = '';
+        for (let i = 0; i < inputMsg.length; ++i) {
             if (i != 0) {
                 combinedMsg += inputMsg[i];
             }
@@ -59,7 +58,7 @@ class Helper {
 
     //checks the whole of a message to tell if there is a URL present. If so, it will return the url
     checkIfURL(inputMsg) {
-        for (var i = 0; i < inputMsg.length; ++i) {
+        for (let i = 0; i < inputMsg.length; ++i) {
             try {
                 new url(inputMsg[i]);
                 return inputMsg[i];
@@ -77,13 +76,13 @@ class Helper {
         let symbolCount = 0;
 
         //the regex that we will use to detect the symbol spam in a message
-        var symList = "[]{}()\`~!@#$%^&*;:'\",<.>\/?-_+=".split('');
+        let symList = "[]{}()\`~!@#$%^&*;:'\",<.>\/?-_+=".split('');
 
-        var splitMsg = inputMsg.split('');
+        let splitMsg = inputMsg.split('');
 
         //search the whole message for the symbols
-        for (var i = 0; i < symList.length; ++i) {
-            for (var j = 0; j < splitMsg.length; ++j) {
+        for (let i = 0; i < symList.length; ++i) {
+            for (let j = 0; j < splitMsg.length; ++j) {
                 if (splitMsg[j].indexOf(symList[i]) > -1) {
                     symbolCount++;
                 }
@@ -101,14 +100,14 @@ class Helper {
     //gets the current time in Central Standard Time in AM/PM configuration
     getCurrentTime(client, target, user) {
         const curTime = new Date();
-        var isAM = false;
+        let isAM = false;
 
         //calculate the hours in military configuration
         const unflooredHours = (curTime.getTime() / 1000) / 3600;
         const flooredHours = Math.floor(unflooredHours);
         const militaryHours = (flooredHours % 24) - 5;
 
-        var trueHours = 0;
+        let trueHours = 0;
 
         //figure out what the military time converts to in standard configuration
         if (militaryHours > 0 && militaryHours <= 12) {
@@ -124,7 +123,7 @@ class Helper {
 
         //calculate the minutes, craft the message, and then send to chat
         const mins = Math.round((unflooredHours - flooredHours) * 60);
-        var msg = `@${user.username}: Currently ${trueHours}:${mins % 60}`;
+        let msg = `@${user.username}: Currently ${trueHours}:${mins % 60}`;
         if (isAM) {
             msg += ` A.M. `;
         } else {

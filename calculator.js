@@ -3,7 +3,7 @@
 
 //cleans up an array and removes indices with empty values
 Array.prototype.clean = function () {
-    for (var i = 0; i < this.length; ++i) {
+    for (let i = 0; i < this.length; ++i) {
         if (this[i] === "") {
             this.splice(i, 1);
         }
@@ -26,15 +26,15 @@ class Calculator {
     //allows for the calculator function to solve more complex mathematical formulas when entered
     //implementation of Djikstra's Shunting Yard algorithm
     #convertToRPN(infixEq) {
-        var output = "";
-        var operStack = [];
+        let output = "";
+        let operStack = [];
 
-        var lastCharChecked = '';
-        var isNegative = false;
+        let lastCharChecked = '';
+        let isNegative = false;
 
         //our list of operators that we will be dealing with
         //may add the special operators 'x' and ':' that were mentioned by a viewer
-        var operators = {
+        let operators = {
             "^": {
                 precedence: 4,
                 associativity: "Right"
@@ -70,8 +70,8 @@ class Calculator {
         infixEq = infixEq.split(/([\+\-\!\*\/\^\%\(\)])/).clean();
 
         //go through the whole eq array and compute from there
-        for (var i = 0; i < infixEq.length; ++i) {
-            var token = infixEq[i];
+        for (let i = 0; i < infixEq.length; ++i) {
+            let token = infixEq[i];
 
             if (this.helper.isNumeric(token)) {
 
@@ -89,8 +89,8 @@ class Calculator {
                     //check now to see if the last character checked was an operator or if this character is the first in the eq
                     isNegative = true;
                 } else {//no negations, so just go to the next part
-                    var o1 = token;
-                    var o2 = operStack[operStack.length - 1];
+                    let o1 = token;
+                    let o2 = operStack[operStack.length - 1];
 
                     while ("^*/%!+-".indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
                         operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
@@ -133,21 +133,21 @@ class Calculator {
 
         mathProblem = this.#convertToRPN(mathProblem);
 
-        var resultStack = []
+        let resultStack = []
         mathProblem = mathProblem.split(" ");
         console.log(mathProblem);
 
-        for (var i = 0; i < mathProblem.length; ++i) {
+        for (let i = 0; i < mathProblem.length; ++i) {
             if (this.helper.isNumeric(mathProblem[i])) {
                 resultStack.push(parseFloat(mathProblem[i]));
             } else if (this.helper.isOperator(mathProblem[i])) {
-                var a = resultStack.pop();
+                let a = resultStack.pop();
                 if (resultStack.length != 0) {
-                    var b = resultStack.pop();
+                    let b = resultStack.pop();
                 } else {
-                    var b = 0;
+                    let b = 0;
                 }
-                var oper = mathProblem[i];
+                let oper = mathProblem[i];
 
                 switch (oper) {
                     case '+':
@@ -188,8 +188,8 @@ class Calculator {
     }
 
     #factorial(cycleNum) {
-        var answer = 1;
-        for (var i = 2; i < cycleNum + 1; ++i) {
+        let answer = 1;
+        for (let i = 2; i < cycleNum + 1; ++i) {
             answer *= i;
         }
         return answer;

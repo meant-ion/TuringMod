@@ -78,8 +78,6 @@ class CommandArray {
 			filePath = './data/intervals.json';
 		}
 
-
-
 		//write the array to file and let the user know the write was a success
 		fs.truncate(filePath, 0, function () {
 			fs.writeFile(filePath, data, 'utf8', function (err) {

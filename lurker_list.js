@@ -41,7 +41,7 @@ class LurkList {
 
     //find the index of the lurker in the list if present
     isLurking(user) {
-        for (var i = 0; i < this.#lurker_list.length; ++i) {
+        for (let i = 0; i < this.#lurker_list.length; ++i) {
             if (this.#lurker_list[i].getKey() == user.username) {
                 return i;
             }

@@ -12,6 +12,12 @@ class AsyncHolder {
 
 	#clip_list;
 
+	//@param   c     The bot's Twitch client
+	//@param   c_i   The bot's client ID
+	//@param   c_s   The bot's client secret
+	//@param   s     The bot's list of scopes
+	//@param   r_u   The bot's redirect URL
+	//@param   s_s   The bot's state secret
 	constructor(c, c_i, c_s, s, r_u, s_s) {
 		this.client = c;
 		this.helper = new h();
@@ -24,6 +30,10 @@ class AsyncHolder {
 
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getFollowAge(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -44,6 +54,10 @@ class AsyncHolder {
 	}
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getChannelSchedule(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -68,6 +82,10 @@ class AsyncHolder {
 	}
 
 	//gets and returns the channel owner's summary/bio
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getChannelSummary(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -78,6 +96,10 @@ class AsyncHolder {
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getStreamUptime(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -96,6 +118,10 @@ class AsyncHolder {
 	}
 
 	//gets and returns the title of the stream
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getStreamTitle(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -106,6 +132,10 @@ class AsyncHolder {
 	}
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getUserAcctAge(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -119,6 +149,10 @@ class AsyncHolder {
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   target         The chatroom that the message will be sent into
 	async getCategory(client_id, access_token, user, target) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -131,6 +165,10 @@ class AsyncHolder {
 		});
 	}
 
+	//Gets info on a specific clip via its ID and sends that to a list of them
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   clip_id        The ID of the potential clip we want to get info on
 	async getClipInformation(client_id, access_token, clip_id) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -148,6 +186,10 @@ class AsyncHolder {
 
 	//edits the channel category/game to one specified by a moderator
 	//currently benched until I can wrap my mind around getting the correct token for editing a stream from a bot
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@param   user           The name of the chat member that typed in the command
+	//@param   gameName       The name of the category that we wish to change the stream over to
 	async editChannelCategory(client_id, access_token, user, gameName) {
 		const data = this.#createTwitchDataHeader(client_id, access_token);
 
@@ -204,32 +246,37 @@ class AsyncHolder {
 //-----------------------------SPOTIFY API FUNCTIONS-------------------------------------------------------------
 
 	//gets and returns the song title and name from the streamer's currently playing songs
-	async getCurrentSongTitleFromSpotify(client, target, user) {
+	//@param   user     The chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
+	async getCurrentSongTitleFromSpotify(target, user) {
 
 		(await this.spotifyApi).getMyCurrentPlayingTrack()
 			.then(function (data) {
 				let songTitle = data.body.item.name;
 				let artistName = data.body.item.artists[0].name;
 				let fullMsg = "Now Playing \"" + songTitle + "\" by " + artistName;
-				client.say(target, `@${user.username}: ${fullMsg}`);
+				this.client.say(target, `@${user.username}: ${fullMsg}`);
 			}, function (err) { console.error(err); });
 	}
 
 	//skips the current song playing on spotify and advances to next one; tells chatroom what song is
-	async skipToNextSong(client, target, user) {
+	//@param   user     The chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
+	async skipToNextSong(target, user) {
 		(await this.spotifyApi).skipToNext()
 			.then(function () {
 				console.log("Skipped to next song");
 			}, function (err) {
 				console.error(err);
 			});
-		this.getCurrentSongTitleFromSpotify(client, target, user);
+		this.getCurrentSongTitleFromSpotify(target, user);
     }
 
 //-----------------------------------------------------------------------------------------------------
 //-------------------------MISC API/ASYNC FUNCTIONS----------------------------------------------------
 
 	//returns a list of all suggestions sent into the bot as a message in chat
+	//@param   user   The chat member that typed in the command
 	async printAllSuggestions(user) {
 		let msg = "";
 		fs.readFile('./data/suggestions.txt', function (err, data) {
@@ -245,6 +292,8 @@ class AsyncHolder {
 	}
 
 	//gets a random wikipedia article from the wikimedia API and delivers it to chat
+	//@param   user     The chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getRandWikipediaArticle(user, target) {
 
 		const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
@@ -259,7 +308,69 @@ class AsyncHolder {
 		}
 	}
 
+	//Function that gathers data about the changes from this bot's GitHub repo and sends it to chat
+	//@param   target   The chatroom that the message will be sent in to
+	async getGithubRepoInfo(target) {
+		const github_url = 'https://api.github.com/repos/meant-ion/TuringMod/commits';
+		try {
+			//get the info that we need to do these calculations
+			const response = await axios.get(github_url);
+			const current_repo_info = await axios.get(response.data[0].url);
+			const last_repo_info = await axios.get(response.data[1].url);//the previous commit before the current one
+			const current_repo_stats = current_repo_info.data.stats;
+			const last_repo_stats = last_repo_info.data.stats;
+
+			//set up the arrays for composing the message
+			let indicators = ["", "", ""];
+			let percentages_array = [0, 0, 0];
+			let current_array = this.helper.getGitStatsArray(current_repo_stats);
+			let last_array = this.helper.getGitStatsArray(last_repo_stats);
+
+			//going through each item in the current_array and last_array, calculate the % change and push to percentages_array
+			for (let i = 0; i < percentages_array.length; ++i) {
+
+				let current_val = Number(current_array[i]);
+				let last_val = Number(last_array[i]);
+				let temp_percent = 0;
+				let temp_indic = "";
+
+				if (current_val > last_val) {//more changes on current repo than last
+
+					temp_indic = "up";
+					temp_percent = this.helper.roundToTwoDecimals((current_val / last_val) * 100);
+
+				} else if (current_val < last_val) {//more changes on last repo than current
+
+					temp_indic = "down";
+					temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100);
+
+				} else {//no change in amount of changes for both repos
+
+					temp_indic = "with no change";
+
+				}
+
+				indicators[i] = temp_indic;
+				percentages_array[i] = temp_percent;
+
+			}
+
+			//now we make the abomination of a message and send it out to the chatroom
+			let message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
+					+ `(${percentages_array[0]}% difference). ` +
+					`Of the current total, ${current_array[1]} were additions (${indicators[1]} from last repo's ${last_array[1]} ` 
+					+ `(${percentages_array[1]}% difference))` + 
+					` and ${current_array[2]} were deletions (${indicators[2]} from last repo's ${last_array[2]} ` 
+					+ `(${percentages_array[2]}% difference))`;
+
+			this.client.say(target, message);
+
+		} catch (err) { console.error(err); }
+	}
+
 	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
+	//@param   user     The chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getRandomWordFromDictionary(user, target) {
 
 		const merrWebAPIKey = process.env.DICTIONARY_API_KEY;
@@ -326,6 +437,9 @@ class AsyncHolder {
 
 	//simple helper function for setting up a basic Helix API header using provided values
 	//made so I have to do less typing/make less redundant code
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   access_token   The bot's access token so its requests are valid
+	//@returns                A header object in the correct format for accessing the Helix API
 	#createTwitchDataHeader(client_id, access_token) {
 		return {
 			'method': 'GET',
@@ -340,6 +454,12 @@ class AsyncHolder {
 	//appearance in the version of the repo that gets used in multiple channels
 
 	//gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
+	//@param   client_id       The bot's Twitch ID, so we can get to the API easier
+	//@param   client_secret   The bot's Twitch password so it can get a token
+	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
+	//@param   redirect_url    The URL that the user will be redirected to so we can get the auth code needed to generate the token
+	//@param   state           Security measure for the Twitch API to avoid certain attacks
+	//@returns                 An OAuth Access Token, so we can read and write info to Twitch's servers
 	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
 		//first, we get the auth code to get the request token
 		let data = {
@@ -366,6 +486,7 @@ class AsyncHolder {
     }
 
 	//initializes all spotify stuff that we will need when we do calls to its API
+	//@returns   A new Spotify Web API client for use with the !song and !skipsong commands
 	async #initSpotifyStuff() {
 
 		let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;

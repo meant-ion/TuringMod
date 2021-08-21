@@ -140,6 +140,8 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- get further testing for the calculator, specifically for negative numbers
 
+	- add in a feature that will tell the chatroom what has changed when I updtae this bot's GitHub repo (Github API needed)
+
 	- once !changegame is finally working, make a similar command (!changetitle ?) that will edit the stream title too
 			* Maybe edit the tags as well?
 

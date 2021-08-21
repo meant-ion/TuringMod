@@ -262,7 +262,11 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
 			async_functions.getRandomWordFromDictionary(user, target);
+
+		} else if (cmdName == '!gitchanges') {//user wants to see how much changed from the last two commits
 			
+			async_functions.getGithubRepoInfo(target);
+
 		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
 

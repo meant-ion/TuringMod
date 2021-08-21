@@ -51,12 +51,19 @@ class Helper {
     isLetter(charToCheck) { return charToCheck.match(/[a-z]/i); }
 
     //helper function to see if a character is a number
+    //@param   charToCheck   self explanatory
+    //@return                True/False
     isNumeric(charToCheck) { return !isNaN(parseFloat(charToCheck)) && isFinite(charToCheck); }
 
     //simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
+    //@param   user          The name of the chat member that typed in the command
+    //@param   theStreamer   The name of the channel owner
+    //@return                True or false, depending on if the user is a mod or the streamer
     checkIfModOrStreamer(user, theStreamer) { return user.mod || user.username == theStreamer; }
 
     //checks the whole of a message to tell if there is a URL present. If so, it will return the url
+    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@return             The URL, or an empty string if not valid
     checkIfURL(inputMsg) {
         for (let i = 0; i < inputMsg.length; ++i) {
             try {
@@ -71,6 +78,9 @@ class Helper {
     //currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
     //(i.e. "Hello there! Y'all'd've ain't done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
     //Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
+    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@param   target     The chatroom that the message will be sent into
+    //@return             True or false, depending on if the message was found to be spam
     detectSymbolSpam(inputMsg, target) {
 
         let symbolCount = 0;
@@ -98,6 +108,9 @@ class Helper {
     }
 
     //gets the current time in Central Standard Time in AM/PM configuration
+    //@param   client   The bot's client for accessing the chat room
+    //@param   target   The chatroom that the message will be sent into
+    //@param   user     The name of the chat member that typed in the command
     getCurrentTime(client, target, user) {
         const curTime = new Date();
         let isAM = false;
@@ -131,6 +144,36 @@ class Helper {
         }
         msg += `CDT for the streamer`;
         client.say(target, msg);
+    }
+
+    //takes a number and rounds it out to two decimal points (for use as percentages)
+    //@param   num   The number we wish to round
+    //@return        The parameter passed in, but rounded to two decimal points
+    roundToTwoDecimals(num) {
+        let neg = false;
+        if (num < 0) {
+            neg = true;
+            num *= -1;
+        }
+        let multiplier = Math.pow(10,2);
+        num = parseFloat((num * multiplier).toFixed(11));
+        num = (Math.round(num) / multiplier).toFixed(2);
+        if (neg) {
+            num = (num * -1).toFixed(2);
+        }
+        return num;
+    }
+
+    //converts a JSON list of key-value pairs into an array of values
+    //@param   obj   The JSON object to be processed
+    //@return        An array of values from the JSON object
+    getGitStatsArray(obj) {
+        const keys = Object.keys(obj);
+        const r = [];
+        for (let i = 0; i < keys.length; ++i) {
+            r.push(obj[keys[i]]);
+        }
+        return r;
     }
 }
 

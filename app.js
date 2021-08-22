@@ -209,7 +209,7 @@ function onMessageHandler(target, user, msg, self) {
 			voiceCrack++;
 			client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
 
-		} else if (cmdName == '!wikirand' && canPostLinks) {//chat member wants to know about something random off wikipedia
+		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
 			async_functions.getRandWikipediaArticle(user, target);
 
@@ -266,6 +266,18 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!gitchanges') {//user wants to see how much changed from the last two commits
 			
 			async_functions.getGithubRepoInfo(target);
+		
+		} else if (cmdName == '!convert') {//user wants to convert an amount of one currency to another
+
+			async_functions.getCurrencyExchangeRate(user, target, inputMsg[1], inputMsg[2], Number(inputMsg[3]));
+
+		} else if (cmdName == '!pokerand') {//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
+
+			async_functions.getRandomPokemon(target);
+
+		} else if (cmdName == '!numrand') {//user wants a fact about a random number
+
+			async_functions.getRandomNumberFact(target);
 
 		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
@@ -276,11 +288,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
-			let msg = `@${user.username}: !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand,` +
-				` !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, ` +
-				`!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect,` + 
-				` !song, !skipsong, !botlinks, !modperms.` +
-				`For specifics on these commands, use !help and follow the link provided. Thank you!`;
+			let msg = "@" + user.username + ": !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand," +
+				" !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, " +
+				"!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect," + 
+				" !song, !skipsong, !botlinks, !modperms, !dictrand, !gitchanges, !convert, !pokerand, !numrand. " + "\n" +
+				"For specifics on these commands, use !help and follow the link provided. Thank you!";
 			client.say(target, msg);
 
 		} else {
@@ -391,7 +403,7 @@ function writeSuggestionToFile(inputMsg) {
 
 //sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber
 function getHelp(target, user) {
-	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo!` +
+	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo! ` +
 		`https://github.com/meant-ion/TuringMod/blob/master/README.md`);
 }
 

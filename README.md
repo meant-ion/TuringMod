@@ -81,6 +81,13 @@ COMMANDS:
 
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one and posts them in chat as a message
 
+	- !convert: converts an amount of one currency input by the user into the equivalent amount of a currency specified by the user
+			* Format: !convert Currency_To_Convert_From Currency_To_Convert_To amount
+
+	- !pokerand: gets the data from a randomly found Pokémon; Tried to keep the message sent as close to the anime format as I could (as best I remember it really)
+
+	- !numrand: gets a fact about a randomly generated number and posts it to chat
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -134,11 +141,27 @@ PLANNED FUNCTIONALITIES/FEATURES:
 				* automatically removes all links that are not permittied
 					- will need to make compatible with !startcollect and !endcollect
 
+		- a quote delivery function
+				* Gets a random quote from a collection of quotes made by me on stream
+				* Would need to have people there to witness and record those quotes as well
+				* Would need a !addq/!addquote and !delq/!delquote commands for this also
+
+		- yodaposting: same idea as !post, but response is said like yoda would
+				* API not free, need to actually be making money to use (lol)
+
 	------------------------------------------------------------
 
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
+
+	- freegame cmd, tells about free games from epic games store (!epicfree ?)
+
+	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
+
+	- a command that gets the space image of the day from NASA's API and displays it in the top-right corner of the stream as a source
+			* Need to research more on how to do that
+			* Need to rate-limit this one too, only one image a day so tens or hundreds of calls a stream = waste of bandwidth
 
 	- once !changegame is finally working, make a similar command (!changetitle ?) that will edit the stream title too
 			* Maybe edit the tags as well?

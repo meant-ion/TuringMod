@@ -291,6 +291,26 @@ class AsyncHolder {
 		this.client.say(this.target, `@${user.username}: ${msg}`);
 	}
 
+	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another; most likely to staple this into a conversion calculator
+	//@param   user              The chat member that typed in the command
+	//@param   target            The chatroom that the message will be sent into
+	//@param   start_currency    The abbreviation of the currency we're converting from
+	//@param   target_currency   The abbreviation of the currency we're converting to
+	//@param   amt               The amount of currency we're converting from the starting currency to the target
+	async getCurrencyExchangeRate(user, target, start_currency, target_currency, amt) {
+		const start_abbrev = start_currency.toUpperCase();
+		const currency_url = `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_RATES_API_KEY}/latest/${start_abbrev}`;
+
+		//get the rates from the api and then do the conversion by multiplication
+		try {
+			const response = await axios.get(currency_url);
+			const target_abbrev = target_currency.toUpperCase();
+			const rate = Number(response.data.conversion_rates[target_abbrev]);
+			let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate)} ${target_abbrev}`;
+			this.client.say(target, msg);
+		} catch (err) { console.error(err); }
+	}
+
 	//gets a random wikipedia article from the wikimedia API and delivers it to chat
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
@@ -368,6 +388,67 @@ class AsyncHolder {
 		} catch (err) { console.error(err); }
 	}
 
+	//gets a random pokemon from the list of all pokemon and returns its flavor text
+	//@param   target   The name of the chatroom that the message will be posted in
+	async getRandomPokemon(target) {
+		//get our requesting URL and its headers in a row and go from there
+		//As of 8/22/2021, according to Bulbapedia, there are 898 separate entries for pokemon for the "National Pokedex"
+		let pokemon_id = Math.floor(Math.random() * 898) + 1;
+
+		try {
+
+			//get the response from the pokemon API
+			const response = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`);
+			
+			//holds the english name, genus, and flavor text of the random pokemon
+			let en_array = ["", "", ""];
+
+			//arrays of all the entries in various languages for the pokemon's data
+			const pokemon_name_array = response.data.names;
+			const flavor_text_array = response.data.flavor_text_entries;
+			const genus_array = response.data.genera;
+
+			//now, we search through the entries for the correct (read: in english) versions of them
+			flavor_text_array.forEach(item => {
+				if (this.#isLangEn(item)) {
+					en_array[2] = item.flavor_text;
+				}
+			});
+			genus_array.forEach(item => {
+				if (this.#isLangEn(item)) {
+					en_array[1] = item.genus;
+				}
+			});
+			pokemon_name_array.forEach(item => {
+				if (this.#isLangEn(item)) {
+					en_array[0] = item.name;
+				}
+			});
+			let msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
+			this.client.say(target, msg);
+
+		} catch (err) { console.error(err); }
+	}
+
+	//gets a fact about a random number, either of trivia, math, a date, or a year
+	//@param   target   The name of the chatroom that the message will be posted in
+	async getRandomNumberFact(target) {
+
+		//from the list below, get a random type for us to get info on and paste it to url
+		const types_array = ["trivia", "math", "date", "year"];
+		let type_index = Math.floor(Math.random() * types_array.length);
+
+		const number_url = `http://numbersapi.com/random/${types_array[type_index]}?notfound=floor`;
+
+		//now just get the data and post it, this API isn't terribly complex
+		try {
+
+			const response = await axios.get(number_url);
+			this.client.say(target, response.data);
+
+		} catch (err) { console.error(err); }
+	}
+
 	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
@@ -433,7 +514,7 @@ class AsyncHolder {
     }
 
 //---------------------------------------------------------------------------------------------------------------
-//------------------------------------INITIALIZERS---------------------------------------------------------------
+//------------------------------------INITIALIZERS/PRIVATE FUNCTIONS---------------------------------------------
 
 	//simple helper function for setting up a basic Helix API header using provided values
 	//made so I have to do less typing/make less redundant code
@@ -450,6 +531,11 @@ class AsyncHolder {
 		};
 	}
 
+	//simple function that returns if the language of item is english
+	//@param   item   The object we are looking at to determine its language
+	//@return         True/False
+	#isLangEn(item) { return item.language.name == "en" }
+
 	//understand that the functions below are meant for my own personal use and will most likely not make an
 	//appearance in the version of the repo that gets used in multiple channels
 
@@ -463,7 +549,10 @@ class AsyncHolder {
 	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
 		//first, we get the auth code to get the request token
 		let data = {
-			'method': 'GET'
+			'method': 'GET',
+			'headers': {
+				'Content-Type': 'application/json'
+			}
 		};
 		let url = `https://id.twitch.tv/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&scope=${scopes}&state=${state}`;
 

@@ -25,6 +25,8 @@ class Calculator {
     //converts an expression to a Reverse Polish Notation (RPN) format so a calculator can better compute the math problem
     //allows for the calculator function to solve more complex mathematical formulas when entered
     //implementation of Djikstra's Shunting Yard algorithm
+    //@param   infixEq   The equation to be converted in infix (standard) form
+    //return             The equation now in reverse polish notation
     #convertToRPN(infixEq) {
         let output = "";
         let operStack = [];
@@ -129,6 +131,8 @@ class Calculator {
     //calculates a problem using RPN function defined above
     //can handle multiple different sized math problems
     //operators possible: =, -, *, /, %, :, x, ^, !
+    //@param   mathProblem   An equation to be solved in reverse polish notation
+    //@return                The end product of the solved equation
     calculate(mathProblem) {
 
         mathProblem = this.#convertToRPN(mathProblem);
@@ -187,6 +191,9 @@ class Calculator {
         }
     }
 
+    //Calculates a factorial to the number given
+    //@param   cycleNum   The number that we need to calculate the factorial of
+    //@result             The product of the factorial
     #factorial(cycleNum) {
         let answer = 1;
         for (let i = 2; i < cycleNum + 1; ++i) {

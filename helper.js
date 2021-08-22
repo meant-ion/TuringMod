@@ -7,6 +7,8 @@ class Helper {
     constructor() { }
 
     //helper function to tell if a character is an operator that we want
+    //@param   charToCheck   self explanatory
+    //@return                True/False
     isOperator(charToCheck) {
         const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!'];
         for (let i = 0; i < operators.length; ++i) {
@@ -18,6 +20,9 @@ class Helper {
     }
 
     //combines the input into a single string
+    //@param   inputMsg         The message that needs to be combined into one string
+    //@param   needWhiteSpace   Whether the string needs to have spaces between words
+    //@return                   A string made up of all elements of the inputMsg array
     combineInput(inputMsg, needWhiteSpace) {
         let combinedMsg = '';
         for (let i = 0; i < inputMsg.length; ++i) {
@@ -32,6 +37,9 @@ class Helper {
     }
 
     //function to get the time passed from one point to another
+    //@param   startTime   The time and date we are calculating time passed from
+    //@param   needDay     Tell if we need the number of days passed since the start
+    //@return              A message telling how much time has passed since the starting date to the current date
     getTimePassed(startTime, needDay) {
 
         const curTime = new Date();
@@ -48,6 +56,8 @@ class Helper {
     }
 
     //helper function to see if a character is a letter (english only I think)
+    //@param   charToCheck   self explanatory
+    //@return                True/False
     isLetter(charToCheck) { return charToCheck.match(/[a-z]/i); }
 
     //helper function to see if a character is a number

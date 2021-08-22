@@ -19,7 +19,11 @@ class ClipCollector {
 
     //whenever a clip is posted when !startcollect is enabled, it grabs the clip, verifies it's a valid format, 
     //verifies that the clip actually exists, and then stores it in a list of clips for safe keeping
+    //@param   client_id      The ID of the Twitch Helix API client we're using
+    //@param   access_token   The token we use to access the Helix API
+    //@param   url            The URL of the clip we need to get info on/validate as a clip
     async validateAndStoreClipLink(client_id, access_token, url) {
+        //test the clip is in the correct format using the constructed regex
         if (this.#regexp_checker.test(url)) {
             let clip_id = url.substring(24);
             await this.#async_functions.getClipInformation(client_id, access_token, clip_id);

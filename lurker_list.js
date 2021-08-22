@@ -14,6 +14,10 @@ class LurkList {
         this.#lurker_list = [];
     }
 
+    //Adds a lurker to the list of lurkers and records their last message
+    //@param   user   Who we're adding to the list
+    //@param   msg    What the last message they said was
+    //@return         Either a "see ya" message or a message telling them they're already lurking
     addLurker(user, msg) {
         if (this.isLurking(user) == -1) {
             this.#lurker_list.push(new Lurker_Item(user.username, msg));
@@ -24,6 +28,8 @@ class LurkList {
 
     //finds the user in lurker_list if there, removes them from the list, and returns a string containing the amount of time
     //they were gone for. 
+    //@param   user   Who we're removing in the lurker list
+    //@return         Either the last message they said, or a message telling them they never !lurk'd in the first place
     removeLurker(user) {
         let index = this.isLurking(user);//ensures that we know if there's an issue
         if (index != -1) {
@@ -40,6 +46,8 @@ class LurkList {
     }
 
     //find the index of the lurker in the list if present
+    //@param   user   Who we're looking for in the lurker list
+    //return          Either the index of the person in the list, or -1 if they aren't there
     isLurking(user) {
         for (let i = 0; i < this.#lurker_list.length; ++i) {
             if (this.#lurker_list[i].getKey() == user.username) {
@@ -62,23 +70,19 @@ class Lurker_Item {
     #value;
     #msg;
 
+    //@param   username   The person that's going AFK for a bit
+    //@param   msg        What the person last said
     constructor(username, msg) {
         this.#key = username;
         this.#value = new Date();
         this.#msg = this.helper.combineInput(msg, true);
     }
 
-    getKey() {
-        return this.#key;
-    }
+    getKey() { return this.#key; }
 
-    getValue() {
-        return this.#value;
-    }
+    getValue() { return this.#value; }
 
-    getMsg() {
-        return this.#msg;
-    }
+    getMsg() { return this.#msg; }
 
 }
 

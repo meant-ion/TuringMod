@@ -50,6 +50,10 @@ class CommandArray {
 
 	//allows for the mods and the streamer to create a command and then write it to file for safe keeping
 	//currently only allows for message commands, next iteration should allow for moderator commands if possible
+	//@param   user       The name of the chat member that typed in the command
+	//@param   target     The chatroom that the message will be sent into
+	//@param   client     The Twitch chat client we will send the message through
+	//@param   inputMsg   The array of words sent in as a message to the chatroom
 	createAndWriteCommandsToFile(client, target, user, inputMsg) {
 		this.#commandTemplate.creating_mod = user.username;
 		var isInterval = inputMsg[1];
@@ -92,6 +96,11 @@ class CommandArray {
 	}
 
 	//removes a command from the list of custom commands
+	//@param   user         The name of the chat member that typed in the command
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
+	//@param   command      The command that needs to be deleted
+	//@param   isInterval   Tells us if the command that needs to be deleted is one that is called on an interval
 	removeCommand(client, target, user, command, isInterval) {
 		if (this.searchForCommand(command, isInterval) != null) {
 
@@ -126,6 +135,11 @@ class CommandArray {
 	}
 
 	//edits the message of the command
+	//@param   user         The name of the chat member that typed in the command
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
+	//@param   command      The command that needs to be deleted
+	//@param   isInterval   Tells us if the command that needs to be deleted is one that is called on an interval
 	editCommand(client, target, user, inputMsg, isInterval) {
 
 		var isInterval = inputMsg[1];
@@ -142,6 +156,9 @@ class CommandArray {
     }
 
 	//prints out a list of all custom created commands for use
+	//@param   user         The name of the chat member that typed in the command
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
 	postListOfCreatedCommands(client, target, user) {
 		var msg = `@${user.username}: These are the current custom commands available: `;
 
@@ -156,14 +173,20 @@ class CommandArray {
 	}
 
 	//gets a command for the interval message loop with provided index
+	//@param   index   The provided index for getting the message
+	//@return          The message found at the specific index of the commands array
 	getIntervalCommand(index) {
 		return this.#intervalArray[index].msg;
 	}
 
 	//gets length of interval array
+	//@return          The length of the interval commands array
 	getIntervalArrayLength() { return this.#intervalArray.length; }
 
 	//from the commandArray, we search for the requested command. If not found, return null. Else, return the message
+	//@param   command      The command that needs to be deleted
+	//@param   isInterval   Tells us if the command that needs to be deleted is one that is called on an interval
+	//@return               Either the message attached to the given command, or null if the command does not exist
 	searchForCommand(command, isInterval) {
 
 		//checking to make sure that the command is a custom defined one

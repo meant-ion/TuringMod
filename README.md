@@ -56,7 +56,7 @@ COMMANDS:
 	= !suggestionlist: gets a comma separated list of all suggestions made to improve the bot and posts them in chat
 
 	- !followage: returns the amount of time that a user has been following the stream. Currently says it in the chatroom, not whispers. 
-				  Would need to have the bot verified as a bot on Twitch to do so.
+				  Would need to have the bot verified as a bot on Twitch to do so (for whispers).
 				  * Verification currently in progress
 
 	- !lurk: sets a user as a "lurker" where they will be gone for a bit along with holding a messgae for 
@@ -78,6 +78,8 @@ COMMANDS:
 	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
 
 	- !dictrand: get a random word from the Merriam-Webster dictionary along with its function and definition and sends it to chat
+
+	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one and posts them in chat as a message
 
 
 MOD/STREAMER ONLY COMMANDS:
@@ -134,13 +136,9 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	------------------------------------------------------------
 
-	- Edit the comments to be more in line with professional comment standards (@params and all that fun stuff)
-
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
-
-	- add in a feature that will tell the chatroom what has changed when I updtae this bot's GitHub repo (Github API needed)
 
 	- once !changegame is finally working, make a similar command (!changetitle ?) that will edit the stream title too
 			* Maybe edit the tags as well?

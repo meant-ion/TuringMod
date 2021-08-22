@@ -8,11 +8,15 @@ class Dice {
 	client = undefined;
 	helper = new h();
 
+	//@param   c   The Twitch chat client
     constructor(c) {
         this.client = c;
     }
 
     //handles validation, error checking, and calculating what to roll how many times
+	//@param   cmdName   The full command passed in for the roll
+	//@param   user      The user who sent the command in the first place
+	//@param   target    The specific chat room that the command came from
 	async getDiceRoll(cmdName, user, target) {
 		//first things first, we check the command to see if they wanted to roll more than 1 die
 		//copy out the character
@@ -122,6 +126,8 @@ class Dice {
 
 	//simple function that flips a "coin" and returns the side (Heads = 0, Tails = 1)
 	//it's here in the Dice class since it's just a probability function
+	//@param   user      The user who sent the command in the first place
+	//@param   target    The specific chat room that the command came from
 	flipCoin(user, target) {
 		let coinFlip = this.#rollDice(1, 2, '');
 
@@ -137,6 +143,8 @@ class Dice {
 	}
 
 	//like Russian Roulette, but with timeouts instead of actual bullets
+	//@param   user      The user who sent the command in the first place
+	//@param   target    The specific chat room that the command came from
 	takeAChanceAtBeingBanned(user, target) {
 		const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
 		if (willTheyBeBanned >= 990) {
@@ -148,6 +156,10 @@ class Dice {
 	}
 
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
+	//@param   numDice   The number of dice we need to roll
+	//@param   sides     The number of sides the dice have
+	//@param   minRoll   The lowest that the computer can roll 
+	//@return            Either the minRoll if the rolled number is lower, or the rolled amount
 	#rollDice(numDice, sides, minRoll) {
 		const diceCount = parseInt(numDice);//number of times we will roll
 		const sidesCount = parseInt(sides);//number of sides on the die that will be rolled

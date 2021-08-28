@@ -73,9 +73,9 @@ COMMANDS:
 
 	- !who: reiterates the streamer's bio/summary
 
-	- !song: returns the name and artist of the song currently playing on stream through Spotify
+	- !song: returns the name and artist of the song currently playing on stream through Spotify (BENCHED, NOT WORKING)
 
-	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
+	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself (BENCHED, NOT WORKING)
 
 	- !dictrand: get a random word from the Merriam-Webster dictionary along with its function and definition and sends it to chat
 
@@ -148,6 +148,8 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 		- yodaposting: same idea as !post, but response is said like yoda would
 				* API not free, need to actually be making money to use (lol)
+		
+		- !shotgun: grabs 1 - 5 users in chat at random and "bans" (times them out) for no more than 10 seconds
 
 	------------------------------------------------------------
 
@@ -156,6 +158,8 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- get further testing for the calculator, specifically for negative numbers
 
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
+
+	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
 	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
 

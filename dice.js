@@ -2,15 +2,28 @@
 // rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
 const h = require('./helper');
+const fs = require('fs');
+const { ENETUNREACH } = require('constants');
 
 class Dice {
 
 	client = undefined;
 	helper = new h();
+	magic8BallPhrases;
 
 	//@param   c   The Twitch chat client
     constructor(c) {
         this.client = c;
+		this.magic8BallPhrases = [];
+		fs.readFile('./data/8ballsayings.txt', 'utf8', (err, data) => {
+			if (err) { console.error(err); }
+			else {
+				this.magic8BallPhrases = data.split(';');
+				this.magic8BallPhrases.splice(-1);
+				console.log("* Magic 8 Ball phrases loaded in from file!");
+			}
+		});
+		
     }
 
     //handles validation, error checking, and calculating what to roll how many times
@@ -142,12 +155,22 @@ class Dice {
 		this.client.say(target, `@${user.username}: ${side}`);
 	}
 
+	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat
+	//here in the dice class since it's a probability function like flipCoin
+	//@param   user      The user who sent the command in the first place
+	//@param   target    The specific chat room that the command came from
+	magic8Ball(user, target) {
+		let phrase_index = this.#rollDice(1,20,'') - 1;
+		let phrase = this.magic8BallPhrases[phrase_index];
+		this.client.say(target, `@${user.username}: ${phrase}`);
+	}
+
 	//like Russian Roulette, but with timeouts instead of actual bullets
 	//@param   user      The user who sent the command in the first place
 	//@param   target    The specific chat room that the command came from
 	takeAChanceAtBeingBanned(user, target) {
 		const willTheyBeBanned = Math.random() * (1000 - 1) + 1;
-		if (willTheyBeBanned >= 990) {
+		if (willTheyBeBanned >= 999) {
 			this.client.say(target, `How very unfortunate`);
 			this.client.timeout(target, user.username, 10);
 		} else {

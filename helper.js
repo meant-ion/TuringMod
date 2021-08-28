@@ -152,7 +152,7 @@ class Helper {
         } else {
             msg += ` P.M. `;
         }
-        msg += `CDT for the streamer`;
+        msg += `CST for the streamer`;
         client.say(target, msg);
     }
 

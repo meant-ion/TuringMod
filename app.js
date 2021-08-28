@@ -251,13 +251,14 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getUserAcctAge(client_id, outside_token, user, target);
 
-		} else if (cmdName == '!song') {//returns the song and artist playing through Spotify
+		//these two commands benched until I can get Spotify API access unscuffed
+		// } else if (cmdName == '!song') {//returns the song and artist playing through Spotify
 
-			async_functions.getCurrentSongTitleFromSpotify(client, target, user);
+		// 	async_functions.getCurrentSongTitleFromSpotify(client, target, user);
 
-		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
+		// } else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
-			thresholdCalc(target, user);
+		// 	thresholdCalc(target, user);
 
 		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
@@ -278,6 +279,10 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!numrand') {//user wants a fact about a random number
 
 			async_functions.getRandomNumberFact(target);
+
+		} else if (cmdName == '!8ball') {//user wants a magic 8 ball fortune
+
+			dice.magic8Ball(user, target);
 
 		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
@@ -318,7 +323,7 @@ function onMessageHandler(target, user, msg, self) {
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
 				linesCount++;
 				lurkerHasTypedMsg(target, user);
-				writeMsgToFile(user, msg);
+				writeMsgToFile();
 
 			}
 		}
@@ -416,20 +421,18 @@ function postWikiPage(target) {
 	client.say(target, `Saint Isidore is the Patron Saint of the Internet and is why I named this bot: ${s}`);
 }
 
-//function to handle the various non-command messages on chat for storing and using with !shitpost
-function writeMsgToFile(user) {
-	 if (user.username != theStreamer) { //the text was not typed by the streamer, so we store their command
-		 try {
-			//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing
-			if (voiceCrack > vCrackCountAtStart) {
-				//truncate and then write to file to overwrite the old contents
-				fs.truncate('./data/attention.txt', 0, function () {
-					fs.writeFile('./data/attention.txt', voiceCrack.toString(),
-						{ flag: 'a+' }, err => { });
-				});
-			}
-		} catch (err) { console.error(err); }
-	}
+//function to write to file every time the voice crack counter is updated
+function writeMsgToFile() {
+	try {
+		//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing
+		if (voiceCrack > vCrackCountAtStart) {
+			//truncate and then write to file to overwrite the old contents
+			fs.truncate('./data/attention.txt', 0, function () {
+				fs.writeFile('./data/attention.txt', voiceCrack.toString(),
+					{ flag: 'a+' }, err => { });
+			});
+		}
+	} catch (err) { console.error(err); }
 }
 
 //when the bot is connected, we call this function to write in the attention counts to memory

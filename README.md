@@ -88,6 +88,8 @@ COMMANDS:
 
 	- !numrand: gets a fact about a randomly generated number and posts it to chat
 
+	- !8ball: gets a random magic 8ball fortune and delivers it to chat
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -158,8 +160,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- get further testing for the calculator, specifically for negative numbers
 
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
-
-	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
 	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
 

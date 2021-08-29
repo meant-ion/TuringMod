@@ -159,6 +159,8 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- get further testing for the calculator, specifically for negative numbers
 
+	- begin process of transferring the custom commands and their functions along with the !8ball sayings to SQLite and have db be called there
+
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 
 	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)

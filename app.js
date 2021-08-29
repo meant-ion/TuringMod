@@ -144,7 +144,7 @@ function onMessageHandler(target, user, msg, self) {
 			//for mods/streamer to remove a custom command
 		} else if (cmdName == '!removecommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
-			commands_holder.removeCommand(client, target, user, inputMsg[2], inputMsg[1]);
+			commands_holder.removeCommand(client, target, user, inputMsg[2], (inputMsg[1] == true));
 
 			//for mods/streamer to edit a custom command
 		} else if (cmdName == '!editcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
@@ -200,7 +200,7 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
 
 			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +
-				` netis 802.11ax PCIe wireless card, USB Expansion Card, and dedicated audio card.`;
+				` netis 802.11ax PCIe wireless card, USB Expansion Card, and a dedicated audio card.`;
 			client.say(target, `@${user.username}: ` + buildMsg);
 
 			//dumb little command for whenever my voice cracks, which is apparently often
@@ -302,10 +302,9 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-			let msg = commands_holder.searchForCommand(cmdName);
-			if (msg != null) {
+			if (commands_holder.getCustomCommand(client, target, cmdName)) {
 
-				client.say(target, msg);
+				console.log("Custom command executed");
 
 			} else if (collectClips) {//if enabled, check to see if it's a clip
 

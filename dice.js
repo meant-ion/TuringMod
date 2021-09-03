@@ -3,30 +3,15 @@
 
 const h = require('./helper');
 const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
 
 class Dice {
 
 	client = undefined;
 	helper = new h();
-	//magic8BallPhrases;
-	#db;
 
 	//@param   c   The Twitch chat client
     constructor(c) {
         this.client = c;
-		//this.magic8BallPhrases = [];
-		this.#db = new sqlite3.Database('C:/sqlite3/test.db', (err) => {
-			if (err) { console.error(err); }
-		});
-		//fs.readFile('./data/8ballsayings.txt', 'utf8', (err, data) => {
-		//	if (err) { console.error(err); }
-		//	else {
-		//		this.magic8BallPhrases = data.split(';');
-		//		this.magic8BallPhrases.splice(-1);
-		//		console.log("* Magic 8 Ball phrases loaded in from file!");
-		//	}
-		//});
 		
     }
 
@@ -157,32 +142,6 @@ class Dice {
 		}
 
 		this.client.say(target, `@${user.username}: ${side}`);
-	}
-
-	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat
-	//here in the dice class since it's a probability function like flipCoin
-	//@param   user      The user who sent the command in the first place
-	//@param   target    The specific chat room that the command came from
-	magic8Ball(user, target) {
-		let phrase_index = this.#rollDice(1, 20, '');
-
-		let search_sql = `SELECT saying FROM sayings WHERE id = ?;`;
-
-		this.#db.serialize(() => {
-			this.#db.each(search_sql, phrase_index, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row == undefined) {
-					return false;
-				} else {
-					this.client.say(target, `@${user.username}: ${row.saying}`);
-					return true;
-				}
-			});
-			return false;
-		});
-		//let phrase = this.magic8BallPhrases[phrase_index];
-		//this.client.say(target, `@${user.username}: ${phrase}`);
 	}
 
 	//like Russian Roulette, but with timeouts instead of actual bullets

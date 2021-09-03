@@ -141,15 +141,60 @@ class CommandArray {
 
 	//gets a command for the interval message loop with provided index
 	//@param   index   The provided index for getting the message
-	getIntervalCommand(index) {
-		let search_sql = `SELECT msg FROM stdcommands WHERE name = ?;`;
-		this.#db.all(search_sql, [], (err, rows) => {
-			if (err) {
-				console.error(err);
-			} else {
-				return rows[index].msg;
+	getIntervalCommand(index, client) {
+		let search_sql = `SELECT msg FROM intervalcommands;`;
+		 this.#db.all(search_sql, (err, rows) => {
+		 	if (err) {
+		 		console.error(err);
+		 	} else {
+
+				client.say('#pope_pontus', rows[index].msg);
             }
-        })
+         });
+	}
+
+	//resets the index of the command we're getting for the interval messages
+	//@param   index   The index we're checking out
+	//@return          A promise containing the new index
+	async getLengthOfIntervals(index) {
+
+		let length_sql = `SELECT COUNT(*) FROM intervalcommands;`;
+
+		//build the promise and send it out with what we have produced
+		return new Promise((resolve, reject) => {
+
+			this.#db.get(length_sql, (err, row) => {
+
+				if (err) { reject(err); } else {
+
+					if (row['COUNT(*)'] <= index + 1) {
+						resolve(0);
+					} else {
+						resolve(index + 1);
+					}
+
+				}
+
+			});
+		});
+	}
+
+	getAndUpdateVoiceCracks(client, target) {
+
+		let vcrack_sql = `SELECT num FROM voicecracks;`;
+
+		this.#db.get(vcrack_sql, (err, row) => {
+
+			if (err) { console.error(err); } else {
+				let count = row[num];
+				client.say(target, `Streamer's voice has cracked ${count} times.`);
+				let update_sql = `UPDATE voicecracks SET num = ?;`
+				this.#db.run(update_sql, [count + 1], (err, row) => {
+					if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
+				});
+			}
+		})
+
 	}
 
 	//fetches the custom commands stored in the database for posting in the chat room
@@ -177,6 +222,31 @@ class CommandArray {
 		});
 		return false;
     }
+
+	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat
+	//here in the commands array class since it uses the sqlite db just like the rest of this
+	//means that I dont have to have 2 connections to the db open at a time
+	//@param   user      The user who sent the command in the first place
+	//@param   target    The specific chat room that the command came from
+	magic8Ball(client, user, target) {
+		let phrase_index = Math.floor(Math.random() * 20) + 1
+
+		let search_sql = `SELECT saying FROM sayings WHERE id = ?;`;
+
+		this.#db.serialize(() => {
+			this.#db.each(search_sql, phrase_index, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row == undefined) {
+					return false;
+				} else {
+					client.say(target, `@${user.username}: ${row.saying}`);
+					return true;
+				}
+			});
+			return false;
+		});
+	}
 }
 
 module.exports = CommandArray;

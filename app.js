@@ -68,7 +68,7 @@ client.connect();
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
-//setting up the interval for telling people to follow me on Twitch, roughly every 15-20 mins or so
+//setting up the interval for giving people info about the streams every 15-20 mins
 //note to self: when testing this for other channels, turn this function OFF to avoid getting called a shill for my own stuff
 //uncomment when not testing on other's streams
 setInterval(intervalMessages, 600000);
@@ -151,14 +151,6 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.editCommand(client, target, user, inputMsg);
 
-		} else if (cmdName == '!isidore') {//someone wants to know who St. Isidore is
-
-			postWikiPage(target);
-
-		} else if (cmdName == '!follow') {//to be run every so often to let people know to follow me
-
-			followMe();
-
 		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
 			client.say(target, lurk_list.addLurker(user, inputMsg));
@@ -197,26 +189,16 @@ function onMessageHandler(target, user, msg, self) {
 
 			dice.takeAChanceAtBeingBanned(user, target);
 
-		} else if (cmdName == '!build') {//chat member wants to know the streamer's PC specs
-
-			const buildMsg = `AMD Ryzen 5 3600 CPU, B450 Tomahawk mobo, 16 GB DDR4 RAM, EVGA GTX 1080 SC, 2.5TB Storage,` +
-				` netis 802.11ax PCIe wireless card, USB Expansion Card, and a dedicated audio card.`;
-			client.say(target, `@${user.username}: ` + buildMsg);
-
 			//dumb little command for whenever my voice cracks, which is apparently often
 		} else if (cmdName == '!voice') {
 
-			voiceCrack++;
-			client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
+			// voiceCrack++;
+			// client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
+			commands_holder.getAndUpdateVoiceCracks(client, target);
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
 
 			async_functions.getRandWikipediaArticle(user, target);
-
-			//sends a list of commands when the user needs them. Needs to be reworked to not be as garbo
-		} else if (cmdName == '!help') {
-
-			getHelp(target, user);
 
 		} else if (cmdName.substring(0, 5) == '!roll') {//simple dice rolling command. Can do many sided dice, not just a d20 or d6
 
@@ -282,7 +264,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!8ball') {//user wants a magic 8 ball fortune
 
-			dice.magic8Ball(user, target);
+			commands_holder.magic8Ball(client, user, target);
 
 		//commented out until I can get the PATCH requests to go through
 		//} else if (cmdName == '!changegame') {
@@ -293,7 +275,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
 
-			let msg = "@" + user.username + ": !post, !isidore, !follow, !title, !followage, !roulette, !calc, !help, !wikirand," +
+			let msg = "@" + user.username + ": !post, !isidore, !title, !followage, !roulette, !calc, !help, !wikirand," +
 				" !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, " +
 				"!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect," + 
 				" !song, !skipsong, !botlinks, !modperms, !dictrand, !gitchanges, !convert, !pokerand, !numrand. " + "\n" +
@@ -316,7 +298,8 @@ function onMessageHandler(target, user, msg, self) {
 					ClipCollector.validateAndStoreClipLink(client_id, outside_token, possibleClipURL);
 				}
 
-			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true))) {//check to see if the msg is spam
+			//check to see if the msg is spam
+			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true), target, user) && !helper.detectUnicode(inputMsg, target, user)) {
 
 				//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
@@ -336,13 +319,10 @@ function onConnectedHandler(addy, prt) {
 }
 
 //sends out a message every so often, following through a list of possible messages/functions. 
-function intervalMessages() {
-	client.say(theStreamer, commands_holder.getIntervalCommand(callThisFunctionNumber));
-	++callThisFunctionNumber;
+async function intervalMessages() {
+	commands_holder.getIntervalCommand(callThisFunctionNumber, client);
 
-	if (commands_holder.getIntervalArrayLength() <= callThisFunctionNumber) {
-		callThisFunctionNumber = 0;
-    }
+	callThisFunctionNumber = await commands_holder.getLengthOfIntervals(callThisFunctionNumber);
 
 }
 
@@ -403,21 +383,6 @@ function writeSuggestionToFile(inputMsg) {
 	});
 
 	return true;
-}
-
-//sends a help message when command is typed in, with different methods depending on whether or not the asking user is a mod or just a chat memeber
-function getHelp(target, user) {
-	client.say(target, `@${user.username}: A list of commands for me can be found on my GitHub Repo! ` +
-		`https://github.com/meant-ion/TuringMod/blob/master/README.md`);
-}
-
-//posts the wikipedia article for Isidore of Seville when command is input
-function postWikiPage(target) {
-
-	//wikipedia link just for reference
-	const s = `https://en.wikipedia.org/wiki/Isidore_of_Seville`;
-
-	client.say(target, `Saint Isidore is the Patron Saint of the Internet and is why I named this bot: ${s}`);
 }
 
 //function to write to file every time the voice crack counter is updated

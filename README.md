@@ -10,8 +10,6 @@ COMMANDS:
 
 	- !isidore: posts a wikipedia link to Isidore of Seville, patron saint of the Internet, and the namesake of my bot
 
-	- !follow: reminder command to have people in chat to follow the channel. Set up as an automatic posting as well
-
 	- !title: returns the current title of the current stream to the chatroom
 
 	- !game: returns the current category of the stream
@@ -159,7 +157,7 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- get further testing for the calculator, specifically for negative numbers
 
-	- begin process of transferring the custom commands and their functions along with the !8ball sayings to SQLite and have db be called there
+	-  Move in attention.txt's contents over to the DB, and migrate some of the smaller command messages over also
 
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 

@@ -126,7 +126,7 @@ class Post {
 				}
 
 				//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
-				var isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
+				let isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
 
 					if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
 						isPostable = true;

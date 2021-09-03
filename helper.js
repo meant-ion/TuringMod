@@ -90,8 +90,9 @@ class Helper {
     //Eventually, the algorithm used to detect the spam will be more efficient than O(n^2) like it is rn
     //@param   inputMsg   The message that is being read through to detect symbol spam
     //@param   target     The chatroom that the message will be sent into
+    //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
-    detectSymbolSpam(inputMsg, target) {
+    detectSymbolSpam(inputMsg, target, user) {
 
         let symbolCount = 0;
 
@@ -112,6 +113,22 @@ class Helper {
         //if enough are found, remove the message for spam
         if (symbolCount > 15) {
             client.timeout(target, user.username, 10, "No symbol spam in chat please");
+            return true;
+        }
+        return false;
+    }
+
+    //Due to the recent issue on twitch with hate raids, figured that it would be a good idea to make this little thing
+    //detects if the message passed in contains any unicode characters at all. If so (as to protect from hate spam) it deletes the message
+    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@param   target     The chatroom that the message will be sent into
+    //@param   user       The user that typed in the offending message
+    //@return             True or false, depending on if the message was found to be spam
+    detectUnicode(inputMsg, target, user) {
+        let msg =  this.combineInput(inputMsg, true);
+        let regex = /^[\u0000-\u007f]*$/;
+        if (regex.test(msg)) {
+            client.timeout(target, user.username, 20, "Please, english only in this chatroom");
             return true;
         }
         return false;

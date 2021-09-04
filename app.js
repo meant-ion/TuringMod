@@ -192,8 +192,6 @@ function onMessageHandler(target, user, msg, self) {
 			//dumb little command for whenever my voice cracks, which is apparently often
 		} else if (cmdName == '!voice') {
 
-			// voiceCrack++;
-			// client.say(target, `Streamer's voice has cracked ${voiceCrack} times.`);
 			commands_holder.getAndUpdateVoiceCracks(client, target);
 
 		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
@@ -273,15 +271,6 @@ function onMessageHandler(target, user, msg, self) {
 			//	async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
 		    //}
 
-		} else if (cmdName == '!commands') {//user wants to know what commands they have without going to the github page
-
-			let msg = "@" + user.username + ": !post, !isidore, !title, !followage, !roulette, !calc, !help, !wikirand," +
-				" !game, !build, !voice, !so, !roll, !flip, !uptime, !streamertime, !customlist, !suggestion, !lurk, !unlurk, " +
-				"!commands, !schedule, !accountage, !who, !addcommand, !removecommand, !editcommand, !startcollect, !endcollect," + 
-				" !song, !skipsong, !botlinks, !modperms, !dictrand, !gitchanges, !convert, !pokerand, !numrand. " + "\n" +
-				"For specifics on these commands, use !help and follow the link provided. Thank you!";
-			client.say(target, msg);
-
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmdName)) {
@@ -298,23 +287,28 @@ function onMessageHandler(target, user, msg, self) {
 					ClipCollector.validateAndStoreClipLink(client_id, outside_token, possibleClipURL);
 				}
 
-			//check to see if the msg is spam
-			} else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true), target, user) && !helper.detectUnicode(inputMsg, target, user)) {
-
+			} else {
 				//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
 				linesCount++;
 				lurkerHasTypedMsg(target, user);
-				writeMsgToFile();
-
 			}
+			//check to see if the msg is spam
+			// } else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true), target, user) && !helper.detectUnicode(inputMsg, target, user)) {
+
+			// 	//if it isn't, we send the message through the prompt and check for other fun things
+			// 	prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
+			// 	linesCount++;
+			// 	lurkerHasTypedMsg(target, user);
+			// 	writeMsgToFile();
+
+			// }
 		}
 	}
 }
 
 //lets me know that the script has connected to twitch servers for their API
 function onConnectedHandler(addy, prt) {
-	loadVoiceCrack();
 	console.log(`* Connected to ${addy}:${prt}`);
 }
 
@@ -343,8 +337,8 @@ function thresholdCalc(target, user) {
 
 //resets the prompt message and sets the line count down to zero
 function resetPrompt() {
-	linesCount = 0;
-	prompt = "";
+	console.log(linesCount);
+	console.log(prompt);
 }
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
@@ -354,9 +348,8 @@ function generatePost(user, target) {
 	//An overly-large prompt will cause the API to return a 400 error
 	if (prompt.length > 2000) { prompt = prompt.substr(prompt.length - 2000); }
 
-	if (post.generatePost(user, prompt, linesCount, target) == true) {
-		resetPrompt();
-	}
+	post.generatePost(user, prompt, linesCount, target);
+	resetPrompt();
 
 	if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
 }
@@ -383,41 +376,4 @@ function writeSuggestionToFile(inputMsg) {
 	});
 
 	return true;
-}
-
-//function to write to file every time the voice crack counter is updated
-function writeMsgToFile() {
-	try {
-		//check to see if the counts for the !voice command has changed at all. if so, write it to file. Otherwise, do nothing
-		if (voiceCrack > vCrackCountAtStart) {
-			//truncate and then write to file to overwrite the old contents
-			fs.truncate('./data/attention.txt', 0, function () {
-				fs.writeFile('./data/attention.txt', voiceCrack.toString(),
-					{ flag: 'a+' }, err => { });
-			});
-		}
-	} catch (err) { console.error(err); }
-}
-
-//when the bot is connected, we call this function to write in the attention counts to memory
-function loadVoiceCrack() {
-	try {
-		//check to make sure that the file actually exists at the specified path first before we attempt to read it
-		if (fs.existsSync('./data/attention.txt', (exists) => {
-			console.log(exists ? 'Exists' : 'Doesnt Exist');
-		})) {
-			//read in the file to a var for processing
-			const attentionFileContents = fs.readFileSync('./data/attention.txt', 'utf8');
-			//set the counts before anyone increases them
-			//for the beginning counts, if the file had nothing in it, set the starting count at 0
-			if (vCrackCountAtStart.length == 0) {
-				attnCountAtStart = 0;
-			} else {//otherwise, parse the string value from the file as an int
-				attnCountAtStart = parseInt(attentionFileContents);
-			}
-			//now set the editable counts
-			voiceCrack = attnCountAtStart;
-			console.log(`* Voice Crack counts loaded and ready for modification on stream :)`);
-		}
-	} catch (err) { console.error(err); }
 }

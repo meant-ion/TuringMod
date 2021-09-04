@@ -126,7 +126,7 @@ class Helper {
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(inputMsg, target, user) {
         let msg =  this.combineInput(inputMsg, true);
-        let regex = /^[\u0000-\u007f]*$/;
+        let regex = /^[ -~\t\n\r]*$/;
         if (regex.test(msg)) {
             client.timeout(target, user.username, 20, "Please, english only in this chatroom");
             return true;

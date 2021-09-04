@@ -179,6 +179,9 @@ class CommandArray {
 		});
 	}
 
+	//gets and updates the amount of times my voice has cracked on stream
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
 	getAndUpdateVoiceCracks(client, target) {
 
 		let vcrack_sql = `SELECT num FROM voicecracks;`;
@@ -186,11 +189,13 @@ class CommandArray {
 		this.#db.get(vcrack_sql, (err, row) => {
 
 			if (err) { console.error(err); } else {
-				let count = row[num];
+				console.log(row);
+				let count = parseInt(row['num']) + 1;
 				client.say(target, `Streamer's voice has cracked ${count} times.`);
 				let update_sql = `UPDATE voicecracks SET num = ?;`
-				this.#db.run(update_sql, [count + 1], (err, row) => {
-					if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
+				let newCount = count.toString();
+				this.#db.run(update_sql, [newCount], (err, row) => {
+				if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
 				});
 			}
 		})

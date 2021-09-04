@@ -157,8 +157,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- get further testing for the calculator, specifically for negative numbers
 
-	-  Move in attention.txt's contents over to the DB, and migrate some of the smaller command messages over also
-
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 
 	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
@@ -172,7 +170,3 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete
-
-	- ensure that the prompt is reset after a certain constraint is met
-			* a character limit is reached for the channel (2000 character limit, need to test this on bigger channel)
-			* the !post command goes through sucessfully

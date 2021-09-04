@@ -4,7 +4,6 @@
 // the command goes through, or some other file type that can store a link as a hyperlink. 
 // In the future, maybe it will be stored on a personal page for an actual website and handle YT links also
 
-const s = require('./asyncer.js');
 const fs = require('fs');
 
 class ClipCollector {
@@ -14,7 +13,6 @@ class ClipCollector {
 
     constructor() {
         this.#regexp_checker = /^(?:(?:https?|http):\/\/)((clips.twitch.tv\/){1})/;
-        this.#async_functions = new s(null, null);//wont be posting msgs, so no point in having valid client & target room
     }
 
     //whenever a clip is posted when !startcollect is enabled, it grabs the clip, verifies it's a valid format, 
@@ -22,11 +20,11 @@ class ClipCollector {
     //@param   client_id      The ID of the Twitch Helix API client we're using
     //@param   access_token   The token we use to access the Helix API
     //@param   url            The URL of the clip we need to get info on/validate as a clip
-    async validateAndStoreClipLink(client_id, access_token, url) {
+    async validateAndStoreClipLink(async_obj, client_id, url) {
         //test the clip is in the correct format using the constructed regex
         if (this.#regexp_checker.test(url)) {
             let clip_id = url.substring(24);
-            await this.#async_functions.getClipInformation(client_id, access_token, clip_id);
+            await async_obj.getClipInformation(client_id, clip_id);
             console.log("item stored");
         }
     }

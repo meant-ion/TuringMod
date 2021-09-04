@@ -3,7 +3,6 @@
 require('dotenv').config({ path: './.env' });
 
 const fetch = require('node-fetch');
-const axios = require('axios');
 const h = require('./helper.js');
 const fs = require('fs');
 const SpotifyWebApi = require('spotify-web-api-node');
@@ -11,6 +10,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 class AsyncHolder {
 
 	#clip_list;
+	#access_token;
 
 	//@param   c     The bot's Twitch client
 	//@param   c_i   The bot's client ID
@@ -23,19 +23,21 @@ class AsyncHolder {
 		this.helper = new h();
 		this.#clip_list = [];
 		this.spotifyApi = this.#initSpotifyStuff();
+		this.#getClientCredentialsToken(c_i, c_s, s);
 		//this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
     }
 
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
 
+
+
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getFollowAge(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getFollowAge(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		let follower_list = undefined;
 
@@ -50,16 +52,17 @@ class AsyncHolder {
 					}
 				}
 
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getChannelSchedule(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getChannelSchedule(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		let schedule = undefined;
 
@@ -78,30 +81,32 @@ class AsyncHolder {
 					
 				}
 				this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//gets and returns the channel owner's summary/bio
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getChannelSummary(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getChannelSummary(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
 			let description = body.data[0].description;
 			this.client.say(target, `@${user.username}: ${description}`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getStreamUptime(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getStreamUptime(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
 			//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
@@ -114,30 +119,32 @@ class AsyncHolder {
 				this.client.say(target, `@${user.username}: ${timeMsg}`);
             }
 			
-        })
+        }).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
 	}
 
 	//gets and returns the title of the stream
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getStreamTitle(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getStreamTitle(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
 			let streamTitle = body.data[0].title;
 			this.client.say(target, `@${user.username} Title is: ${streamTitle}`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getUserAcctAge(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getUserAcctAge(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
 
@@ -145,16 +152,17 @@ class AsyncHolder {
 			let acctCreateDate = new Date(body.data[0].created_at);
 			let timePassed = this.helper.getTimePassed(acctCreateDate, true);
 			this.client.say(target, `@${user.username}, your account is ${timePassed} old`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getCategory(client_id, access_token, user, target) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getCategory(client_id, user, target) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 
@@ -162,15 +170,16 @@ class AsyncHolder {
 			let streamCategory = body.data[0].game_name;
 			let msg = `@${user.username}: Current category is ${streamCategory}`;
 			this.client.say(target, msg);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
 	//Gets info on a specific clip via its ID and sends that to a list of them
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   clip_id        The ID of the potential clip we want to get info on
-	async getClipInformation(client_id, access_token, clip_id) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async getClipInformation(client_id, clip_id) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
 
@@ -179,6 +188,8 @@ class AsyncHolder {
 				let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
 				this.#clip_list.push(u);
 			}
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});
 	}
 
@@ -187,11 +198,10 @@ class AsyncHolder {
 	//edits the channel category/game to one specified by a moderator
 	//currently benched until I can wrap my mind around getting the correct token for editing a stream from a bot
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@param   user           The name of the chat member that typed in the command
 	//@param   gameName       The name of the category that we wish to change the stream over to
-	async editChannelCategory(client_id, access_token, user, gameName) {
-		const data = this.#createTwitchDataHeader(client_id, access_token);
+	async editChannelCategory(client_id, user, gameName) {
+		const data = this.#createTwitchDataHeader(client_id);
 
 		gameName = gameName.slice(1);
 		gameName = gameName.replace(/&/g, "%26");
@@ -207,6 +217,9 @@ class AsyncHolder {
 		await fetch(gameIdURL, data).then(result => result.json()).then(body => {
 			gameID = body.data[0].id;
 			editChannelURL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+			return;
 		});
 
 		//now that we have the game id, we can make the patch request and go from there
@@ -239,6 +252,8 @@ class AsyncHolder {
 			}
 			console.log(res);
 			console.log(responseStatus);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
 		});	
 	}
 
@@ -299,16 +314,18 @@ class AsyncHolder {
 	//@param   amt               The amount of currency we're converting from the starting currency to the target
 	async getCurrencyExchangeRate(user, target, start_currency, target_currency, amt) {
 		const start_abbrev = start_currency.toUpperCase();
+		const target_abbrev = target_currency.toUpperCase();
 		const currency_url = `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_RATES_API_KEY}/latest/${start_abbrev}`;
 
 		//get the rates from the api and then do the conversion by multiplication
-		try {
-			const response = await axios.get(currency_url);
-			const target_abbrev = target_currency.toUpperCase();
-			const rate = Number(response.data.conversion_rates[target_abbrev]);
+		await fetch(currency_url).then(result => result.json()).then(body => {
+			const rate = Number(body.conversion_rates[target_abbrev]);
 			let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate)} ${target_abbrev}`;
 			this.client.say(target, msg);
-		} catch (err) { console.error(err); }
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
+
 	}
 
 	//gets a random wikipedia article from the wikimedia API and delivers it to chat
@@ -316,76 +333,88 @@ class AsyncHolder {
 	//@param   target   The chatroom that the message will be sent into
 	async getRandWikipediaArticle(user, target) {
 
-		const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
+		const wiki_url = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
 
-		try {
-			const response = await axios.get(wikiUrl);
-			const pageTitle = response.data.query.random[0].title.replace(/ /g, "_");
-			const wikiPageURL = "https://en.wikipedia.org/wiki/" + pageTitle;
-			this.client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wikiPageURL}`);
-		} catch (err) {
-			console.error(err);
-		}
+		await fetch(wiki_url).then(result => result.json()).then(body => {
+			const page_title = body.query.random[0].title.replace(/ /g, "_");
+			const wiki_page_url = "https://en.wikipedia.org/wiki/" + page_title;
+			this.client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wiki_page_url}`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
+
 	}
 
 	//Function that gathers data about the changes from this bot's GitHub repo and sends it to chat
 	//@param   target   The chatroom that the message will be sent in to
 	async getGithubRepoInfo(target) {
 		const github_url = 'https://api.github.com/repos/meant-ion/TuringMod/commits';
-		try {
-			//get the info that we need to do these calculations
-			const response = await axios.get(github_url);
-			const current_repo_info = await axios.get(response.data[0].url);
-			const last_repo_info = await axios.get(response.data[1].url);//the previous commit before the current one
-			const current_repo_stats = current_repo_info.data.stats;
-			const last_repo_stats = last_repo_info.data.stats;
+		let current_repo_info, last_repo_info = undefined;//the URLS for the repos we need
+		let current_repo_stats, last_repo_stats = undefined;//the info that the repos have
 
-			//set up the arrays for composing the message
-			let indicators = ["", "", ""];
-			let percentages_array = [0, 0, 0];
-			let current_array = this.helper.getGitStatsArray(current_repo_stats);
-			let last_array = this.helper.getGitStatsArray(last_repo_stats);
+		//fetch the statistics we need from github via its web API
+		await fetch(github_url).then(result => result.json()).then(body => {
+			current_repo_info = body[0].url;
+			last_repo_info = body[1].url;
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+			return;
+		});
 
-			//going through each item in the current_array and last_array, calculate the % change and push to percentages_array
-			for (let i = 0; i < percentages_array.length; ++i) {
+		await fetch(current_repo_info).then(result => result.json()).then(body => { current_repo_stats = body.stats; }).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+			return;
+		});
 
-				let current_val = Number(current_array[i]);
-				let last_val = Number(last_array[i]);
-				let temp_percent = 0;
-				let temp_indic = "";
+		await fetch(last_repo_info).then(result => result.json()).then(body => { last_repo_stats = body.stats; }).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+			return;
+		});
 
-				if (current_val > last_val) {//more changes on current repo than last
+		//set up what's gonna hold our data in place
+		let indicators = ["", "", ""];
+		let percentages_array = [0, 0, 0];
+		let current_array = this.helper.getGitStatsArray(current_repo_stats);
+		let last_array = this.helper.getGitStatsArray(last_repo_stats);
 
-					temp_indic = "up";
-					temp_percent = this.helper.roundToTwoDecimals((current_val / last_val) * 100);
+		//going through each item in the current_array and last_array, calculate the % change and push to percentages_array
+		for (let i = 0; i < percentages_array.length; ++i) {
 
-				} else if (current_val < last_val) {//more changes on last repo than current
+			let current_val = Number(current_array[i]);
+			let last_val = Number(last_array[i]);
+			let temp_percent = 0;
+			let temp_indic = "";
 
-					temp_indic = "down";
-					temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100);
+			if (current_val > last_val) {//more changes on current repo than last
 
-				} else {//no change in amount of changes for both repos
+				temp_indic = "up";
+				temp_percent = this.helper.roundToTwoDecimals((current_val / last_val) * 100);
 
-					temp_indic = "with no change";
+			} else if (current_val < last_val) {//more changes on last repo than current
 
-				}
+				temp_indic = "down";
+				temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100);
 
-				indicators[i] = temp_indic;
-				percentages_array[i] = temp_percent;
+			} else {//no change in amount of changes for both repos
+
+				temp_indic = "with no change";
 
 			}
 
-			//now we make the abomination of a message and send it out to the chatroom
-			let message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
-					+ `(${percentages_array[0]}% difference). ` +
-					`Of the current total, ${current_array[1]} were additions (${indicators[1]} from last repo's ${last_array[1]} ` 
-					+ `(${percentages_array[1]}% difference))` + 
-					` and ${current_array[2]} were deletions (${indicators[2]} from last repo's ${last_array[2]} ` 
-					+ `(${percentages_array[2]}% difference))`;
+			indicators[i] = temp_indic;
+			percentages_array[i] = temp_percent;
 
-			this.client.say(target, message);
+		}
 
-		} catch (err) { console.error(err); }
+		//now we make the abomination of a message and send it out to the chatroom
+		let message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
+				+ `(${percentages_array[0]}% difference). ` +
+				`Of the current total, ${current_array[1]} were additions (${indicators[1]} from last repo's ${last_array[1]} ` 
+				+ `(${percentages_array[1]}% difference))` + 
+				` and ${current_array[2]} were deletions (${indicators[2]} from last repo's ${last_array[2]} ` 
+				+ `(${percentages_array[2]}% difference))`;
+
+		this.client.say(target, message);
 	}
 
 	//gets a random pokemon from the list of all pokemon and returns its flavor text
@@ -394,19 +423,14 @@ class AsyncHolder {
 		//get our requesting URL and its headers in a row and go from there
 		//As of 8/22/2021, according to Bulbapedia, there are 898 separate entries for pokemon for the "National Pokedex"
 		let pokemon_id = Math.floor(Math.random() * 898) + 1;
+		const pokemon_url = `https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`;
+		let en_array = ["", "", ""];
 
-		try {
-
-			//get the response from the pokemon API
-			const response = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`);
-			
-			//holds the english name, genus, and flavor text of the random pokemon
-			let en_array = ["", "", ""];
-
+		await fetch(pokemon_url).then(result => result.json()).then(body => {
 			//arrays of all the entries in various languages for the pokemon's data
-			const pokemon_name_array = response.data.names;
-			const flavor_text_array = response.data.flavor_text_entries;
-			const genus_array = response.data.genera;
+			const pokemon_name_array = body.names;
+			const flavor_text_array = body.flavor_text_entries;
+			const genus_array = body.genera;
 
 			//now, we search through the entries for the correct (read: in english) versions of them
 			flavor_text_array.forEach(item => {
@@ -426,8 +450,10 @@ class AsyncHolder {
 			});
 			let msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
 			this.client.say(target, msg);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
 
-		} catch (err) { console.error(err); }
 	}
 
 	//gets a fact about a random number, either of trivia, math, a date, or a year
@@ -436,17 +462,16 @@ class AsyncHolder {
 
 		//from the list below, get a random type for us to get info on and paste it to url
 		const types_array = ["trivia", "math", "date", "year"];
-		let type_index = Math.floor(Math.random() * types_array.length);
 
-		const number_url = `http://numbersapi.com/random/${types_array[type_index]}?notfound=floor`;
+		const number_url = `http://numbersapi.com/random/${types_array[Math.floor(Math.random() * types_array.length)]}?notfound=floor`;
 
 		//now just get the data and post it, this API isn't terribly complex
-		try {
+		await fetch(number_url).then(result => result.text()).then(body => {
+			this.client.say(target, body);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
 
-			const response = await axios.get(number_url);
-			this.client.say(target, response.data);
-
-		} catch (err) { console.error(err); }
 	}
 
 	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
@@ -458,59 +483,66 @@ class AsyncHolder {
 
 		//we can't get a random word through the dictionary API, so we get it through a different, free API
 		const randomWordURL = `https://random-words-api.herokuapp.com/w?n=1`;
+		let dictionary_url = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
+		let word = "";
 
-		let grAbbrev = "";//the abbreviation of the grammatical function of the word
+		let gr_abbrev = "";//the abbreviation of the grammatical function of the word
 
-		try {
-			//get the word, and then use it to get the other parts of the message from Merriam-Webster
-			const wordResponse = await axios.get(randomWordURL);
-			const word = wordResponse.data[0];
-			const dictionaryURL = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${merrWebAPIKey}`;
-			const response = await axios.get(dictionaryURL);
-			const definition = response.data[0].shortdef[0];
-			const grammarFunction = response.data[0].fl;
+		//get the random word first for us to get access to the definition of it
+		await fetch(randomWordURL).then(result => result.json()).then(body => {
+			word = body[0];
+			dictionary_url += `${word}?key=${merrWebAPIKey}`;
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+			return;
+		});
 
-			//now we get the abbreviation of the grammar function to shorten the chat message
-			switch (grammarFunction) {
-				case "verb":
-					grAbbrev = "v";
-					break;
-				case "noun":
-					grAbbrev = "n";
-					break;
-				case "adjective":
-					grAbbrev = "adj";
-					break;
-				case "adverb":
-					grAbbrev = "adv";
-					break;
-				case "pronoun":
-					grAbbrev = "prn";
-					break;
-				case "trademark":
-					grAbbrev = "�";
-					break;
-				case "abbreviation":
-					grAbbrev = "abbrev";
-					break;
-				case "preposition":
-					grAbbrev = "prep";
-					break;
-				case "conjunction":
-					grAbbrev = "conj";
-					break;
-				case "interjection":
-					grAbbrev = "intj";
-					break;
-				default://need to see what pops out through here to get the abbreviaiton correct for this
-					grAbbrev == grammarFunction;
-					break;
-			}
+		//now we get the data on the word
+		await fetch(dictionary_url).then(result => result.json()).then(body => {
 
-			this.client.say(target, `@${user.username}: ${word}: ${grAbbrev}; ${definition}`);
+			const definition = body[0].shortdef[0];
+			const grammar_function = body[0].fl;
 
-		} catch (err) { console.error(err); }
-
+		//now we get the abbreviation of the grammar function to shorten the chat message
+		 	switch (grammar_function) {
+		 		case "verb":
+		 			gr_abbrev = "v";
+		 			break;
+		 		case "noun":
+					gr_abbrev = "n";
+		 			break;
+		 		case "adjective":
+					gr_abbrev = "adj";
+		 			break;
+		 		case "adverb":
+					gr_abbrev = "adv";
+					break;
+		 		case "pronoun":
+					gr_abbrev = "prn";
+		 			break;
+		 		case "trademark":
+					gr_abbrev = "�";
+		 			break;
+		 		case "abbreviation":
+		 			grAbbrev = "abbrev";
+		 			break;
+		 		case "preposition":
+					gr_abbrev = "prep";
+		 			break;
+		 		case "conjunction":
+					gr_abbrev = "conj";
+		 			break;
+		 		case "interjection":
+					gr_abbrev = "intj";
+		 			break;
+		 		default://need to see what pops out through here to get the abbreviaiton correct for this
+				 gr_abbrev == grammar_function;
+					break;
+		 	}
+			 this.client.say(target, `@${user.username}: ${word}: ${gr_abbrev}; ${definition}`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		});
     }
 
 //---------------------------------------------------------------------------------------------------------------
@@ -519,16 +551,41 @@ class AsyncHolder {
 	//simple helper function for setting up a basic Helix API header using provided values
 	//made so I have to do less typing/make less redundant code
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
-	//@param   access_token   The bot's access token so its requests are valid
 	//@returns                A header object in the correct format for accessing the Helix API
-	#createTwitchDataHeader(client_id, access_token) {
+	#createTwitchDataHeader(client_id) {
 		return {
 			'method': 'GET',
 			'headers': {
 				'client-id': `${client_id}`,
-				'Authorization': `Bearer ${access_token}`
+				'Authorization': `Bearer ${this.#access_token}`
 			}
 		};
+	}
+
+	//Generates a client credentials token for use with Twitch's Helix API
+	//Note: this type of token is READ-ONLY, and cannot be used to edit any information
+	//will most likely be replaced with a generator that makes an oauth credentials token in the future
+	//@param   client_id       The bot's Twitch ID, so we can get to the API easier
+	//@param   client_secret   The bot's Twitch password so it can get a token
+	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
+	async #getClientCredentialsToken(client_id, client_secret, scope) {
+		const twitch_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&grant_type=client_credentials&scope=${scope}`;
+		await fetch(twitch_url, { method: 'POST' }).then(result  => result.json()).then(body => {
+			//outside_token = body.access_token;
+			console.log(`* Async Client Credentials Token Generated for Helix API`);
+			this.#access_token = body.access_token;
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, "#pope_pontus");
+		});
+	}
+
+
+	//simple helper for generating an error so I don't have to type as much
+	//@param   err      The error that has been generated
+	//@param   target   The name of the chatroom we are posting to
+	#generateAPIErrorResponse(err, target) {
+		this.client.say(target, "Error: API currently not responding");
+		console.error(err);
 	}
 
 	//simple function that returns if the language of item is english
@@ -558,8 +615,10 @@ class AsyncHolder {
 
 		console.log(url);
 
-		await fetch(url, data).then(result => result.json()).then(body => {
+		await fetch(url, data).then(result => result.text()).then(body => {
 			console.log(body);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, "pope_pontus");
 		});
 
 		let code = process.env.TWITCH_CODE;
@@ -571,6 +630,8 @@ class AsyncHolder {
 
 		await fetch(post_url, post_data).then(result => result.json()).then(body => {
 			console.log(body);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, "pope_pontus");
 		});
     }
 

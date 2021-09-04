@@ -2,7 +2,6 @@
 // rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
 const h = require('./helper');
-const fs = require('fs');
 
 class Dice {
 

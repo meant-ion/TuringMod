@@ -1,7 +1,7 @@
 //file that holds the post generating class; moved from asyncer.js to help clean up the code and make it easier
 //to use this separately if necessary
 
-const got = require('got');
+const fetch = require('node-fetch');
 //using the readline-sync library in order to control if the message can be posted or not via the console. NEEDS TO BE SYNC
 const readline = require('readline-sync');
 
@@ -35,122 +35,129 @@ class Post {
 			const gen_url = 'https://api.openai.com/v1/engines/davinci/completions';
 			const testing_url = 'https://api.openai.com/v1/engines/content-filter-alpha-c4/completions';
 
-			//we are getting access to the model through simple https requests, so we will use the Got library to do so
-			try {
-				//set up the parameters for the model, which will be:
-				//  - prompt: input text (so just the logs from the chat)
-				//  - max_tokens: how long the response is (1 token = ~4 characters)
-				//  - temperature: the level of creative freedom for responses
-				//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
-				//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
-				//  - stop: what the API will stop generation when it sees these (punctuation for this one)
-				//  - logprobs: many functions, use it here to get a list of all tokens
-				const content_params = {
-					"prompt": prompt,
-					"max_tokens": 80,
-					"temperature": 0.7,
-					"frequency_penalty": 0.3,
-					"presence_penalty": 0.3,
-					"stop": ["!", "?", ".", "\n"],
-					"logprobs": 10
-				};
+			//set up the parameters for the model, which will be:
+			//  - prompt: input text (so just the logs from the chat)
+			//  - max_tokens: how long the response is (1 token = ~4 characters)
+			//  - temperature: the level of creative freedom for responses
+			//  - frequency_penalty: how much effort the model will have in not repeating itself (0 - 1)
+			//  - presence_penalty: the effort the model will make for intro-ing new topics (0 - 1)
+			//  - stop: what the API will stop generation when it sees these (punctuation for this one)
+			//  - logprobs: many functions, use it here to get a list of all tokens
+			const content_params = {
+				"prompt": prompt,
+				"max_tokens": 80,
+				"temperature": 0.7,
+				"frequency_penalty": 0.3,
+				"presence_penalty": 0.3,
+				"stop": ["!", "?", ".", "\n"],
+				"logprobs": 10
+			};
 
-				//the headers, which is effectively the API key for GPT-3 to be sent for model access
-				const headers = {
-					'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-					'Content-Type': 'application/json',
-				};
+			//the headers, which is effectively the API key for GPT-3 to be sent for model access
+			const headers = {
+				'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+				'Content-Type': 'application/json',
+			};
 
-				let output_text = await got.post(gen_url, { json: content_params, headers: headers }).json();
+			let output_text = "";
+			let tested_output = "";
+			let token_list = undefined;
 
-				//now, we construct the vars necessary to test the response for naughtiness
-
-				const toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
-
-				let token_list = output_text.choices[0].logprobs.tokens;//list of all tokens generated from original prompt
-
-				//how we will call the content filter
-				let testing_params = {
-					"prompt": "<|endoftext|>" + token_list[0] + "\n--\nLabel:",
-					"max_tokens": 1,
-					"temperature": 0.0,
-					"top_p": 1,
-					"frequency_penalty": 0.3,
-					"presence_penalty": 0.3,
-					"logprobs": 10
-				};
-
-				let tested_output = "";
-
-				//loop through each token and see if we can include it in the final output
-				for (let i = 0; i < token_list.length; ++i) {
-					//get the rating of the token from the content filter engine
-					let probs_output = await got.post(testing_url, { json: testing_params, headers: headers }).json();
-					let output_label = probs_output.choices[0].text;
-
-					//if the output label is 2 (meaning a risky output), we test it to confirm a high level of 
-					//confidence in the rating and substitute the token as needed
-					if (output_label == "2") {
-						let logprobs = probs_output.choices[0].logprobs.top_logprobs[0];
-
-						if (logprobs["2"] < toxic_threshold) {
-							let logprob_0 = logprobs || "0";
-							let logprob_1 = logprobs || "1";
-
-							if ((logprob_0 != null) && (logprob_1 != null)) {
-								if (logprob_0 >= logprob_1) {
-									output_label = "0";
-								} else {
-									output_label = "1";
-								}
-							} else if (logprob_0 != null) {
-								output_label = "0";
-							} else if (logprob_1 != null) {
-								output_label = "1";
-							}
-						}
-					}
-
-					//if the output is not 0, 1, or 2, we set it as 2 for safety
-					if ((output_label != "0") && (output_label != "1") && (output_label != "2")) {
-						output_label = "2";
-					}
-
-					//if the token has been proven to not fall into a bad area/level of toxicity, 
-					//we add it to the output text and send that out for approval for the bot's administrator
-					if (output_label != "2") {
-						tested_output += token_list[i];
-					}
-
-					testing_params.prompt = "<|endoftext|>" + token_list[i] + "\n--\nLabel:";
-				}
-
-				//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
-				let isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
-
-					if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
-						isPostable = true;
-					} else {
-						console.log("Post will be discarded then. Thank you!");
-						isPostable = false;
-					}
-
-					rl.close();
+			await fetch(gen_url, { method: 'POST', headers: headers, body: JSON.stringify(content_params)})
+				.then(result => result.json()).then(body => {
+					output_text = body.choices[0].text;
+					token_list = body.choices[0].logprobs.tokens;
+				}).catch(err => {
+					this.client.say(target, `Error in text generation`);
+					console.error(err);
+					return false;
 				});
 
-				//now, post the message after approval by the bot's admin
-				if (isPostable == "no") {
-					this.client.say(target, `@${user.username}: bot response rejected by bot admin`);
-					return false;
+			const toxic_threshold = -0.355;//probability that a "2" is real or discarded as false pos
+
+			//how we will call the content filter
+			let testing_params = {
+				"prompt": "<|endoftext|>" + token_list[0] + "\n--\nLabel:",
+				"max_tokens": 1,
+				"temperature": 0.0,
+				"top_p": 1,
+				"frequency_penalty": 0.3,
+				"presence_penalty": 0.3,
+		 		"logprobs": 10
+		 	};
+
+			//loop through each token and see if we can include it in the final output
+		 	for (let i = 0; i < token_list.length; ++i) {
+				let output_label = "";
+				let probs_output = undefined;
+		 		//get the rating of the token from the content filter engine
+				await fetch(testing_url, { method: 'POST', headers: headers, body: JSON.stringify(testing_params)})
+					.then(result => result.json()).then(body => {
+						probs_output = body;
+						output_label = body.choices[0].text;
+					}).catch(err => {
+						this.client.say(target, `Error in text generation`);
+						console.error(err);
+						return false;
+					});
+
+		 		//if the output label is 2 (meaning a risky output), we test it to confirm a high level of 
+		 		//confidence in the rating and substitute the token as needed
+		 		if (output_label == "2") {
+					let logprobs = probs_output.choices[0].logprobs.top_logprobs[0];
+
+					if (logprobs["2"] < toxic_threshold) {
+						let logprob_0 = logprobs || "0";
+		 				let logprob_1 = logprobs || "1";
+
+					if ((logprob_0 != null) && (logprob_1 != null)) {
+	 					if (logprob_0 >= logprob_1) {
+								output_label = "0";
+							} else {
+								output_label = "1";
+							}
+						} else if (logprob_0 != null) {
+							output_label = "0";
+						} else if (logprob_1 != null) {
+							output_label = "1";
+						}
+					}
+		 		}
+
+		 		//if the output is not 0, 1, or 2, we set it as 2 for safety
+		 		if ((output_label != "0") && (output_label != "1") && (output_label != "2")) {
+		 			output_label = "2";
+		 		}
+
+		 		//if the token has been proven to not fall into a bad area/level of toxicity, 
+		 		//we add it to the output text and send that out for approval for the bot's administrator
+		 		if (output_label != "2") {
+		 			tested_output += token_list[i];
+		 		}
+
+				testing_params.prompt = "<|endoftext|>" + token_list[i] + "\n--\nLabel:";
+		 	}
+
+			//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
+			let isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
+
+				if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
+					isPostable = true;
 				} else {
-					this.client.say(target, `@${user.username}: MrDestructoid ${tested_output}`);
-					return true;
+					console.log("Post will be discarded then. Thank you!");
+					isPostable = false;
 				}
 
-			} catch (err) {//in case of a screwup, post an error message to chat and print error
-				this.client.say(target, `Error in text generation`);
-				console.error(err);
+				rl.close();
+		 	});
+
+			//now, post the message after approval by the bot's admin
+			if (isPostable == "no") {
+				this.client.say(target, `@${user.username}: bot response rejected by bot admin`);
 				return false;
+			} else {
+				this.client.say(target, `@${user.username}: MrDestructoid ${tested_output}`);
+				return true;
 			}
 		}
 		//there weren't enough comments to generate a post

@@ -2,10 +2,9 @@ require('dotenv').config({ path: './.env' });
 
 const tmi = require('tmi.js');
 const fs = require('fs');
-const Twitch = require('simple-twitch-api');
 const calculator = require('./calculator.js');
 const h = require('./helper');
-const loader = require('./command_loader.js');
+const loader = require('./sqlite_db.js');
 const lrk = require('./lurker_list.js');
 const AsyncHolder = require('./asyncer.js');
 const dicee = require('./dice.js');
@@ -34,25 +33,10 @@ const session_secret = process.env.SESSION_SECRET;
 
 const theStreamer = opts.channels[0];
 
-let outside_token = undefined;
-
-//get access to the Helix API for twitch and get all wanted chunks of info for it too
-Twitch.getToken(client_id, client_secret, scope).then(async result => {
-	var access_token = result.access_token;
-
-	outside_token = access_token;
-
-	console.log(`* Token generated for Helix API`);
-});
-
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
 let linesCount = 0;
 let prompt = "";
-
-//vars for the !voice command
-let vCrackCountAtStart = 0;
-let voiceCrack = 0;
 
 //what we set when we want to collect clips to be seen later
 let collectClips = false;
@@ -165,7 +149,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!followage') {//user wants to know how long they've followed the stream
 
-			async_functions.getFollowAge(client_id, outside_token, user, target);
+			async_functions.getFollowAge(client_id, user, target);
 
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
@@ -179,11 +163,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
-			async_functions.getStreamTitle(client_id, outside_token, user, target);
+			async_functions.getStreamTitle(client_id, user, target);
 
 		} else if (cmdName == '!game') {//tells user what category stream is under
 
-			async_functions.getCategory(client_id, outside_token, user, target);
+			async_functions.getCategory(client_id, user, target);
 
 		} else if (cmdName == '!roulette' && isModerator) {//allows chat member to take a chance at being timed out
 
@@ -208,7 +192,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
-			async_functions.getStreamUptime(client_id, outside_token, user, target);
+			async_functions.getStreamUptime(client_id, user, target);
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
 
@@ -221,15 +205,15 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!schedule') {//returns a link to the stream schedule
 
-			async_functions.getChannelSchedule(client_id, outside_token, user, target);
+			async_functions.getChannelSchedule(client_id, user, target);
 
 		} else if (cmdName == '!who') {//returns the bio of the streamer
 
-			async_functions.getChannelSummary(client_id, outside_token, user, target);
+			async_functions.getChannelSummary(client_id, user, target);
 
 		} else if (cmdName == '!accountage') {//returns the age of the account asking
 
-			async_functions.getUserAcctAge(client_id, outside_token, user, target);
+			async_functions.getUserAcctAge(client_id, user, target);
 
 		//these two commands benched until I can get Spotify API access unscuffed
 		// } else if (cmdName == '!song') {//returns the song and artist playing through Spotify
@@ -284,7 +268,7 @@ function onMessageHandler(target, user, msg, self) {
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
-					ClipCollector.validateAndStoreClipLink(client_id, outside_token, possibleClipURL);
+					ClipCollector.validateAndStoreClipLink(async_functions, client_id, possibleClipURL);
 				}
 
 			} else {
@@ -293,16 +277,6 @@ function onMessageHandler(target, user, msg, self) {
 				linesCount++;
 				lurkerHasTypedMsg(target, user);
 			}
-			//check to see if the msg is spam
-			// } else if (!helper.detectSymbolSpam(helper.combineInput(inputMsg, true), target, user) && !helper.detectUnicode(inputMsg, target, user)) {
-
-			// 	//if it isn't, we send the message through the prompt and check for other fun things
-			// 	prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
-			// 	linesCount++;
-			// 	lurkerHasTypedMsg(target, user);
-			// 	writeMsgToFile();
-
-			// }
 		}
 	}
 }
@@ -315,7 +289,6 @@ function onConnectedHandler(addy, prt) {
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
 	commands_holder.getIntervalCommand(callThisFunctionNumber, client);
-
 	callThisFunctionNumber = await commands_holder.getLengthOfIntervals(callThisFunctionNumber);
 
 }
@@ -337,8 +310,8 @@ function thresholdCalc(target, user) {
 
 //resets the prompt message and sets the line count down to zero
 function resetPrompt() {
-	console.log(linesCount);
-	console.log(prompt);
+	linesCount = 0;
+	prompt = "";
 }
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0

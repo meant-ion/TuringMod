@@ -147,7 +147,7 @@ class CommandArray {
 		 	if (err) {
 		 		console.error(err);
 		 	} else {
-
+				//just using the hard-coded target channel here since this version of the bot will only be used on this channel
 				client.say('#pope_pontus', rows[index].msg);
             }
          });
@@ -167,6 +167,7 @@ class CommandArray {
 
 				if (err) { reject(err); } else {
 
+					//send out either 0 if we reach the end of the entries in the DB, or the index + 1 otherwise
 					if (row['COUNT(*)'] <= index + 1) {
 						resolve(0);
 					} else {
@@ -186,6 +187,7 @@ class CommandArray {
 
 		let vcrack_sql = `SELECT num FROM voicecracks;`;
 
+		//get the current count and push it out to the chat room
 		this.#db.get(vcrack_sql, (err, row) => {
 
 			if (err) { console.error(err); } else {
@@ -193,9 +195,10 @@ class CommandArray {
 				let count = parseInt(row['num']) + 1;
 				client.say(target, `Streamer's voice has cracked ${count} times.`);
 				let update_sql = `UPDATE voicecracks SET num = ?;`
-				let newCount = count.toString();
-				this.#db.run(update_sql, [newCount], (err, row) => {
-				if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
+
+				//now we update the count by 1 and push that new count to the DB
+				this.#db.run(update_sql, [count.toString()], (err, row) => {
+					if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
 				});
 			}
 		})

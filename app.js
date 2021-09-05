@@ -248,12 +248,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.magic8Ball(client, user, target);
 
-		//commented out until I can get the PATCH requests to go through
-		//} else if (cmdName == '!changegame') {
+		} else if (cmdName == '!changegame') {//moderator/streamer wishes to change the category of the stream
 
-			//if (helper.checkIfModOrStreamer(user, theStreamer)) {
-			//	async_functions.editChannelCategory(client_id, outside_token, user, helper.combineInput(inputMsg, true));
-		    //}
+			if (helper.checkIfModOrStreamer(user, theStreamer)) {
+				async_functions.editChannelCategory(client_id, user, helper.combineInput(inputMsg, true), target);
+		    }
 
 		} else {
 			//check to see if the message is a custom command

@@ -6,6 +6,9 @@ const fetch = require('node-fetch');
 const h = require('./helper.js');
 const fs = require('fs');
 const SpotifyWebApi = require('spotify-web-api-node');
+const http = require('http');
+const url = require('url');
+const open = require('open');
 
 class AsyncHolder {
 
@@ -23,8 +26,7 @@ class AsyncHolder {
 		this.helper = new h();
 		this.#clip_list = [];
 		this.spotifyApi = this.#initSpotifyStuff();
-		this.#getClientCredentialsToken(c_i, c_s, s);
-		//this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
+		this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
     }
 
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
@@ -132,6 +134,10 @@ class AsyncHolder {
 		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+			// if (body.status == 400 || body.status == 401) {
+
+			// }
+			console.log(body);
 			let streamTitle = body.data[0].title;
 			this.client.say(target, `@${user.username} Title is: ${streamTitle}`);
 		}).catch(err => {
@@ -200,7 +206,7 @@ class AsyncHolder {
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   gameName       The name of the category that we wish to change the stream over to
-	async editChannelCategory(client_id, user, gameName) {
+	async editChannelCategory(client_id, user, gameName, target) {
 		const data = this.#createTwitchDataHeader(client_id);
 
 		gameName = gameName.slice(1);
@@ -229,7 +235,7 @@ class AsyncHolder {
 		const editData = {
 			'method': 'PATCH',
 			'headers': {
-				'Authorization': `Bearer ${access_token}`,
+				'Authorization': `Bearer ${this.#access_token}`,
 				'Client-Id': `${client_id}`,
 				'Content-Type': 'application/json'
 			},
@@ -242,16 +248,8 @@ class AsyncHolder {
 
 		//send out the info and edit the channel's category
 		//TODO: get this to not 401 me whenever I try to edit my own channel
-		await fetch(editChannelURL, editData).then((result) => {
-			responseStatus = result.status;
-			res = result;
-			return result.json();
-		}).then(body => {
-			if (responseStatus == "204") {
-				console.log("successfully updated category");
-			}
-			console.log(res);
-			console.log(responseStatus);
+		await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
+			console.log("successfully updated category");
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
 		});	
@@ -562,23 +560,6 @@ class AsyncHolder {
 		};
 	}
 
-	//Generates a client credentials token for use with Twitch's Helix API
-	//Note: this type of token is READ-ONLY, and cannot be used to edit any information
-	//will most likely be replaced with a generator that makes an oauth credentials token in the future
-	//@param   client_id       The bot's Twitch ID, so we can get to the API easier
-	//@param   client_secret   The bot's Twitch password so it can get a token
-	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
-	async #getClientCredentialsToken(client_id, client_secret, scope) {
-		const twitch_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&grant_type=client_credentials&scope=${scope}`;
-		await fetch(twitch_url, { method: 'POST' }).then(result  => result.json()).then(body => {
-			//outside_token = body.access_token;
-			console.log(`* Async Client Credentials Token Generated for Helix API`);
-			this.#access_token = body.access_token;
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, "#pope_pontus");
-		});
-	}
-
 
 	//simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated
@@ -604,36 +585,45 @@ class AsyncHolder {
 	//@param   state           Security measure for the Twitch API to avoid certain attacks
 	//@returns                 An OAuth Access Token, so we can read and write info to Twitch's servers
 	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
-		//first, we get the auth code to get the request token
-		let data = {
-			'method': 'GET',
-			'headers': {
-				'Content-Type': 'application/json'
-			}
-		};
-		let url = `https://id.twitch.tv/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&scope=${scopes}&state=${state}`;
 
-		console.log(url);
-
-		await fetch(url, data).then(result => result.text()).then(body => {
-			console.log(body);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, "pope_pontus");
-		});
-
-		let code = process.env.TWITCH_CODE;
-
-		let post_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&code=${code}&grant_type=authorization_code&redirect_uri=${redirect_url}`;
+		//all necessary vars needed to get the auth token so we can get the request token
 		let post_data = {
 			'method': 'POST'
-		};
+	   	};
+		let url = `https://id.twitch.tv/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&scope=${scopes}&state=${state}`;
 
+		let code, post_url;
+
+		//first, we get the auth code to get the request token via getting a server up and running
+		http.createServer((req, res) => {
+			let u = new URL(req.url, "http://localhost:3000");
+			if (u.searchParams.get('code') != null) {
+				code = u.searchParams.get('code');
+			}
+			post_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&code=${code}&grant_type=authorization_code&redirect_uri=${redirect_url}`;
+			res.end();
+		}).listen(3000);
+
+		//open up the page to get access to the auth code
+		await open(url, {wait:true}).then(console.log("Page opened"));
+
+		//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
+		//TODO: get these stored into a database
 		await fetch(post_url, post_data).then(result => result.json()).then(body => {
-			console.log(body);
+			this.#access_token = body.access_token;
+			console.log("* Full OAuth Access Token to Helix API Accquired");
 		}).catch(err => {
-			this.#generateAPIErrorResponse(err, "pope_pontus");
+		 	this.#generateAPIErrorResponse(err, "pope_pontus");
 		});
     }
+
+	#refreshTwitchTokens() {
+		let data = {
+			'method': 'POST'
+	   	};
+
+		let token_array = ["", "", ""];
+	}
 
 	//initializes all spotify stuff that we will need when we do calls to its API
 	//@returns   A new Spotify Web API client for use with the !song and !skipsong commands

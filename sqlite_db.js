@@ -197,7 +197,7 @@ class CommandArray {
 				let update_sql = `UPDATE voicecracks SET num = ?;`
 
 				//now we update the count by 1 and push that new count to the DB
-				this.#db.run(update_sql, [count.toString()], (err, row) => {
+				this.#db.run(update_sql, [count.toString()], (err) => {
 					if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
 				});
 			}
@@ -243,9 +243,7 @@ class CommandArray {
 
 		this.#db.serialize(() => {
 			this.#db.each(search_sql, phrase_index, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row == undefined) {
+				if (err) { console.error(err); } else if (row == undefined) {
 					return false;
 				} else {
 					client.say(target, `@${user.username}: ${row.saying}`);
@@ -253,6 +251,37 @@ class CommandArray {
 				}
 			});
 			return false;
+		});
+	}
+
+	getTwitchInfo(index) {
+		let item;
+		switch(index) {
+			case 0:
+				item = "access_token";
+				break;
+			case 1:
+				item = "refresh_token";
+				break;
+			case 2:
+				item = "scopes";
+				break;
+		}
+
+		let twitch_sql = `SELECT ${item} FROM twitch_tokens`;
+
+		this.#db.get(twitch_sql, (err, row) => {
+			if(err) { console.log(err); } else {
+				return row[item];
+			}
+		});
+	}
+
+	writeTwitchTokensToDB(access_token, refresh_token, scopes) {
+		let update_sql = "UPDATE twitch_tokens SET access_token = ?, refresh_token = ?, scopes = ?;";
+
+		this.#db.run(update_sql, [access_token, refresh_token, scopes], (err) => {
+			if (err) { console.error(err); } else { console.log("New Twitch Tokens written to DB successfully!"); }
 		});
 	}
 }

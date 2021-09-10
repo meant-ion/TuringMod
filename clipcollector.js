@@ -11,8 +11,9 @@ class ClipCollector {
     #regexp_checker;//what we will use to verify that the link is a correct one
     #async_functions;//for verifying that the link is an actual clip
 
-    constructor() {
+    constructor(async_functions) {
         this.#regexp_checker = /^(?:(?:https?|http):\/\/)((clips.twitch.tv\/){1})/;
+        this.#async_functions = async_functions;
     }
 
     //whenever a clip is posted when !startcollect is enabled, it grabs the clip, verifies it's a valid format, 
@@ -36,8 +37,10 @@ class ClipCollector {
         let rtf_body = `<body>\n<div>\n<p>\n`
         let list = this.#async_functions.getClipList();
 
+        console.log(list);
+
         for (let i = 0; i < list.length; ++i) {
-            rtf_body += list[i] + '\n';
+             rtf_body += list[i] + '\n';
         }
 
         rtf_body += "</p>\n</div>\n</body>";

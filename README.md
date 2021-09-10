@@ -51,7 +51,7 @@ COMMANDS:
 	- !suggestion: gets a viewer's suggestion on what should be added to the bot/improved upon and writes it to file to be read
 				   and considered later on, probably after stream. 
 
-	= !suggestionlist: gets a comma separated list of all suggestions made to improve the bot and posts them in chat
+	- !suggestionlist: gets a comma separated list of all suggestions made to improve the bot and posts them in chat
 
 	- !followage: returns the amount of time that a user has been following the stream. Currently says it in the chatroom, not whispers. 
 				  Would need to have the bot verified as a bot on Twitch to do so (for whispers).
@@ -61,9 +61,6 @@ COMMANDS:
 			 why they were lurking. Complementary with !unlurk
 
 	- !unlurk: removes a user from the list of lurkers and returns the time they were "lurking" to the chatroom. Complementary to !lurk
-
-	- !commands: prints a list of all commands (excluding this one) to the chatroom. Does not say what they do or how to invoke, just 
-				 the names. 
 	
 	- !schedule: returns a schedule for the next week starting the day after the command is called in a readable format
 
@@ -88,6 +85,8 @@ COMMANDS:
 
 	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
+	- !spacepic: gets the NASA Space Picture of the Day and sends it out to chat
+
 
 MOD/STREAMER ONLY COMMANDS:
 
@@ -110,11 +109,9 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !endcollect: tells the bot to stop collecting twitch clip links
 			  
-	- !editgame: changes the category on the stream (CURRENTLY IN PROGRESS/BENCHED FOR A LITTLE WHILE)\
-				 * most likely to become a similar block of code to change the title/tags for a stream
-
-	- !botlinks: allows channel moderators/streamer to control if the bot can post links in chat or not
-				* useful to avoid conflicts with NightBot/StreamLabs/StreamElements/etc.
+	- !changegame: changes the category on the stream
+	
+	- !changetitle: changes the title of the stream to a user defined one
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			NOW FULLY ENABLED AS OF AUGUST 10, 2021
@@ -160,13 +157,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 
 	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
-
-	- a command that gets the space image of the day from NASA's API and displays it in the top-right corner of the stream as a source
-			* Need to research more on how to do that
-			* Need to rate-limit this one too, only one image a day so tens or hundreds of calls a stream = waste of bandwidth
-
-	- once !changegame is finally working, make a similar command (!changetitle ?) that will edit the stream title too
-			* Maybe edit the tags as well?
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete

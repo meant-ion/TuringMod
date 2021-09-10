@@ -14,6 +14,9 @@ class AsyncHolder {
 
 	#clip_list;
 	#access_token;
+	#data_base;
+	#nasa_get;
+	#space_url;
 
 	//@param   c     The bot's Twitch client
 	//@param   c_i   The bot's client ID
@@ -21,12 +24,17 @@ class AsyncHolder {
 	//@param   s     The bot's list of scopes
 	//@param   r_u   The bot's redirect URL
 	//@param   s_s   The bot's state secret
-	constructor(c, c_i, c_s, s, r_u, s_s) {
+	//@param   d_b   The bot's client for accessing its database
+	constructor(c, c_i, c_s, s, r_u, s_s, d_b) {
 		this.client = c;
 		this.helper = new h();
+		this.#data_base = d_b;
 		this.#clip_list = [];
 		this.spotifyApi = this.#initSpotifyStuff();
+		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
+		this.#space_url = "";
 		this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
+		setInterval(this.#refreshTwitchTokens, 3600000);//refreshes our oauth tokens every hour or so. Resets when the bot goes down
     }
 
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
@@ -134,10 +142,6 @@ class AsyncHolder {
 		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-			// if (body.status == 400 || body.status == 401) {
-
-			// }
-			console.log(body);
 			let streamTitle = body.data[0].title;
 			this.client.say(target, `@${user.username} Title is: ${streamTitle}`);
 		}).catch(err => {
@@ -202,7 +206,6 @@ class AsyncHolder {
 	getClipList() { return this.#clip_list; }
 
 	//edits the channel category/game to one specified by a moderator
-	//currently benched until I can wrap my mind around getting the correct token for editing a stream from a bot
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   gameName       The name of the category that we wish to change the stream over to
@@ -215,8 +218,6 @@ class AsyncHolder {
 		//first, we need to get the category id to change the channel's category
 		const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
 
-		let responseStatus;
-
 		let gameID = "";
 		let editChannelURL = "";
 
@@ -227,9 +228,6 @@ class AsyncHolder {
 			this.#generateAPIErrorResponse(err, target);
 			return;
 		});
-
-		//now that we have the game id, we can make the patch request and go from there
-		let res;
 
 		//secondary data structure is meant for the editing, since we have to use PATCH and not GET
 		const editData = {
@@ -244,15 +242,41 @@ class AsyncHolder {
             }),
 		};
 
-		console.log(editData);
-
 		//send out the info and edit the channel's category
-		//TODO: get this to not 401 me whenever I try to edit my own channel
 		await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
 			console.log("successfully updated category");
+			this.client.say(target, `@${user.username}: Category Successfully Updated`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
 		});	
+	}
+
+	//edits the stream's title to one requested by streamer/moderator
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   user           The name of the chat member that typed in the command
+	//@param   title          The title we wish to now use on the stream
+	async editStreamTitle(client_id, title, target) {
+		const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+
+		//nothing fancy like editing the category, we just make the header and use the provided title for updating
+		const edit_data = {
+			'method': 'PATCH',
+			'headers': {
+				'Authorization': `Bearer ${this.#access_token}`,
+				'Client-Id': `${client_id}`,
+				'Content-Type': 'application/json'
+			},
+			'body': JSON.stringify({
+				'title': title
+			}),
+		};
+
+		//send out the request and tell if there's been an issue on their end
+		await fetch(url, edit_data).then(result => result.text()).then(body => {
+			this.client.say(target, `@${user.username}: Title successfully updated!`);
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, target);
+		})
 	}
 
 //---------------------------------------------------------------------------------------------------------------
@@ -297,9 +321,9 @@ class AsyncHolder {
 
 			let suggs = data.toString();
 			let sugg = suggs.split('\n');
-			for (let i = 0; i < sugg.length; ++i) {
-				msg += sugg[i] + ', ';
-			}
+			sugg.forEach(item => {
+				msg += item + ', ';
+			});
 		});
 		this.client.say(this.target, `@${user.username}: ${msg}`);
 	}
@@ -543,6 +567,40 @@ class AsyncHolder {
 		});
     }
 
+	//gets the NASA Space image of the day and sends it out to the chat room as a URL
+	//@param   api_key   The API key needed to get access to NASA's APIs
+	//@param   target    The name of the chatroom we are posting the photo into
+	async getNASAPicOfTheDay(api_key, target) {
+		let url = `https://api.nasa.gov/planetary/apod?api_key=${api_key}`;
+
+		//we have gotten the space image URL at least once today
+		if (this.#nasa_get != undefined) {
+			let cur_date = new Date();
+			if (cur_date.getTime() - this.#nasa_get.getTime() > 86400000) {//more than 24 hours have passed since the last call here
+				await fetch(url).then(result => result.json()).then(body => {
+					this.#space_url = body.hdurl;
+				}).catch(err => {
+					this.#generateAPIErrorResponse(err, target);
+				});
+			}
+		} else {//we havent gotten the image yet as of launch, so get it immediately
+			await fetch(url).then(result => result.json()).then(body => {
+				this.#space_url = body.hdurl;
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		}
+
+		//assuming that there was something to get, we send out the link
+		if (this.#space_url != "") {
+			this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
+		} else {
+			this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
+		}
+
+		
+	}
+
 //---------------------------------------------------------------------------------------------------------------
 //------------------------------------INITIALIZERS/PRIVATE FUNCTIONS---------------------------------------------
 
@@ -583,7 +641,6 @@ class AsyncHolder {
 	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
 	//@param   redirect_url    The URL that the user will be redirected to so we can get the auth code needed to generate the token
 	//@param   state           Security measure for the Twitch API to avoid certain attacks
-	//@returns                 An OAuth Access Token, so we can read and write info to Twitch's servers
 	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
 
 		//all necessary vars needed to get the auth token so we can get the request token
@@ -605,24 +662,39 @@ class AsyncHolder {
 		}).listen(3000);
 
 		//open up the page to get access to the auth code
-		await open(url, {wait:true}).then(console.log("Page opened"));
+		await open(url, {wait:true}).then(console.log("* Page opened"));
 
 		//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
 		//TODO: get these stored into a database
 		await fetch(post_url, post_data).then(result => result.json()).then(body => {
 			this.#access_token = body.access_token;
+			this.#data_base.writeTwitchTokensToDB(this.#access_token, body.refresh_token);
 			console.log("* Full OAuth Access Token to Helix API Accquired");
 		}).catch(err => {
 		 	this.#generateAPIErrorResponse(err, "pope_pontus");
 		});
     }
 
-	#refreshTwitchTokens() {
+	//When called (i.e. when an API call fails or every 2 hours or so while active) it will query the Helix API and get us a new access token when needed
+	async #refreshTwitchTokens() {
+		//standard data object so the API knows we're refreshing the token we got
 		let data = {
 			'method': 'POST'
 	   	};
 
-		let token_array = ["", "", ""];
+		//from the DB object passed into the class, we grab the refresh token we're gonna need for this to work
+		let refresh_token = this.#data_base.getTwitchInfo(1);
+
+		//get the client secret and all that fun stuff so we can make the proper request
+		let client_stuff = this.#data_base.getIdAndSecret();
+
+		let url = `https://id.twitch.tv/oauth2/token--data-urlencode?grant_type=refresh_token&refresh_token=${refresh_token}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
+		
+		await fetch(url, data).then(result => result.json()).then(body => {
+			if (body.status == null) {
+				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token)
+			}
+		});
 	}
 
 	//initializes all spotify stuff that we will need when we do calls to its API

@@ -87,7 +87,7 @@ class Dice {
 					rIndex = i;
 					break;
 				} else {//we found a letter in with the command, so invalid
-					client.say(target, `Invalid command use. Do not have any non numeric characters in with the number of sides`);
+					this.client.say(target, `Invalid command use. Do not have any non numeric characters in with the number of sides`);
 					isValidCmd = false;
 					break;
 				}
@@ -104,7 +104,7 @@ class Dice {
 					if (this.helper.isNumeric(checkerChar)) {
 						minRoll += checkerChar;
 					} else {
-						client.say(target, `Invalid minimum roll requirment, please try again`);
+						this.client.say(target, `Invalid minimum roll requirment, please try again`);
 						isValidCmd = false;
 						break;
 					}

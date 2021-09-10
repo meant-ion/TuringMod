@@ -63,7 +63,7 @@ class Post {
 			let tested_output = "";
 			let token_list = undefined;
 
-			await fetch(gen_url, { method: 'POST', headers: headers, body: JSON.stringify(content_params)})
+			await fetch(gen_url, { method: 'POST', headers: headers, body: JSON.stringify(content_params)} )
 				.then(result => result.json()).then(body => {
 					output_text = body.choices[0].text;
 					token_list = body.choices[0].logprobs.tokens;
@@ -87,11 +87,11 @@ class Post {
 		 	};
 
 			//loop through each token and see if we can include it in the final output
-		 	for (let i = 0; i < token_list.length; ++i) {
+		 	for (token of token_list) {
 				let output_label = "";
 				let probs_output = undefined;
 		 		//get the rating of the token from the content filter engine
-				await fetch(testing_url, { method: 'POST', headers: headers, body: JSON.stringify(testing_params)})
+				await fetch(testing_url, { method: 'POST', headers: headers, body: JSON.stringify(testing_params) })
 					.then(result => result.json()).then(body => {
 						probs_output = body;
 						output_label = body.choices[0].text;
@@ -132,10 +132,10 @@ class Post {
 		 		//if the token has been proven to not fall into a bad area/level of toxicity, 
 		 		//we add it to the output text and send that out for approval for the bot's administrator
 		 		if (output_label != "2") {
-		 			tested_output += token_list[i];
+		 			tested_output += token;
 		 		}
 
-				testing_params.prompt = "<|endoftext|>" + token_list[i] + "\n--\nLabel:";
+				testing_params.prompt = "<|endoftext|>" + token + "\n--\nLabel:";
 		 	}
 
 			//ask the question in the console to let the streamer see whats gonna be pushed before it goes out

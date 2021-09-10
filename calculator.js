@@ -74,7 +74,6 @@ class Calculator {
         //go through the whole eq array and compute from there
         for (let i = 0; i < infixEq.length; ++i) {
             let token = infixEq[i];
-
             if (this.helper.isNumeric(token)) {
 
                 if (isNegative) {//if we detected a unary negation before hand, we make the number negative before we output it
@@ -146,10 +145,11 @@ class Calculator {
                 resultStack.push(parseFloat(mathProblem[i]));
             } else if (this.helper.isOperator(mathProblem[i])) {
                 let a = resultStack.pop();
+                let b;
                 if (resultStack.length != 0) {
-                    let b = resultStack.pop();
+                    b = resultStack.pop();
                 } else {
-                    let b = 0;
+                    b = 0;
                 }
                 let oper = mathProblem[i];
 

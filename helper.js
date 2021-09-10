@@ -75,6 +75,7 @@ class Helper {
     //@param   inputMsg   The message that is being read through to detect symbol spam
     //@return             The URL, or an empty string if not valid
     checkIfURL(inputMsg) {
+        //do not have this be a forEach loop, it will not work lol
         for (let i = 0; i < inputMsg.length; ++i) {
             try {
                 new url(inputMsg[i]);
@@ -144,8 +145,11 @@ class Helper {
 
         //calculate the hours in military configuration
         const unflooredHours = (curTime.getTime() / 1000) / 3600;
+        console.log(unflooredHours);
         const flooredHours = Math.floor(unflooredHours);
+        console.log(flooredHours % 24);
         const militaryHours = (flooredHours % 24) - 5;
+        console.log(militaryHours);
 
         let trueHours = 0;
 
@@ -197,9 +201,9 @@ class Helper {
     getGitStatsArray(obj) {
         const keys = Object.keys(obj);
         const r = [];
-        for (let i = 0; i < keys.length; ++i) {
-            r.push(obj[keys[i]]);
-        }
+        keys.forEach(item => {
+            r.push(obj[item]);
+        });
         return r;
     }
 }

@@ -254,6 +254,9 @@ class CommandArray {
 		});
 	}
 
+	//refreshing function, gets a specific item from the DB as we need it
+	//@param   index   Tells us what item we are needing from the DB specifically
+	//@return          Our requested item
 	getTwitchInfo(index) {
 		let item;
 		switch(index) {
@@ -268,7 +271,7 @@ class CommandArray {
 				break;
 		}
 
-		let twitch_sql = `SELECT ${item} FROM twitch_tokens`;
+		let twitch_sql = `SELECT ${item} FROM twitch_auth;`;
 
 		this.#db.get(twitch_sql, (err, row) => {
 			if(err) { console.log(err); } else {
@@ -277,10 +280,28 @@ class CommandArray {
 		});
 	}
 
-	writeTwitchTokensToDB(access_token, refresh_token, scopes) {
-		let update_sql = "UPDATE twitch_tokens SET access_token = ?, refresh_token = ?, scopes = ?;";
+	//refreshing function, gets the client id and secret of the bot so we can use the Helix API
+	//@return           An array of two items, the client secret and the client id
+	getIdAndSecret() {
+		let twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
 
-		this.#db.run(update_sql, [access_token, refresh_token, scopes], (err) => {
+		this.#db.get(twitch_sql, (err, row) => {
+			if (err) { console.error(err); } else {
+				let arr = [``,``];
+				arr[0] = row.client_id;
+				arr[1] = row.client_secret;
+				return arr;
+			}
+		})
+	}
+
+	//refreshing function, writes the new tokens to DB after they are gathered from the API
+	//@param   access_token    The new access token we need to access anything on the Helix API
+	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
+	writeTwitchTokensToDB(access_token, refresh_token) {
+		let update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
+
+		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) { console.error(err); } else { console.log("New Twitch Tokens written to DB successfully!"); }
 		});
 	}

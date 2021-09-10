@@ -71,10 +71,10 @@ for (i in opts.channels) { prompt_list.push(i); }
 let commands_holder = new loader();
 let helper = new h();
 let lurk_list = new lrk();
-let async_functions = new AsyncHolder(client, client_id, client_secret, scope, redirect_url, session_secret);
+let async_functions = new AsyncHolder(client, client_id, client_secret, scope, redirect_url, session_secret, commands_holder);
 let dice = new dicee(client);
 let Calculator = new calculator();
-let ClipCollector = new collector();
+let ClipCollector = new collector(async_functions);
 let post = new poster_class(client);
 
 //called every time a message gets sent in
@@ -111,6 +111,7 @@ function onMessageHandler(target, user, msg, self) {
 			//ends clip collection services
 		} else if (cmdName == '!endcollect' && collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
 
+			console.log(async_functions.getClipList());
 			ClipCollector.writeClipsToHTMLFile();
 			collectClips = false;
 			client.say(target, "All collected clips are written to file!");
@@ -134,6 +135,14 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmdName == '!editcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			commands_holder.editCommand(client, target, user, inputMsg);
+
+		} else if (cmdName == '!changegame' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the category of the stream
+
+			async_functions.editChannelCategory(client_id, user, helper.combineInput(inputMsg, true), target);
+
+		} else if (cmdName == '!changetitle' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the title of the stream
+
+			async_functions.editStreamTitle(client_id, helper.combineInput(inputMsg, true), target)
 
 		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
@@ -248,11 +257,9 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.magic8Ball(client, user, target);
 
-		} else if (cmdName == '!changegame') {//moderator/streamer wishes to change the category of the stream
+		} else if (cmdName == '!spacepic') {//user wants to see the NASA Space Pic of the Day
 
-			if (helper.checkIfModOrStreamer(user, theStreamer)) {
-				async_functions.editChannelCategory(client_id, user, helper.combineInput(inputMsg, true), target);
-		    }
+			async_functions.getNASAPicOfTheDay(process.env.NASA_API_KEY, target);
 
 		} else {
 			//check to see if the message is a custom command
@@ -263,10 +270,12 @@ function onMessageHandler(target, user, msg, self) {
 			} else if (collectClips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
+				console.log("inside of collectClips stuff");
 				let possibleClipURL = helper.checkIfURL(inputMsg);
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
+					console.log("Storing link");
 					ClipCollector.validateAndStoreClipLink(async_functions, client_id, possibleClipURL);
 				}
 

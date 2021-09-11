@@ -45,6 +45,8 @@ let collectClips = false;
 //relevant command: !skipsong
 let skipThreshold = 0;
 
+let is_init = false;
+
 let client = new tmi.client(opts);
 
 client.connect();
@@ -99,8 +101,12 @@ function onMessageHandler(target, user, msg, self) {
 			//a moderator or the streamer wishes to flush the bot's posting prompt
 		} else if (cmdName == '!flush' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
-			resetPrompt();
-			client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
+			if (prompt.length == 0) {//make sure we don't waste time flushing a prompt that is just empty
+				client.say(target, "Cannot flush and erase an empty prompt");
+			} else {
+				resetPrompt();
+				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
+			}
 
 			//starts clip collection services
 		} else if (cmdName == '!startcollect' && !collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
@@ -111,7 +117,7 @@ function onMessageHandler(target, user, msg, self) {
 			//ends clip collection services
 		} else if (cmdName == '!endcollect' && collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
 
-			console.log(async_functions.getClipList());
+			async_functions.getClipList();
 			ClipCollector.writeClipsToHTMLFile();
 			collectClips = false;
 			client.say(target, "All collected clips are written to file!");
@@ -142,7 +148,13 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!changetitle' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the title of the stream
 
-			async_functions.editStreamTitle(client_id, helper.combineInput(inputMsg, true), target)
+			async_functions.editStreamTitle(client_id, helper.combineInput(inputMsg, true), target);
+
+		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wants to have the "banhammer" hit randomly
+
+			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
+			//as if that will ever happen of course
+			//async_functions.shotgunTheChat(client_id);
 
 		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
@@ -158,7 +170,12 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!followage') {//user wants to know how long they've followed the stream
 
-			async_functions.getFollowAge(client_id, user, target);
+			if (user.username == theStreamer) {//make sure the streamer isn't the one trying to get a follow age lol
+				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
+			} else {
+				async_functions.getFollowAge(client_id, user, target);
+			}
+
 
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
@@ -224,14 +241,15 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getUserAcctAge(client_id, user, target);
 
-		//these two commands benched until I can get Spotify API access unscuffed
-		// } else if (cmdName == '!song') {//returns the song and artist playing through Spotify
+		} else if (cmdName == '!song') {//returns the song and artist playing through Spotify
 
-		// 	async_functions.getCurrentSongTitleFromSpotify(client, target, user);
+		 	async_functions.getCurrentSongTitleFromSpotify(target, user);
 
+		//bench for now, need to get other things working before this can do its job
 		// } else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
-		// 	thresholdCalc(target, user);
+		//  thresholdCalc(target, user);
+		// 	async_functions.skipToNextSong(target, user);
 
 		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
@@ -270,12 +288,10 @@ function onMessageHandler(target, user, msg, self) {
 			} else if (collectClips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
-				console.log("inside of collectClips stuff");
 				let possibleClipURL = helper.checkIfURL(inputMsg);
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
-					console.log("Storing link");
 					ClipCollector.validateAndStoreClipLink(async_functions, client_id, possibleClipURL);
 				}
 
@@ -310,7 +326,7 @@ function thresholdCalc(target, user) {
 			client.say(target, `@${user.username}: Skip request recorded. ${skipThreshold}/5 requests put through`);
         }
 	} else {
-		async_functions.skipToNextSong(client, target, user);
+		async_functions.skipToNextSong(target, user);
 		skipThreshold = 0;
 		skip_list = [];
 	}

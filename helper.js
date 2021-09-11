@@ -25,6 +25,7 @@ class Helper {
     //@return                   A string made up of all elements of the inputMsg array
     combineInput(inputMsg, needWhiteSpace) {
         let combinedMsg = '';
+        //console.log("input length: " + inputMsg.length);
         for (let i = 0; i < inputMsg.length; ++i) {
             if (i != 0) {
                 combinedMsg += inputMsg[i];
@@ -32,7 +33,9 @@ class Helper {
             if (needWhiteSpace && (i + 1 != inputMsg.length)) {
                 combinedMsg += ' ';
             }
+            //console.log("After adding in char to string: " + combinedMsg);
         }
+        //console.log("After returning combined string: " + combinedMsg);
         return combinedMsg;
     }
 

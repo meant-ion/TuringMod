@@ -26,7 +26,6 @@ class ClipCollector {
         if (this.#regexp_checker.test(url)) {
             let clip_id = url.substring(24);
             await async_obj.getClipInformation(client_id, clip_id);
-            console.log("item stored");
         }
     }
 

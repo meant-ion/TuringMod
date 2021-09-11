@@ -11,7 +11,6 @@
     "node-fetch": "^2.6.1",
     "open": "^8.2.1",
     "readline-sync": "^1.4.10",
-    "spotify-web-api-node": "^5.0.2",
     "sqlite3": "^4.2.0",
     "tmi.js": "^1.8.3"
   }

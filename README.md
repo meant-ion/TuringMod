@@ -145,18 +145,15 @@ PLANNED FUNCTIONALITIES/FEATURES:
 
 		- yodaposting: same idea as !post, but response is said like yoda would
 				* API not free, need to actually be making money to use (lol)
-		
-		- !shotgun: grabs 1 - 5 users in chat at random and "bans" (times them out) for no more than 10 seconds
 
 	------------------------------------------------------------
 
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
+		- Figure out weird error where typing in the same problem twice gets two different results (last value of eq is being deleted, but why tho?)
 
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
-
-	- (MAJOR MAYBE) have !exchange be able to convert currencies into their values as crypto (dunno about this one morally tbh)
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete

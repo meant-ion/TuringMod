@@ -5,9 +5,7 @@ require('dotenv').config({ path: './.env' });
 const fetch = require('node-fetch');
 const h = require('./helper.js');
 const fs = require('fs');
-const SpotifyWebApi = require('spotify-web-api-node');
 const http = require('http');
-const url = require('url');
 const open = require('open');
 
 class AsyncHolder {
@@ -17,6 +15,8 @@ class AsyncHolder {
 	#data_base;
 	#nasa_get;
 	#space_url;
+	#spot_access;
+	#spot_refresh;
 
 	//@param   c     The bot's Twitch client
 	//@param   c_i   The bot's client ID
@@ -30,11 +30,12 @@ class AsyncHolder {
 		this.helper = new h();
 		this.#data_base = d_b;
 		this.#clip_list = [];
-		this.spotifyApi = this.#initSpotifyStuff();
 		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
 		this.#space_url = "";
 		this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
 		setInterval(this.#refreshTwitchTokens, 3600000);//refreshes our oauth tokens every hour or so. Resets when the bot goes down
+		this.#initSpotifyStuff();
+		setInterval(this.#refreshSpotifyToken, 3600000);//refreshes our spotify oauth tokens every hour, and resets when the bot goes down
     }
 
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
@@ -49,14 +50,12 @@ class AsyncHolder {
 	async getFollowAge(client_id, user, target) {
 		const data = this.#createTwitchDataHeader(client_id);
 
-		let follower_list = undefined;
-
 		await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
 			.then(body => {
-				follower_list = body;
-				for (let i = 0; i < follower_list.data.length; ++i) {
-					if (follower_list.data[i].from_login == user.username) {
-						let followedDate = new Date(follower_list.data[i].followed_at);
+				//loop through the list of followers to find the one that requested their follow age
+				for (let i = 0; i < body.data.length; ++i) {
+					if (body.data[i].from_login == user.username) {
+						let followedDate = new Date(body.data[i].followed_at);
 						this.client.say(target, `@${user.username} has been following for:` 
 							+ `${this.helper.getTimePassed(followedDate, true)}`);
 					}
@@ -74,16 +73,13 @@ class AsyncHolder {
 	async getChannelSchedule(client_id, user, target) {
 		const data = this.#createTwitchDataHeader(client_id);
 
-		let schedule = undefined;
-
 		await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
 			.then(body => {
 
-				schedule = body;
 				let streamDates = "";
-				for (let i = 1; i < schedule.data.segments.length; ++i) {
-					let curDate = new Date(schedule.data.segments[i].start_time);
-					if (i + 1 == schedule.data.segments.length) {
+				for (let i = 1; i < body.data.segments.length; ++i) {
+					let curDate = new Date(body.data.segments[i].start_time);
+					if (i + 1 == body.data.segments.length) {
 						streamDates += curDate.toDateString();
 					} else {
 						streamDates += curDate.toDateString() + ", ";
@@ -104,8 +100,7 @@ class AsyncHolder {
 		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
-			let description = body.data[0].description;
-			this.client.say(target, `@${user.username}: ${description}`);
+			this.client.say(target, `@${user.username}: ${body.data[0].description}`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
 		});
@@ -142,8 +137,7 @@ class AsyncHolder {
 		const data = this.#createTwitchDataHeader(client_id);
 
 		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-			let streamTitle = body.data[0].title;
-			this.client.say(target, `@${user.username} Title is: ${streamTitle}`);
+			this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
 		});
@@ -177,9 +171,7 @@ class AsyncHolder {
 		const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 
 		await fetch(url, data).then(result => result.json()).then(body => {
-			let streamCategory = body.data[0].game_name;
-			let msg = `@${user.username}: Current category is ${streamCategory}`;
-			this.client.say(target, msg);
+			this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
 		});
@@ -195,8 +187,8 @@ class AsyncHolder {
 
 		await fetch(url, data).then(result => result.json()).then(body => {
 			if (body.data[0].url != undefined) {
-				let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
-				this.#clip_list.push(u);
+				//let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
+				this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
 			}
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
@@ -244,7 +236,6 @@ class AsyncHolder {
 
 		//send out the info and edit the channel's category
 		await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
-			console.log("successfully updated category");
 			this.client.say(target, `@${user.username}: Category Successfully Updated`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
@@ -279,6 +270,36 @@ class AsyncHolder {
 		})
 	}
 
+	//grabs a list of all members in the chatroom currently and times random ones out for a short time
+	//to be seriously used when there is enough people to actually use it on
+	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
+	//@param   target         The chatroom that the message will be sent into
+	async shotgunTheChat(client_id, target) {
+		const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
+
+		const data = this.#createTwitchDataHeader(client_id);
+
+		this.client.say(target, "Uh oh, someone fired the banhammer off again!");
+
+		//get the number of people hit by the shotgun "pellets"
+		const victims = Math.floor(Math.random() * 5) + 1;
+
+		//now get the list of "victims" and choose, at random, who gets hit
+		await fetch(url, data).then(result => result.json()).then(body => {
+			let list = body.chatters.viewers;
+			console.log(body.chatters.viewers);
+
+			//with the list gathered, loop through each time and time out the member all at once
+			for (i = 0; i < victims; ++i) {
+				let victim_index = Math.floor(Math.random() * list.length);
+
+				let victim_name = list[victim_index];
+
+				this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
+			}
+		});
+	}
+
 //---------------------------------------------------------------------------------------------------------------
 //-----------------------------SPOTIFY API FUNCTIONS-------------------------------------------------------------
 
@@ -287,26 +308,50 @@ class AsyncHolder {
 	//@param   target   The chatroom that the message will be sent into
 	async getCurrentSongTitleFromSpotify(target, user) {
 
-		(await this.spotifyApi).getMyCurrentPlayingTrack()
-			.then(function (data) {
-				let songTitle = data.body.item.name;
-				let artistName = data.body.item.artists[0].name;
-				let fullMsg = "Now Playing \"" + songTitle + "\" by " + artistName;
-				this.client.say(target, `@${user.username}: ${fullMsg}`);
-			}, function (err) { console.error(err); });
+		const url = `https://api.spotify.com/v1/me/player/currently-playing`;
+
+		//header for everything that we need
+		const data = {
+			'method': 'GET',
+			'headers': {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${this.#spot_access}`
+			}
+		};
+
+		//get the data from the API and send out the relevant bits to chat
+		await fetch(url, data).then(result => result.json()).then(body => {
+			this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`);
+		}).catch(err => {
+			console.error(err);
+			this.client.say(target, "Unable to get title of song");
+		});
+
 	}
 
 	//skips the current song playing on spotify and advances to next one; tells chatroom what song is
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
 	async skipToNextSong(target, user) {
-		(await this.spotifyApi).skipToNext()
-			.then(function () {
-				console.log("Skipped to next song");
-			}, function (err) {
-				console.error(err);
-			});
-		this.getCurrentSongTitleFromSpotify(target, user);
+		const url = `https://api.spotify.com/v1/me/player/next`;
+
+		const data = {
+			'method': 'GET',
+			'headers': {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${this.#spot_access}`
+			}
+		};
+
+		console.log(this.#spot_access);
+
+		await fetch(url, data).then(result => result.text()).then(body => {
+			console.log(body);
+			this.getCurrentSongTitleFromSpotify(target, user);
+		});
+
     }
 
 //-----------------------------------------------------------------------------------------------------
@@ -652,7 +697,7 @@ class AsyncHolder {
 		let code, post_url;
 
 		//first, we get the auth code to get the request token via getting a server up and running
-		http.createServer((req, res) => {
+		let s = http.createServer((req, res) => {
 			let u = new URL(req.url, "http://localhost:3000");
 			if (u.searchParams.get('code') != null) {
 				code = u.searchParams.get('code');
@@ -673,6 +718,8 @@ class AsyncHolder {
 		}).catch(err => {
 		 	this.#generateAPIErrorResponse(err, "pope_pontus");
 		});
+
+		s.close();
     }
 
 	//When called (i.e. when an API call fails or every 2 hours or so while active) it will query the Helix API and get us a new access token when needed
@@ -690,6 +737,7 @@ class AsyncHolder {
 
 		let url = `https://id.twitch.tv/oauth2/token--data-urlencode?grant_type=refresh_token&refresh_token=${refresh_token}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
 		
+		//send the request and write the tokens to the DB for safe keeping
 		await fetch(url, data).then(result => result.json()).then(body => {
 			if (body.status == null) {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token)
@@ -698,65 +746,79 @@ class AsyncHolder {
 	}
 
 	//initializes all spotify stuff that we will need when we do calls to its API
-	//@returns   A new Spotify Web API client for use with the !song and !skipsong commands
 	async #initSpotifyStuff() {
 
-		let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
-		//var access_token = process.env.SPOTIFY_TOKEN;
+		//create our constants for getting the info we need
+		const spotify_id = process.env.SPOTIFY_CLIENT_ID;
+		const spotify_secret = process.env.SPOTIFY_CLIENT_SECRET;
+		const spotify_redirect_url = process.env.SPOTIFY_REDIRECT_URL;
+		const scopes = 'user-read-private%20user-read-currently-playing%20user-modify-playback-state';
+		const state = "some-type-of-creature";
 
-		//first, we get an access token from the API
-		let spotifyData = new SpotifyWebApi({
-			redirectUri: process.env.SPOTIFY_REDIRECT_URL,
-			clientId: process.env.SPOTIFY_CLIENT_ID,
-			clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-		});
+		//build the URLS that we need to access for the requests
+		const url = `https://accounts.spotify.com/authorize?client_id=${spotify_id}&response_type=code&redirect_uri=${spotify_redirect_url}&scope=${scopes}&state=${state}`;
 
-		//when need new access token, uncomment and roll
-		//var scopes = ['user-read-private', 'user-read-currently-playing', 'user-modify-playback-state'];
-		//var state = "some-type-of-creature";
-		//var auth_url = spotifyData.createAuthorizeURL(scopes, state);
+		let token_url = 'https://accounts.spotify.com/api/token';
 
-		//try {
-		//	console.log(auth_url);
-		//	const response = await axios.get(auth_url);
-		//	console.log(response);
-		//	var code = response.code;
-		//	console.log(code);
+		let code, encoded_header, params;
 
-		//} catch (err) { console.error(err); }
+		//build the server and have it automatically gather the info we need when getting our code
+		let s = http.createServer((req, res) => {
 
-
-
-		//spotifyData.authorizationCodeGrant(code).then(
-		//	function (data) {
-		//		console.log('The token expires in ' + data.body['expires_in']);
-		//		console.log('The access token is ' + data.body['access_token']);
-		//		console.log('The refresh token is ' + data.body['refresh_token']);
-
-		//		// Set the access token on the API object to use it in later calls
-		//		spotifyData.setAccessToken(data.body['access_token']);
-		//		spotifyData.setRefreshToken(data.body['refresh_token']);
-		//	},
-		//	function (err) {
-		//		console.log('Something went wrong!', err);
-		//	}
-		//);
-
-		spotifyData.setRefreshToken(refresh_token);
-
-		spotifyData.refreshAccessToken().then(
-			function (data) {
-				//console.log('The access token has been refreshed!');
-
-				// Save the access token so that it's used in future calls
-				spotifyData.setAccessToken(data.body['access_token']);
-			},
-			function (err) {
-				console.log('Could not refresh access token', err);
+			//get the auth code
+			let u = new URL(req.url, "http://localhost:4000");
+			if (u.searchParams.get('code') != null) {
+				code = u.searchParams.get('code');
 			}
-		);
 
-		return spotifyData;
+			//build the items necessary to get the tokens
+			let b = Buffer.from(spotify_id + ':' + spotify_secret, 'utf-8')
+			encoded_header = {
+				'Authorization': `Basic ${b.toString('base64')}`,
+				'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+			};
+			params = {
+				'code': code,
+				'grant_type': "authorization_code",
+				'redirect_uri': spotify_redirect_url,
+			}
+			res.end();
+		}).listen(4000);
+
+		//open the url and get what we want from it
+		await open(url, { wait: true }).then(console.log("* Spotify Test Page Opened!"));
+
+		//with all data gathered, we send out a fetch request and get the tokens stored
+		//TODO: get these tokens sent into a DB for better safe keeping
+		await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
+		.then(result => result.json()).then(body => {
+			this.#spot_access = body.access_token;
+			this.#spot_refresh = body.refresh_token;
+			console.log("* Spotidy Tokens Get!");
+		}).catch(err => { console.error(err); });
+
+		s.close();
+	}
+
+	//refreshes the Spotify Web API access tokens after they have expired in one hour after generation
+	async #refreshSpotifyToken() {
+		//get the url, the header, and the body parameters set up for the request
+		const token_url = "https://accounts.spotify.com/api/token";
+		const b = Buffer.from(process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET, 'utf-8')
+		const encoded_header = {
+			'Authorization': `Basic ${b.toString('base64')}`,
+			'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+		};
+		const params = {
+			'code': this.#spot_refresh,
+			'grant_type': "refresh_token",
+		};
+
+		//push through the request and retrieve our new access token
+		await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
+		.then(result => result.json()).then(body => {
+			this.#spot_access = body.access_token; //no need to get a new refresh token, that's ours now. Just a new access token
+		});
 	}
 //--------------------------------------------------------------------------------------------------------
 }

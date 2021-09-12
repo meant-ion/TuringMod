@@ -11,12 +11,9 @@ const open = require('open');
 class AsyncHolder {
 
 	#clip_list;
-	#access_token;
 	#data_base;
 	#nasa_get;
 	#space_url;
-	#spot_access;
-	#spot_refresh;
 
 	//@param   c     The bot's Twitch client
 	//@param   c_i   The bot's client ID
@@ -44,260 +41,288 @@ class AsyncHolder {
 
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getFollowAge(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getFollowAge(user, target) {
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-		await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
-			.then(body => {
-				//loop through the list of followers to find the one that requested their follow age
-				for (let i = 0; i < body.data.length; ++i) {
-					if (body.data[i].from_login == user.username) {
-						let followedDate = new Date(body.data[i].followed_at);
-						this.client.say(target, `@${user.username} has been following for:` 
-							+ `${this.helper.getTimePassed(followedDate, true)}`);
+			await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
+				.then(body => {
+					//loop through the list of followers to find the one that requested their follow age
+					for (let i = 0; i < body.data.length; ++i) {
+						if (body.data[i].from_login == user.username) {
+							let followedDate = new Date(body.data[i].followed_at);
+							this.client.say(target, `@${user.username} has been following for:` 
+								+ `${this.helper.getTimePassed(followedDate, true)}`);
+						}
 					}
-				}
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
 
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
 	}
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getChannelSchedule(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getChannelSchedule(user, target) {
 
-		await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
-			.then(body => {
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-				let streamDates = "";
-				for (let i = 1; i < body.data.segments.length; ++i) {
-					let curDate = new Date(body.data.segments[i].start_time);
-					if (i + 1 == body.data.segments.length) {
-						streamDates += curDate.toDateString();
-					} else {
-						streamDates += curDate.toDateString() + ", ";
-                    }
-					
-				}
-				this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+			await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
+				.then(body => {
+	
+					let streamDates = "";
+					for (let i = 1; i < body.data.segments.length; ++i) {
+						let curDate = new Date(body.data.segments[i].start_time);
+						if (i + 1 == body.data.segments.length) {
+							streamDates += curDate.toDateString();
+						} else {
+							streamDates += curDate.toDateString() + ", ";
+						}
+						
+					}
+					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
+
 	}
 
 	//gets and returns the channel owner's summary/bio
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getChannelSummary(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getChannelSummary(user, target) {
 
-		await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
-			this.client.say(target, `@${user.username}: ${body.data[0].description}`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		try {
+			const data = await this.#createTwitchDataHeader();
+
+			await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
+				this.client.say(target, `@${user.username}: ${body.data[0].description}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getStreamUptime(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getStreamUptime(user, target) {
 
-		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-			//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
-			if (body.data[0].started_at == undefined) {
-				this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
-					` the next stream is. Thank you! :)`);
-			} else {
-				let startTime = new Date(body.data[0].started_at);
-				let timeMsg = this.helper.getTimePassed(startTime, false);
-				this.client.say(target, `@${user.username}: ${timeMsg}`);
-            }
-			
-        }).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		try {
+			const data = await this.#createTwitchDataHeader();
+
+			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+				//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
+				if (body.data[0].started_at == undefined) {
+					this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
+						` the next stream is. Thank you! :)`);
+				} else {
+					let startTime = new Date(body.data[0].started_at);
+					let timeMsg = this.helper.getTimePassed(startTime, false);
+					this.client.say(target, `@${user.username}: ${timeMsg}`);
+				}
+				
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
 	}
 
 	//gets and returns the title of the stream
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getStreamTitle(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getStreamTitle(user, target) {
 
-		await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-			this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		try {
+			const data = await this.#createTwitchDataHeader();
+
+			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+				this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
+
 	}
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getUserAcctAge(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getUserAcctAge(user, target) {
 
-		const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-		await fetch(url, data).then(result => result.json()).then(body => {
-			let acctCreateDate = new Date(body.data[0].created_at);
-			let timePassed = this.helper.getTimePassed(acctCreateDate, true);
-			this.client.say(target, `@${user.username}, your account is ${timePassed} old`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
+	
+			await fetch(url, data).then(result => result.json()).then(body => {
+				let acctCreateDate = new Date(body.data[0].created_at);
+				let timePassed = this.helper.getTimePassed(acctCreateDate, true);
+				this.client.say(target, `@${user.username}, your account is ${timePassed} old`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
+
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
 	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getCategory(client_id, user, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getCategory(user, target) {
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-		const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+			const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+	
+			await fetch(url, data).then(result => result.json()).then(body => {
+				this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
 
-		await fetch(url, data).then(result => result.json()).then(body => {
-			this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
 	}
 
 	//Gets info on a specific clip via its ID and sends that to a list of them
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   clip_id        The ID of the potential clip we want to get info on
-	async getClipInformation(client_id, clip_id) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async getClipInformation(clip_id) {
 
-		const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-		await fetch(url, data).then(result => result.json()).then(body => {
-			if (body.data[0].url != undefined) {
-				//let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
-				this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
-			}
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+			const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
+	
+			await fetch(url, data).then(result => result.json()).then(body => {
+				if (body.data[0].url != undefined) {
+					//let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
+					this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
+				}
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
+
 	}
 
 	getClipList() { return this.#clip_list; }
 
 	//edits the channel category/game to one specified by a moderator
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   gameName       The name of the category that we wish to change the stream over to
-	async editChannelCategory(client_id, user, gameName, target) {
-		const data = this.#createTwitchDataHeader(client_id);
+	async editChannelCategory(user, gameName, target) {
 
-		gameName = gameName.slice(1);
-		gameName = gameName.replace(/&/g, "%26");
+		try {
+			const data = await this.#createTwitchDataHeader();
 
-		//first, we need to get the category id to change the channel's category
-		const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
+			gameName = gameName.slice(1);
+			gameName = gameName.replace(/&/g, "%26");
+	
+			//first, we need to get the category id to change the channel's category
+			const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
+	
+			let gameID = "";
+			let editChannelURL = "";
+	
+			await fetch(gameIdURL, data).then(result => result.json()).then(body => {
+				gameID = body.data[0].id;
+				editChannelURL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+				return;
+			});
+	
+			//secondary data structure is meant for the editing, since we have to use PATCH and not GET
+			const editData = {
+				'method': 'PATCH',
+				'headers': {
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
+					'Content-Type': 'application/json'
+				},
+				'body': JSON.stringify({
+					"game_id": gameID,
+				}),
+			};
+	
+			//send out the info and edit the channel's category
+			await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
+				this.client.say(target, `@${user.username}: Category Successfully Updated`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});	
+		} catch (err) { console.error(err); }
 
-		let gameID = "";
-		let editChannelURL = "";
-
-		await fetch(gameIdURL, data).then(result => result.json()).then(body => {
-			gameID = body.data[0].id;
-			editChannelURL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-			return;
-		});
-
-		//secondary data structure is meant for the editing, since we have to use PATCH and not GET
-		const editData = {
-			'method': 'PATCH',
-			'headers': {
-				'Authorization': `Bearer ${this.#access_token}`,
-				'Client-Id': `${client_id}`,
-				'Content-Type': 'application/json'
-			},
-			'body': JSON.stringify({
-				"game_id": gameID,
-            }),
-		};
-
-		//send out the info and edit the channel's category
-		await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
-			this.client.say(target, `@${user.username}: Category Successfully Updated`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});	
 	}
 
 	//edits the stream's title to one requested by streamer/moderator
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   title          The title we wish to now use on the stream
-	async editStreamTitle(client_id, title, target) {
-		const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+	async editStreamTitle(title, target) {
 
-		//nothing fancy like editing the category, we just make the header and use the provided title for updating
-		const edit_data = {
-			'method': 'PATCH',
-			'headers': {
-				'Authorization': `Bearer ${this.#access_token}`,
-				'Client-Id': `${client_id}`,
-				'Content-Type': 'application/json'
-			},
-			'body': JSON.stringify({
-				'title': title
-			}),
-		};
+		try {
+			const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 
-		//send out the request and tell if there's been an issue on their end
-		await fetch(url, edit_data).then(result => result.text()).then(body => {
-			this.client.say(target, `@${user.username}: Title successfully updated!`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		})
+			//nothing fancy like editing the category, we just make the header and use the provided title for updating
+			const edit_data = {
+				'method': 'PATCH',
+				'headers': {
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
+					'Content-Type': 'application/json'
+				},
+				'body': JSON.stringify({
+					'title': title
+				}),
+			};
+	
+			//send out the request and tell if there's been an issue on their end
+			await fetch(url, edit_data).then(result => result.text()).then(body => {
+				this.client.say(target, `@${user.username}: Title successfully updated!`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
 	}
 
 	//grabs a list of all members in the chatroom currently and times random ones out for a short time
 	//to be seriously used when there is enough people to actually use it on
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   target         The chatroom that the message will be sent into
-	async shotgunTheChat(client_id, target) {
-		const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
+	async shotgunTheChat(target) {
 
-		const data = this.#createTwitchDataHeader(client_id);
+		try {
+			const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
 
-		this.client.say(target, "Uh oh, someone fired the banhammer off again!");
+			const data = await this.#createTwitchDataHeader();
+	
+			this.client.say(target, "Uh oh, someone fired the banhammer off again!");
+	
+			//get the number of people hit by the shotgun "pellets"
+			const victims = Math.floor(Math.random() * 5) + 1;
+	
+			//now get the list of "victims" and choose, at random, who gets hit
+			await fetch(url, data).then(result => result.json()).then(body => {
+				let list = body.chatters.viewers;
+				console.log(body.chatters.viewers);
+	
+				//with the list gathered, loop through each time and time out the member all at once
+				for (i = 0; i < victims; ++i) {
+					let victim_index = Math.floor(Math.random() * list.length);
+	
+					let victim_name = list[victim_index];
+	
+					this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
+				}
+			});
+		} catch (err) { console.error(err); }
 
-		//get the number of people hit by the shotgun "pellets"
-		const victims = Math.floor(Math.random() * 5) + 1;
-
-		//now get the list of "victims" and choose, at random, who gets hit
-		await fetch(url, data).then(result => result.json()).then(body => {
-			let list = body.chatters.viewers;
-			console.log(body.chatters.viewers);
-
-			//with the list gathered, loop through each time and time out the member all at once
-			for (i = 0; i < victims; ++i) {
-				let victim_index = Math.floor(Math.random() * list.length);
-
-				let victim_name = list[victim_index];
-
-				this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
-			}
-		});
 	}
 
 //---------------------------------------------------------------------------------------------------------------
@@ -310,23 +335,18 @@ class AsyncHolder {
 
 		const url = `https://api.spotify.com/v1/me/player/currently-playing`;
 
-		//header for everything that we need
-		const data = {
-			'method': 'GET',
-			'headers': {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${this.#spot_access}`
-			}
-		};
+		try {
+			//header for everything that we need; gets a promise from DB for access key
+			const data = await this.#generateSpotifyHeaders('GET');
 
-		//get the data from the API and send out the relevant bits to chat
-		await fetch(url, data).then(result => result.json()).then(body => {
-			this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`);
-		}).catch(err => {
-			console.error(err);
-			this.client.say(target, "Unable to get title of song");
-		});
+			//get the data from the API and send out the relevant bits to chat
+			await fetch(url, data).then(result => result.json()).then(body => {
+				this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`);
+			}).catch(err => {
+				console.error(err);
+				this.client.say(target, "Unable to get title of song");
+			});
+		} catch (err) { console.error(err); }
 
 	}
 
@@ -336,23 +356,54 @@ class AsyncHolder {
 	async skipToNextSong(target, user) {
 		const url = `https://api.spotify.com/v1/me/player/next`;
 
-		const data = {
-			'method': 'GET',
-			'headers': {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${this.#spot_access}`
-			}
-		};
+		try {
+			//header for everything that we need; gets a promise from DB for access key
+			const data = await this.#generateSpotifyHeaders('POST');
 
-		console.log(this.#spot_access);
+			await fetch(url, data).then(result => result.text()).then(body => {
+				this.getCurrentSongTitleFromSpotify(target, user);
+			});
 
-		await fetch(url, data).then(result => result.text()).then(body => {
-			console.log(body);
-			this.getCurrentSongTitleFromSpotify(target, user);
-		});
-
+		} catch (err) { console.error(err); }
     }
+
+	//adds a song to the queue suggested by the chat member if it can be found on spotify
+	//@param   user            The chat member that typed in the command
+	//@param   target          The chatroom that the message will be sent into
+	//@param   search_params   The parameters that will help the computer find the song
+	async addSongToQueue(target, user, search_params) {
+		//first, we need to get the search done to find the right song requested
+		//which is why we have search_params passed in
+		
+		//have the URLs needed here just so I can keep track of them easier
+		let search_url = 'https://api.spotify.com/v1/search';
+		let queue_url = 'https://api.spotify.com/v1/me/player/queue';
+
+		//process the input so we can actually get the info we need
+		search_params = this.helper.combineInput(search_params, true).slice(1);
+		search_params = search_params.replace(/\s+/g, "%20");
+		search_url += '?query=' + search_params + '&type=track';
+
+		let track_name, track_artist;
+		try {
+			//get the header set up, send the fetch request, and get the track's information (first track on the list)
+			const search_data = await this.#generateSpotifyHeaders('GET');
+
+			await fetch(search_url, search_data).then(result => result.json()).then(body => {
+				queue_url += '?uri=' + body.tracks.items[0].uri;
+				track_name = body.tracks.items[0].name;
+				track_artist = body.tracks.items[0].artists[0].name;
+			});
+
+			//with our queue_url now fully built, we will send out a POST request and add the song to the queue if possible
+			const queue_data = await this.#generateSpotifyHeaders('POST');
+
+			await fetch(queue_url, queue_data).then(result => result.text()).then(body => {
+				this.client.say(target, `@${user.username}: ${track_name} by ${track_artist} was successfully added to song queue`);
+			});
+		} catch (err) { console.error(err); }
+
+	}
 
 //-----------------------------------------------------------------------------------------------------
 //-------------------------MISC API/ASYNC FUNCTIONS----------------------------------------------------
@@ -382,16 +433,21 @@ class AsyncHolder {
 	async getCurrencyExchangeRate(user, target, start_currency, target_currency, amt) {
 		const start_abbrev = start_currency.toUpperCase();
 		const target_abbrev = target_currency.toUpperCase();
-		const currency_url = `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_RATES_API_KEY}/latest/${start_abbrev}`;
 
-		//get the rates from the api and then do the conversion by multiplication
-		await fetch(currency_url).then(result => result.json()).then(body => {
-			const rate = Number(body.conversion_rates[target_abbrev]);
-			let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate)} ${target_abbrev}`;
-			this.client.say(target, msg);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		try {
+			let key = await this.#data_base.getAPIKeys(2);
+			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
+
+			//get the rates from the api and then do the conversion by multiplication
+			await fetch(currency_url).then(result => result.json()).then(body => {
+				const rate = Number(body.conversion_rates[target_abbrev]);
+				let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate)} ${target_abbrev}`;
+				this.client.say(target, msg);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
+
 
 	}
 
@@ -546,102 +602,109 @@ class AsyncHolder {
 	//@param   target   The chatroom that the message will be sent into
 	async getRandomWordFromDictionary(user, target) {
 
-		const merrWebAPIKey = process.env.DICTIONARY_API_KEY;
-
 		//we can't get a random word through the dictionary API, so we get it through a different, free API
 		const randomWordURL = `https://random-words-api.herokuapp.com/w?n=1`;
-		let dictionary_url = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
+		let dictionary_url;
 		let word = "";
-
 		let gr_abbrev = "";//the abbreviation of the grammatical function of the word
 
-		//get the random word first for us to get access to the definition of it
-		await fetch(randomWordURL).then(result => result.json()).then(body => {
-			word = body[0];
-			dictionary_url += `${word}?key=${merrWebAPIKey}`;
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-			return;
-		});
-
-		//now we get the data on the word
-		await fetch(dictionary_url).then(result => result.json()).then(body => {
-
-			const definition = body[0].shortdef[0];
-			const grammar_function = body[0].fl;
-
-		//now we get the abbreviation of the grammar function to shorten the chat message
-		 	switch (grammar_function) {
-		 		case "verb":
-		 			gr_abbrev = "v";
-		 			break;
-		 		case "noun":
-					gr_abbrev = "n";
-		 			break;
-		 		case "adjective":
-					gr_abbrev = "adj";
-		 			break;
-		 		case "adverb":
-					gr_abbrev = "adv";
-					break;
-		 		case "pronoun":
-					gr_abbrev = "prn";
-		 			break;
-		 		case "trademark":
-					gr_abbrev = "�";
-		 			break;
-		 		case "abbreviation":
-		 			grAbbrev = "abbrev";
-		 			break;
-		 		case "preposition":
-					gr_abbrev = "prep";
-		 			break;
-		 		case "conjunction":
-					gr_abbrev = "conj";
-		 			break;
-		 		case "interjection":
-					gr_abbrev = "intj";
-		 			break;
-		 		default://need to see what pops out through here to get the abbreviaiton correct for this
-				 gr_abbrev == grammar_function;
-					break;
-		 	}
-			 this.client.say(target, `@${user.username}: ${word}: ${gr_abbrev}; ${definition}`);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		try {
+			let key = await this.#data_base.getAPIKeys(1);
+			//get the random word first for us to get access to the definition of it
+			await fetch(randomWordURL).then(result => result.json()).then(body => {
+				word = body[0];
+				dictionary_url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${key}`;
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+				return;
+			});
+	
+			//now we get the data on the word
+			await fetch(dictionary_url).then(result => result.json()).then(body => {
+	
+				const definition = body[0].shortdef[0];
+				const grammar_function = body[0].fl;
+	
+			//now we get the abbreviation of the grammar function to shorten the chat message
+				 switch (grammar_function) {
+					 case "verb":
+						 gr_abbrev = "v";
+						 break;
+					 case "noun":
+						gr_abbrev = "n";
+						 break;
+					 case "adjective":
+						gr_abbrev = "adj";
+						 break;
+					 case "adverb":
+						gr_abbrev = "adv";
+						break;
+					 case "pronoun":
+						gr_abbrev = "prn";
+						 break;
+					 case "trademark":
+						gr_abbrev = "�";
+						 break;
+					 case "abbreviation":
+						 grAbbrev = "abbrev";
+						 break;
+					 case "preposition":
+						gr_abbrev = "prep";
+						 break;
+					 case "conjunction":
+						gr_abbrev = "conj";
+						 break;
+					 case "interjection":
+						gr_abbrev = "intj";
+						 break;
+					 default://need to see what pops out through here to get the abbreviaiton correct for this
+					 gr_abbrev == grammar_function;
+						break;
+				 }
+				 this.client.say(target, `@${user.username}: ${word}: ${gr_abbrev}; ${definition}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+		} catch (err) { console.error(err); }
     }
 
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
-	//@param   api_key   The API key needed to get access to NASA's APIs
 	//@param   target    The name of the chatroom we are posting the photo into
-	async getNASAPicOfTheDay(api_key, target) {
-		let url = `https://api.nasa.gov/planetary/apod?api_key=${api_key}`;
+	async getNASAPicOfTheDay(target) {
 
-		//we have gotten the space image URL at least once today
-		if (this.#nasa_get != undefined) {
-			let cur_date = new Date();
-			if (cur_date.getTime() - this.#nasa_get.getTime() > 86400000) {//more than 24 hours have passed since the last call here
+		try {
+
+			//let api_key = await this.#data_base.getAPIKeys(3);
+			let url = `https://api.nasa.gov/planetary/apod?api_key=${await this.#data_base.getAPIKeys(3)}`;
+	
+			//we have gotten the space image URL at least once today
+			if (this.#nasa_get != undefined) {
+				let cur_date = new Date();
+				if (cur_date.getTime() - this.#nasa_get.getTime() > 86400000) {//more than 24 hours have passed since the last call here
+					await fetch(url).then(result => result.json()).then(body => {
+						this.#space_url = body.hdurl;
+					}).catch(err => {
+						this.#generateAPIErrorResponse(err, target);
+					});
+				}
+			} else {//we havent gotten the image yet as of launch, so get it immediately
 				await fetch(url).then(result => result.json()).then(body => {
 					this.#space_url = body.hdurl;
 				}).catch(err => {
 					this.#generateAPIErrorResponse(err, target);
 				});
 			}
-		} else {//we havent gotten the image yet as of launch, so get it immediately
-			await fetch(url).then(result => result.json()).then(body => {
-				this.#space_url = body.hdurl;
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
-		}
+	
+			//assuming that there was something to get, we send out the link
+			if (this.#space_url != "") {
+				this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
+			} else {
+				this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
+			}
 
-		//assuming that there was something to get, we send out the link
-		if (this.#space_url != "") {
-			this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
-		} else {
-			this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
-		}
+		} catch (err) { console.error(err); }
+
+
 
 		
 	}
@@ -651,14 +714,14 @@ class AsyncHolder {
 
 	//simple helper function for setting up a basic Helix API header using provided values
 	//made so I have to do less typing/make less redundant code
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@returns                A header object in the correct format for accessing the Helix API
-	#createTwitchDataHeader(client_id) {
+	async #createTwitchDataHeader() {
+		let s = await this.#data_base.getIdAndSecret();
 		return {
 			'method': 'GET',
 			'headers': {
-				'client-id': `${client_id}`,
-				'Authorization': `Bearer ${this.#access_token}`
+				'client-id': `${s[0]}`,
+				'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`
 			}
 		};
 	}
@@ -677,8 +740,19 @@ class AsyncHolder {
 	//@return         True/False
 	#isLangEn(item) { return item.language.name == "en" }
 
-	//understand that the functions below are meant for my own personal use and will most likely not make an
-	//appearance in the version of the repo that gets used in multiple channels
+	//simple helper similar in function to #createTwitchDataHeader, but just for Spotify instead
+	//@param   request_type   Tells what type of request is needed (GET, POST, PATCH, etc.)
+	//@return                 A header needed for getting info/doing things with Spotify's Web API
+	async #generateSpotifyHeaders(request_type) {
+		return {
+			'method': `${request_type}`,
+			'headers': {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${await this.#data_base.getSpotifyInfo(false)}`
+			}
+		};
+	}
 
 	//gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
 	//@param   client_id       The bot's Twitch ID, so we can get to the API easier
@@ -712,8 +786,7 @@ class AsyncHolder {
 		//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
 		//TODO: get these stored into a database
 		await fetch(post_url, post_data).then(result => result.json()).then(body => {
-			this.#access_token = body.access_token;
-			this.#data_base.writeTwitchTokensToDB(this.#access_token, body.refresh_token);
+			this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 			console.log("* Full OAuth Access Token to Helix API Accquired");
 		}).catch(err => {
 		 	this.#generateAPIErrorResponse(err, "pope_pontus");
@@ -789,11 +862,9 @@ class AsyncHolder {
 		await open(url, { wait: true }).then(console.log("* Spotify Test Page Opened!"));
 
 		//with all data gathered, we send out a fetch request and get the tokens stored
-		//TODO: get these tokens sent into a DB for better safe keeping
 		await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
 		.then(result => result.json()).then(body => {
-			this.#spot_access = body.access_token;
-			this.#spot_refresh = body.refresh_token;
+			this.#data_base.writeSpotifyTokensToDB(body.access_token, body.refresh_token);
 			console.log("* Spotidy Tokens Get!");
 		}).catch(err => { console.error(err); });
 
@@ -809,15 +880,17 @@ class AsyncHolder {
 			'Authorization': `Basic ${b.toString('base64')}`,
 			'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
 		};
+		let refresh_token = await this.#data_base.getSpotifyInfo(true)[1];
 		const params = {
-			'code': this.#spot_refresh,
+			'code': refresh_token,
 			'grant_type': "refresh_token",
 		};
 
 		//push through the request and retrieve our new access token
 		await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
 		.then(result => result.json()).then(body => {
-			this.#spot_access = body.access_token; //no need to get a new refresh token, that's ours now. Just a new access token
+			//no need to get a new refresh token, that's ours now. Just a new access token
+			this.#data_base.writeSpotifyTokensToDB(body.access_token, refresh_token);
 		});
 	}
 //--------------------------------------------------------------------------------------------------------

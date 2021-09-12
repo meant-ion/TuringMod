@@ -45,8 +45,6 @@ let collectClips = false;
 //relevant command: !skipsong
 let skipThreshold = 0;
 
-let is_init = false;
-
 let client = new tmi.client(opts);
 
 client.connect();
@@ -144,11 +142,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!changegame' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the category of the stream
 
-			async_functions.editChannelCategory(client_id, user, helper.combineInput(inputMsg, true), target);
+			async_functions.editChannelCategory(user, helper.combineInput(inputMsg, true), target);
 
 		} else if (cmdName == '!changetitle' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the title of the stream
 
-			async_functions.editStreamTitle(client_id, helper.combineInput(inputMsg, true), target);
+			async_functions.editStreamTitle(helper.combineInput(inputMsg, true), target);
 
 		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wants to have the "banhammer" hit randomly
 
@@ -173,7 +171,7 @@ function onMessageHandler(target, user, msg, self) {
 			if (user.username == theStreamer) {//make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 			} else {
-				async_functions.getFollowAge(client_id, user, target);
+				async_functions.getFollowAge(user, target);
 			}
 
 
@@ -189,11 +187,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
-			async_functions.getStreamTitle(client_id, user, target);
+			async_functions.getStreamTitle(user, target);
 
 		} else if (cmdName == '!game') {//tells user what category stream is under
 
-			async_functions.getCategory(client_id, user, target);
+			async_functions.getCategory(user, target);
 
 		} else if (cmdName == '!roulette' && isModerator) {//allows chat member to take a chance at being timed out
 
@@ -218,7 +216,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
 
-			async_functions.getStreamUptime(client_id, user, target);
+			async_functions.getStreamUptime(user, target);
 
 		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
 
@@ -231,25 +229,28 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!schedule') {//returns a link to the stream schedule
 
-			async_functions.getChannelSchedule(client_id, user, target);
+			async_functions.getChannelSchedule(user, target);
 
 		} else if (cmdName == '!who') {//returns the bio of the streamer
 
-			async_functions.getChannelSummary(client_id, user, target);
+			async_functions.getChannelSummary(user, target);
 
 		} else if (cmdName == '!accountage') {//returns the age of the account asking
 
-			async_functions.getUserAcctAge(client_id, user, target);
+			async_functions.getUserAcctAge(user, target);
 
 		} else if (cmdName == '!song') {//returns the song and artist playing through Spotify
 
 		 	async_functions.getCurrentSongTitleFromSpotify(target, user);
 
 		//bench for now, need to get other things working before this can do its job
-		// } else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
+		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
-		//  thresholdCalc(target, user);
-		// 	async_functions.skipToNextSong(target, user);
+		  thresholdCalc(target, user);
+
+		} else if (cmdName == '!addsong') {//user wants to add a song to the playlist queue
+
+			async_functions.addSongToQueue(target, user, inputMsg);
 
 		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
@@ -277,7 +278,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!spacepic') {//user wants to see the NASA Space Pic of the Day
 
-			async_functions.getNASAPicOfTheDay(process.env.NASA_API_KEY, target);
+			async_functions.getNASAPicOfTheDay(target);
 
 		} else {
 			//check to see if the message is a custom command
@@ -292,7 +293,7 @@ function onMessageHandler(target, user, msg, self) {
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
-					ClipCollector.validateAndStoreClipLink(async_functions, client_id, possibleClipURL);
+					ClipCollector.validateAndStoreClipLink(async_functions, possibleClipURL);
 				}
 
 			} else {
@@ -339,16 +340,20 @@ function resetPrompt() {
 }
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
-function generatePost(user, target) {
+async function generatePost(user, target) {
 	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
 	//take the last 2000 characters for the prompt and discard all other characters.
 	//An overly-large prompt will cause the API to return a 400 error
 	if (prompt.length > 2000) { prompt = prompt.substr(prompt.length - 2000); }
 
-	post.generatePost(user, prompt, linesCount, target);
-	resetPrompt();
+	try {
+		const key = await commands_holder.getAPIKeys(0);
+		post.generatePost(user, prompt, linesCount, target, key);
+		resetPrompt();
+	
+		if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
+	} catch (err) { console.error(err); }
 
-	if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

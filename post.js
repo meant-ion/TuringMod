@@ -19,14 +19,15 @@ class Post {
      * As of August 01, 2021, I have received approval from OpenAI to use GPT-3 for this bot
 	 * Officially, this function is now live and I cannot be happier about it
      * 
-     * @param  user       the user that asked for the response from the bot (may be removed in the future)
-     * @param  prompt     the combined total comments from the chatroom that will be used to generate the prompt
-     * @param  linesCount total lines within the prompt; needs to be over certain value to generate a post
-     * @param  target     chatroom that the command was called from and response will be posted into
+     * @param   user         the user that asked for the response from the bot (may be removed in the future)
+     * @param   prompt       the combined total comments from the chatroom that will be used to generate the prompt
+     * @param   linesCount   total lines within the prompt; needs to be over certain value to generate a post
+     * @param   target       chatroom that the command was called from and response will be posted into
+	 * @param   key          The API key we need for GPT-3, gathered from a DB
      * 
-     * @return            whether the prompt was able to be posted to the target room or not
+     * @return               whether the prompt was able to be posted to the target room or not
      */
-    async generatePost(user, prompt, linesCount, target) {
+    async generatePost(user, prompt, linesCount, target, key) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
 		console.log("Number of lines in prompt: " + linesCount);
 		if (linesCount >= 10) {
@@ -55,7 +56,7 @@ class Post {
 
 			//the headers, which is effectively the API key for GPT-3 to be sent for model access
 			const headers = {
-				'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+				'Authorization': `Bearer ${key}`,
 				'Content-Type': 'application/json',
 			};
 
@@ -87,7 +88,7 @@ class Post {
 		 	};
 
 			//loop through each token and see if we can include it in the final output
-		 	for (token of token_list) {
+		 	for (let token of token_list) {
 				let output_label = "";
 				let probs_output = undefined;
 		 		//get the rating of the token from the content filter engine

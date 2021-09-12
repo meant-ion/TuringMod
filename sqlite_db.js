@@ -256,7 +256,7 @@ class CommandArray {
 
 	//refreshing function, gets a specific item from the DB as we need it
 	//@param   index   Tells us what item we are needing from the DB specifically
-	//@return          Our requested item
+	//@return          Our requested item, packaged into a Promise
 	getTwitchInfo(index) {
 		let item;
 		switch(index) {
@@ -273,11 +273,14 @@ class CommandArray {
 
 		let twitch_sql = `SELECT ${item} FROM twitch_auth;`;
 
-		this.#db.get(twitch_sql, (err, row) => {
-			if(err) { console.log(err); } else {
-				return row[item];
-			}
+		return new Promise((resolve, reject) => {
+			this.#db.get(twitch_sql, (err, row) => {
+				if(err) { reject(err); } else {
+					resolve(row[item]);
+				}
+			});
 		});
+		
 	}
 
 	//refreshing function, gets the client id and secret of the bot so we can use the Helix API
@@ -285,14 +288,17 @@ class CommandArray {
 	getIdAndSecret() {
 		let twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
 
-		this.#db.get(twitch_sql, (err, row) => {
-			if (err) { console.error(err); } else {
-				let arr = [``,``];
-				arr[0] = row.client_id;
-				arr[1] = row.client_secret;
-				return arr;
-			}
-		})
+		return new Promise((resolve, reject) => {
+			this.#db.get(twitch_sql, (err, row) => {
+				if (err) { reject(err); } else {
+					let arr = [``,``];
+					arr[0] = row.client_id;
+					arr[1] = row.client_secret;
+					resolve(arr);
+				}
+			});
+		});
+		
 	}
 
 	//refreshing function, writes the new tokens to DB after they are gathered from the API
@@ -304,6 +310,81 @@ class CommandArray {
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) { console.error(err); } else { console.log("New Twitch Tokens written to DB successfully!"); }
 		});
+	}
+
+	//gets the Spotify Web API Token(s) from the DB so we can work with them in the app
+	//@param   needBoth   Boolean to tell us if we need just the access token or both it and the refresh token
+	//@return             Either just the access token outright, or a 2 element array with the access and refresh tokens
+	async getSpotifyInfo(need_both) {
+		let spotify_sql;
+		if (!need_both) {
+			spotify_sql = `SELECT access_token FROM spotify_auth;`;
+		} else {
+			spotify_sql = `SELECT access_token, refresh_token FROM spotify_auth`;
+		}
+
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
+		return new Promise((resolve, reject) => {
+
+			this.#db.get(spotify_sql, (err, row) => {
+				if (err) { reject(err); } else {
+					if (!need_both) {//we need only the access token
+
+						resolve(row.access_token);
+
+					} else {//we need both tokens, so send them into an array and go from there
+
+						let arr = ['', ''];
+						arr[0] = row.access_token;
+						arr[1] = row.refresh_token;
+						resolve(arr);
+
+					}
+				}
+			});
+		});
+	}
+
+	//gets an API key for the requested API
+	//@param   key_to_get   Number that tells us which key we need at the moment
+	//@return               A new Promise containing the API key
+	getAPIKeys(key_to_get) {
+		let key;
+		switch(key_to_get) {
+			case 0:
+				key = 'open_ai';
+				break;
+			case 1:
+				key = 'dictionary';
+				break;
+			case 2:
+				key = 'exchange_rates';
+				break;
+			case 3:
+				key = 'nasa';
+				break;
+		}
+
+		let keys_sql = `SELECT ${key} FROM api_keys;`;
+
+		return new Promise((resolve, reject) => {
+			this.#db.get(keys_sql, (err, row) => {
+				if(err) { reject(err); } else {
+					resolve(row[key]);
+				}
+			});
+		});
+	}
+
+	//refreshing function similar to writeTwitchTokensToDB, but for Spotify instead
+	//@param   access_token    The new access token we need to access anything on Spotify's Web API
+	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
+	writeSpotifyTokensToDB(access_token, refresh_token) {
+		let update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
+
+		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
+			if (err) { console.error(err); } else { console.log("New Spotify Tokens Written Successfully!"); }
+		})
 	}
 }
 

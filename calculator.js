@@ -68,15 +68,11 @@ class Calculator {
         };
 
         //remove all white space present and tokenize the equation
-        console.log("input eq before whitespace removal: " + infixEq);
         infixEq = infixEq.replace(/\s+/g, "");
-        console.log("input eq after whitespace removal, before tokenization: " + infixEq);
         infixEq = infixEq.split(/([\+\-\!\*\/\^\%\(\)])/).clean();
-        console.log("input eq after whitespace removal and tokenization: " + infixEq);
 
         //go through the whole eq array and compute from there
         for (let i = 0; i < infixEq.length; ++i) {
-            console.log(infixEq);
             let token = infixEq[i];
             if (this.helper.isNumeric(token)) {
 
@@ -142,7 +138,6 @@ class Calculator {
 
         let resultStack = []
         mathProblem = mathProblem.split(" ");
-        console.log(mathProblem);
 
         for (let i = 0; i < mathProblem.length; ++i) {
             if (this.helper.isNumeric(mathProblem[i])) {

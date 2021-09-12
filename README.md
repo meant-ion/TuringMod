@@ -68,9 +68,11 @@ COMMANDS:
 
 	- !who: reiterates the streamer's bio/summary
 
-	- !song: returns the name and artist of the song currently playing on stream through Spotify (BENCHED, NOT WORKING)
+	- !song: returns the name and artist of the song currently playing on stream through Spotify
 
-	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself (BENCHED, NOT WORKING)
+	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
+
+	- !addsong: adds in a user requested song to the current Spotify playlist via search parameters given by the user
 
 	- !dictrand: get a random word from the Merriam-Webster dictionary along with its function and definition and sends it to chat
 
@@ -118,6 +120,9 @@ MOD/STREAMER ONLY COMMANDS:
 			* Called either the stream's moderators or the streamer proper. When called, response from API
 			  is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
 			  and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
+
+	- !shotgun: takes 1 - 5 chat members and "bans" (times them out for ~10 seconds) them, like they got hit with a shotgun
+			* Not currently enabled, no point with how small my stream is
 
 
 PLANNED FUNCTIONALITIES/FEATURES:

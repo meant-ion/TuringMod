@@ -148,18 +148,18 @@ class Helper {
 
         //calculate the hours in military configuration
         const unflooredHours = (curTime.getTime() / 1000) / 3600;
-        console.log(unflooredHours);
         const flooredHours = Math.floor(unflooredHours);
-        console.log(flooredHours % 24);
         const militaryHours = (flooredHours % 24) - 5;
-        console.log(militaryHours);
 
         let trueHours = 0;
 
         //figure out what the military time converts to in standard configuration
-        if (militaryHours > 0 && militaryHours <= 12) {
+        if (militaryHours > 0 && militaryHours < 12) {
             trueHours = militaryHours;
             isAM = true;
+        } else if (militaryHours == 12) {
+            trueHours = militaryHours;
+            isAM = false;
         } else if (militaryHours > 12) {
             trueHours = militaryHours - 12;
             isAM = false;

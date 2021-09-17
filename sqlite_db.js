@@ -273,6 +273,7 @@ class CommandArray {
 
 		let twitch_sql = `SELECT ${item} FROM twitch_auth;`;
 
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
 				if(err) { reject(err); } else {
@@ -283,11 +284,55 @@ class CommandArray {
 		
 	}
 
+	//gets all the info needed to get a key from Twitch's OAuth via the DB
+	//returns     An array with all the necessary items stuffed inside it
+	getTwitchSessionInfo() {
+		let twitch_sql = `SELECT client_id, client_secret, scope, redirect_url, session_secret FROM twitch_session_stuff;`;
+
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
+		return new Promise((resolve, reject) => {
+			this.#db.get(twitch_sql, (err, row) => {
+				if (err) { reject(err); } else {
+					let arr = ["","","","",""];
+					arr[0] = row["client_id"];
+					arr[1] = row["client_secret"];
+					arr[2] = row["scope"];
+					arr[3] = row["redirect_url"];
+					arr[4] = row["session_secret"];
+					resolve(arr);
+				}
+			});
+		});
+	}
+
+	//gets all the info needed to get a key from Spotify's OAuth via the DB
+	//returns     An array with all the necessary items stuffed inside it
+	getSpotifySessionInfo() {
+		let spotify_sql = `SELECT client_id, client_secret, redirect_url, scope, state FROM spotify_session_stuff;`;
+
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
+		return new Promise((resolve, reject) => {
+			this.#db.get(spotify_sql, (err, row) => {
+				if (err) { reject(err); } else {
+					let arr = ["","","","",""];
+					arr[0] = row["client_id"];
+					arr[1] = row["client_secret"];
+					arr[2] = row["redirect_url"];
+					arr[3] = row["scope"];
+					arr[4] = row["state"];
+					resolve(arr);
+				}
+
+			});
+		});
+	}
+
 	//refreshing function, gets the client id and secret of the bot so we can use the Helix API
 	//@return           An array of two items, the client secret and the client id
 	getIdAndSecret() {
 		let twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
 
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
 				if (err) { reject(err); } else {
@@ -367,6 +412,7 @@ class CommandArray {
 
 		let keys_sql = `SELECT ${key} FROM api_keys;`;
 
+		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(keys_sql, (err, row) => {
 				if(err) { reject(err); } else {

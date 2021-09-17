@@ -16,20 +16,15 @@ class AsyncHolder {
 	#space_url;
 
 	//@param   c     The bot's Twitch client
-	//@param   c_i   The bot's client ID
-	//@param   c_s   The bot's client secret
-	//@param   s     The bot's list of scopes
-	//@param   r_u   The bot's redirect URL
-	//@param   s_s   The bot's state secret
 	//@param   d_b   The bot's client for accessing its database
-	constructor(c, c_i, c_s, s, r_u, s_s, d_b) {
+	constructor(c, d_b) {
 		this.client = c;
 		this.helper = new h();
 		this.#data_base = d_b;
 		this.#clip_list = [];
 		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
 		this.#space_url = "";
-		this.#getTwitchToken(c_i, c_s, s, r_u, s_s);
+		this.#getTwitchToken();
 		setInterval(this.#refreshTwitchTokens, 3600000);//refreshes our oauth tokens every hour or so. Resets when the bot goes down
 		this.#initSpotifyStuff();
 		setInterval(this.#refreshSpotifyToken, 3600000);//refreshes our spotify oauth tokens every hour, and resets when the bot goes down
@@ -760,39 +755,45 @@ class AsyncHolder {
 	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
 	//@param   redirect_url    The URL that the user will be redirected to so we can get the auth code needed to generate the token
 	//@param   state           Security measure for the Twitch API to avoid certain attacks
-	async #getTwitchToken(client_id, client_secret, scopes, redirect_url, state) {
+	async #getTwitchToken() {
 
-		//all necessary vars needed to get the auth token so we can get the request token
-		let post_data = {
-			'method': 'POST'
-	   	};
-		let url = `https://id.twitch.tv/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&scope=${scopes}&state=${state}`;
+		try {
+			//get all necessary data from the DB and go from there
+			let session_info = await this.#data_base.getTwitchSessionInfo();
 
-		let code, post_url;
+			//all necessary vars needed to get the auth token so we can get the request token
+			let post_data = {
+				'method': 'POST'
+			};
+			let url = `https://id.twitch.tv/oauth2/authorize?client_id=${session_info[0]}&redirect_uri=${session_info[3]}&response_type=code&scope=${session_info[2]}&state=${session_info[4]}`;
 
-		//first, we get the auth code to get the request token via getting a server up and running
-		let s = http.createServer((req, res) => {
-			let u = new URL(req.url, "http://localhost:3000");
-			if (u.searchParams.get('code') != null) {
-				code = u.searchParams.get('code');
-			}
-			post_url = `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&code=${code}&grant_type=authorization_code&redirect_uri=${redirect_url}`;
-			res.end();
-		}).listen(3000);
+			let code, post_url;
 
-		//open up the page to get access to the auth code
-		await open(url, {wait:true}).then(console.log("* Page opened"));
+			//first, we get the auth code to get the request token via getting a server up and running
+			let s = http.createServer((req, res) => {
+				let u = new URL(req.url, "http://localhost:3000");
+				if (u.searchParams.get('code') != null) {
+					code = u.searchParams.get('code');
+				}
+				post_url = `https://id.twitch.tv/oauth2/token?client_id=${session_info[0]}&client_secret=${session_info[1]}&code=${code}&grant_type=authorization_code&redirect_uri=${session_info[3]}`;
+				res.end();
+			}).listen(3000);
 
-		//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
-		//TODO: get these stored into a database
-		await fetch(post_url, post_data).then(result => result.json()).then(body => {
-			this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
-			console.log("* Full OAuth Access Token to Helix API Accquired");
-		}).catch(err => {
-		 	this.#generateAPIErrorResponse(err, "pope_pontus");
-		});
+			//open up the page to get access to the auth code
+			await open(url, {wait:true}).then(console.log("* Page opened"));
 
-		s.close();
+			//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
+			//TODO: get these stored into a database
+			await fetch(post_url, post_data).then(result => result.json()).then(body => {
+				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
+				console.log("* Full OAuth Access Token to Helix API Accquired");
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, "pope_pontus");
+			});
+
+			s.close();
+		} catch (err) { console.error(err); }
+
     }
 
 	//When called (i.e. when an API call fails or every 2 hours or so while active) it will query the Helix API and get us a new access token when needed
@@ -821,54 +822,55 @@ class AsyncHolder {
 	//initializes all spotify stuff that we will need when we do calls to its API
 	async #initSpotifyStuff() {
 
-		//create our constants for getting the info we need
-		const spotify_id = process.env.SPOTIFY_CLIENT_ID;
-		const spotify_secret = process.env.SPOTIFY_CLIENT_SECRET;
-		const spotify_redirect_url = process.env.SPOTIFY_REDIRECT_URL;
-		const scopes = 'user-read-private%20user-read-currently-playing%20user-modify-playback-state';
-		const state = "some-type-of-creature";
+		try {
+			//get our data from the DB
+			let session_data = await this.#data_base.getSpotifySessionInfo();
 
-		//build the URLS that we need to access for the requests
-		const url = `https://accounts.spotify.com/authorize?client_id=${spotify_id}&response_type=code&redirect_uri=${spotify_redirect_url}&scope=${scopes}&state=${state}`;
+			//build the URLS that we need to access for the requests
+			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}&response_type=code&redirect_uri=${session_data[2]}&scope=${session_data[3]}&state=${session_data[4]}`;
+	
+			let token_url = 'https://accounts.spotify.com/api/token';
+	
+			let code, encoded_header, params;
+	
+			//build the server and have it automatically gather the info we need when getting our code
+			let s = http.createServer((req, res) => {
+	
+				//get the auth code
+				let u = new URL(req.url, "http://localhost:4000");
+				if (u.searchParams.get('code') != null) {
+					code = u.searchParams.get('code');
+				}
+	
+				//build the items necessary to get the tokens
+				let b = Buffer.from(session_data[0] + ':' + session_data[1], 'utf-8')
+				encoded_header = {
+					'Authorization': `Basic ${b.toString('base64')}`,
+					'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+				};
+				params = {
+					'code': code,
+					'grant_type': "authorization_code",
+					'redirect_uri': session_data[2],
+				}
+				res.end();
+			}).listen(4000);
+	
+			//open the url and get what we want from it
+			await open(url, { wait: true }).then(console.log("* Spotify Test Page Opened!"));
+	
+			//with all data gathered, we send out a fetch request and get the tokens stored
+			await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
+			.then(result => result.json()).then(body => {
+				this.#data_base.writeSpotifyTokensToDB(body.access_token, body.refresh_token);
+				console.log("* Spotidy Tokens Get!");
+			}).catch(err => { console.error(err); });
+	
+			s.close();
 
-		let token_url = 'https://accounts.spotify.com/api/token';
+		} catch (err) { console.error(err); }
 
-		let code, encoded_header, params;
 
-		//build the server and have it automatically gather the info we need when getting our code
-		let s = http.createServer((req, res) => {
-
-			//get the auth code
-			let u = new URL(req.url, "http://localhost:4000");
-			if (u.searchParams.get('code') != null) {
-				code = u.searchParams.get('code');
-			}
-
-			//build the items necessary to get the tokens
-			let b = Buffer.from(spotify_id + ':' + spotify_secret, 'utf-8')
-			encoded_header = {
-				'Authorization': `Basic ${b.toString('base64')}`,
-				'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-			};
-			params = {
-				'code': code,
-				'grant_type': "authorization_code",
-				'redirect_uri': spotify_redirect_url,
-			}
-			res.end();
-		}).listen(4000);
-
-		//open the url and get what we want from it
-		await open(url, { wait: true }).then(console.log("* Spotify Test Page Opened!"));
-
-		//with all data gathered, we send out a fetch request and get the tokens stored
-		await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
-		.then(result => result.json()).then(body => {
-			this.#data_base.writeSpotifyTokensToDB(body.access_token, body.refresh_token);
-			console.log("* Spotidy Tokens Get!");
-		}).catch(err => { console.error(err); });
-
-		s.close();
 	}
 
 	//refreshes the Spotify Web API access tokens after they have expired in one hour after generation

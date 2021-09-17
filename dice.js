@@ -11,7 +11,6 @@ class Dice {
 	//@param   c   The Twitch chat client
     constructor(c) {
         this.client = c;
-		
     }
 
     //handles validation, error checking, and calculating what to roll how many times

@@ -24,13 +24,6 @@ const opts = {
 	]
 };
 
-//for getting the access token from Helix
-const client_id = process.env.CLIENT_ID;
-const client_secret = process.env.CLIENT_SECRET;
-const scope = "user:read:email channel:manage:broadcast";
-const redirect_url = process.env.REDIRECT_URL;
-const session_secret = process.env.SESSION_SECRET;
-
 const theStreamer = opts.channels[0];
 
 //we want at least 5 lines of text to be able to make Turing-Bot
@@ -53,8 +46,6 @@ client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
 //setting up the interval for giving people info about the streams every 15-20 mins
-//note to self: when testing this for other channels, turn this function OFF to avoid getting called a shill for my own stuff
-//uncomment when not testing on other's streams
 setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
@@ -63,15 +54,11 @@ let callThisFunctionNumber = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
-//array that holds the prompt per streamer. I.E. key == target, value == prompt for !post
-let prompt_list = [];
-for (i in opts.channels) { prompt_list.push(i); }
-
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 let commands_holder = new loader();
 let helper = new h();
 let lurk_list = new lrk();
-let async_functions = new AsyncHolder(client, client_id, client_secret, scope, redirect_url, session_secret, commands_holder);
+let async_functions = new AsyncHolder(client, commands_holder);
 let dice = new dicee(client);
 let Calculator = new calculator();
 let ClipCollector = new collector(async_functions);
@@ -243,7 +230,6 @@ function onMessageHandler(target, user, msg, self) {
 
 		 	async_functions.getCurrentSongTitleFromSpotify(target, user);
 
-		//bench for now, need to get other things working before this can do its job
 		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
 		  thresholdCalc(target, user);

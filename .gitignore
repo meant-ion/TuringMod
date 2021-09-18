@@ -1,11 +1,7 @@
 .env
-/data/attention.txt
 TuringMod.njsproj
 TuringMod.njsproj.*
 TuringMod.sln
 Microsoft.NodejsTools.WebRole.dll
-/data/commands.json
-/data/intervals.json
 /data/suggestions.txt
 /data/clip_links.html
-/data/audio_post_alert.flac

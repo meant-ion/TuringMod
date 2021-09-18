@@ -161,7 +161,6 @@ function onMessageHandler(target, user, msg, self) {
 				async_functions.getFollowAge(user, target);
 			}
 
-
 		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
 			if (writeSuggestionToFile(inputMsg)) {
@@ -184,8 +183,7 @@ function onMessageHandler(target, user, msg, self) {
 
 			dice.takeAChanceAtBeingBanned(user, target);
 
-			//dumb little command for whenever my voice cracks, which is apparently often
-		} else if (cmdName == '!voice') {
+		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
 			commands_holder.getAndUpdateVoiceCracks(client, target);
 
@@ -232,7 +230,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
-		  thresholdCalc(target, user);
+		    thresholdCalc(target, user);
 
 		} else if (cmdName == '!addsong') {//user wants to add a song to the playlist queue
 
@@ -282,7 +280,9 @@ function onMessageHandler(target, user, msg, self) {
 					ClipCollector.validateAndStoreClipLink(async_functions, possibleClipURL);
 				}
 
-			} else {
+			//detect if this message is either non-english (unicode) or symbol spam
+			} else if (!helper.detectUnicode(inputMsg, target, user, client)) {
+			//} else {
 				//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
 				linesCount++;

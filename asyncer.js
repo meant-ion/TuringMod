@@ -4,7 +4,6 @@ require('dotenv').config({ path: './.env' });
 
 const fetch = require('node-fetch');
 const h = require('./helper.js');
-const fs = require('fs');
 const http = require('http');
 const open = require('open');
 
@@ -42,19 +41,38 @@ class AsyncHolder {
 		try {
 			const data = await this.#createTwitchDataHeader();
 
-			await fetch('https://api.twitch.tv/helix/users/follows?to_id=71631229', data).then(result => result.json())
+			let acct_found = false;
+			let follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229';
+
+			//go through the list of accounts, paging forward every 20 if we don't find what we want immediately
+			while (!acct_found) {
+				await fetch(follow_url, data).then(result => result.json())
 				.then(body => {
+
 					//loop through the list of followers to find the one that requested their follow age
-					for (let i = 0; i < body.data.length; ++i) {
-						if (body.data[i].from_login == user.username) {
-							let followedDate = new Date(body.data[i].followed_at);
-							this.client.say(target, `@${user.username} has been following for:` 
-								+ `${this.helper.getTimePassed(followedDate, true)}`);
+					if (body.data != undefined) {
+						for (let i = 0; i < body.data.length; ++i) {
+							if (body.data[i].from_login == user.username) {//finally found the user following
+								acct_found = true;
+								let followedDate = new Date(body.data[i].followed_at);
+								this.client.say(target, `@${user.username} has been following for: ` 
+									+ `${this.helper.getTimePassed(followedDate, true)}`);
+								break;
+							}
 						}
+	
+						//not found yet, so set the cursor forward and remake request
+						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + `&after=${body.pagination.cursor}`;
+					} else {
+						this.client.say(target, `@${user.username}: You are currently not following this channel`);
+						acct_found = true;//setting this to be true to avoid infinite loop
 					}
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+
+				}).catch(err => {
+					this.#generateAPIErrorResponse(err, target);
+				});
+			}
+
 		} catch (err) { console.error(err); }
 
 	}
@@ -71,6 +89,7 @@ class AsyncHolder {
 				.then(body => {
 	
 					let streamDates = "";
+					console.log(body.data);
 					for (let i = 1; i < body.data.segments.length; ++i) {
 						let curDate = new Date(body.data.segments[i].start_time);
 						if (i + 1 == body.data.segments.length) {
@@ -197,7 +216,6 @@ class AsyncHolder {
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
 				if (body.data[0].url != undefined) {
-					//let u = `<a href="${body.data[0].url}">${body.data[0].url}</a>`;
 					this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
 				}
 			}).catch(err => {
@@ -248,11 +266,12 @@ class AsyncHolder {
 			};
 	
 			//send out the info and edit the channel's category
-			await fetch(editChannelURL, editData).then(result => result.text()).then(body => {
+			await fetch(editChannelURL, editData).then(() => {
 				this.client.say(target, `@${user.username}: Category Successfully Updated`);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 			});	
+
 		} catch (err) { console.error(err); }
 
 	}
@@ -262,29 +281,35 @@ class AsyncHolder {
 	//@param   title          The title we wish to now use on the stream
 	async editStreamTitle(title, target) {
 
-		try {
-			const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
-
-			//nothing fancy like editing the category, we just make the header and use the provided title for updating
-			const edit_data = {
-				'method': 'PATCH',
-				'headers': {
-					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
-					'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
-					'Content-Type': 'application/json'
-				},
-				'body': JSON.stringify({
-					'title': title
-				}),
-			};
+		if (title.length == 0 || title == " ") {//catch if the title is empty and prevent it from passing through
+			this.client.say(target, "Cant change stream title to empty title");
+		} else {
+			try {
+				const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 	
-			//send out the request and tell if there's been an issue on their end
-			await fetch(url, edit_data).then(result => result.text()).then(body => {
-				this.client.say(target, `@${user.username}: Title successfully updated!`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
-		} catch (err) { console.error(err); }
+				//nothing fancy like editing the category, we just make the header and use the provided title for updating
+				const edit_data = {
+					'method': 'PATCH',
+					'headers': {
+						'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+						'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
+						'Content-Type': 'application/json'
+					},
+					'body': JSON.stringify({
+						'title': title
+					}),
+				};
+		
+				//send out the request and tell if there's been an issue on their end
+				await fetch(url, edit_data).then(() => {
+					this.client.say(target, `@${user.username}: Title successfully updated!`);
+				}).catch(err => {
+					this.#generateAPIErrorResponse(err, target);
+				});
+			} catch (err) { console.error(err); }
+		}
+
+
 	}
 
 	//grabs a list of all members in the chatroom currently and times random ones out for a short time
@@ -355,7 +380,7 @@ class AsyncHolder {
 			//header for everything that we need; gets a promise from DB for access key
 			const data = await this.#generateSpotifyHeaders('POST');
 
-			await fetch(url, data).then(result => result.text()).then(body => {
+			await fetch(url, data).then(() => {
 				this.getCurrentSongTitleFromSpotify(target, user);
 			});
 
@@ -369,55 +394,59 @@ class AsyncHolder {
 	async addSongToQueue(target, user, search_params) {
 		//first, we need to get the search done to find the right song requested
 		//which is why we have search_params passed in
-		
+
 		//have the URLs needed here just so I can keep track of them easier
 		let search_url = 'https://api.spotify.com/v1/search';
 		let queue_url = 'https://api.spotify.com/v1/me/player/queue';
 
-		//process the input so we can actually get the info we need
-		search_params = this.helper.combineInput(search_params, true).slice(1);
-		search_params = search_params.replace(/\s+/g, "%20");
-		search_url += '?query=' + search_params + '&type=track';
+		//set up a var so we know if a url was passed through for the request
+		let need_to_search = true;
 
-		let track_name, track_artist;
 		try {
-			//get the header set up, send the fetch request, and get the track's information (first track on the list)
-			const search_data = await this.#generateSpotifyHeaders('GET');
-
-			await fetch(search_url, search_data).then(result => result.json()).then(body => {
-				queue_url += '?uri=' + body.tracks.items[0].uri;
-				track_name = body.tracks.items[0].name;
-				track_artist = body.tracks.items[0].artists[0].name;
-			});
-
-			//with our queue_url now fully built, we will send out a POST request and add the song to the queue if possible
+			//build the headers needed for both searching for a track and adding it to the queue
 			const queue_data = await this.#generateSpotifyHeaders('POST');
+			const search_data = await this.#generateSpotifyHeaders('GET');
+	
+			//check first to see if it is a URL for spotify. 
+			let possible_url = this.helper.checkIfURL(search_params);
+			if (possible_url != "") {//its a url, so get the track id and go forward from there
+				let url = new URL(possible_url);
+				let uri = `spotify%3Atrack%3A${url.pathname.slice(7)}`;
+				queue_url += '?uri=' + uri;
+				need_to_search = false;
+			}
 
-			await fetch(queue_url, queue_data).then(result => result.text()).then(body => {
-				this.client.say(target, `@${user.username}: ${track_name} by ${track_artist} was successfully added to song queue`);
+			if (need_to_search) {//no URL found, so we search for what we need
+				//process the input so we can actually get the info we need
+				search_params = this.helper.combineInput(search_params, true).slice(1);
+				search_params = search_params.replace(/\s+/g, "%20");
+				search_url += '?query=' + search_params + '&type=track';
+
+				//searching fetch request to get the song's URI from Spotify
+				await fetch(search_url, search_data).then(result => result.json()).then(body => {
+					if (body != undefined) {
+						queue_url += '?uri=' + body.tracks.items[0].uri;
+					} else {
+						this.client.say(target, "Error in adding in song from command. Please try again later");
+						return;
+					}	
+				}).catch(err => {
+					this.client.say(target, "Error in getting response from Spotify");
+					console.error(err);
+					return;
+				});
+			}
+
+			//queue adding fetch request, this time to 
+			await fetch(queue_url, queue_data).then(() => {
+				this.client.say(target, `@${user.username}: Requested song was successfully added to song queue`);
 			});
-		} catch (err) { console.error(err); }
 
+		} catch (err) { console.error(err); }
 	}
 
 //-----------------------------------------------------------------------------------------------------
 //-------------------------MISC API/ASYNC FUNCTIONS----------------------------------------------------
-
-	//returns a list of all suggestions sent into the bot as a message in chat
-	//@param   user   The chat member that typed in the command
-	async printAllSuggestions(user) {
-		let msg = "";
-		fs.readFile('./data/suggestions.txt', function (err, data) {
-			if (err) { console.error(err); }
-
-			let suggs = data.toString();
-			let sugg = suggs.split('\n');
-			sugg.forEach(item => {
-				msg += item + ', ';
-			});
-		});
-		this.client.say(this.target, `@${user.username}: ${msg}`);
-	}
 
 	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another; most likely to staple this into a conversion calculator
 	//@param   user              The chat member that typed in the command
@@ -698,9 +727,6 @@ class AsyncHolder {
 			}
 
 		} catch (err) { console.error(err); }
-
-
-
 		
 	}
 
@@ -863,7 +889,7 @@ class AsyncHolder {
 			await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
 			.then(result => result.json()).then(body => {
 				this.#data_base.writeSpotifyTokensToDB(body.access_token, body.refresh_token);
-				console.log("* Spotidy Tokens Get!");
+				console.log("* Spotify Tokens Get!");
 			}).catch(err => { console.error(err); });
 	
 			s.close();

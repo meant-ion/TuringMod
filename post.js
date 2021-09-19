@@ -8,7 +8,7 @@ const readline = require('readline-sync');
 class Post {
 
     /*
-     * @param c the client that handles the posting for the bot
+     * @param   c   the client that handles the posting for the bot
      */
     constructor(c) {
         this.client = c;

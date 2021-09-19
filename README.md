@@ -51,8 +51,6 @@ COMMANDS:
 	- !suggestion: gets a viewer's suggestion on what should be added to the bot/improved upon and writes it to file to be read
 				   and considered later on, probably after stream. 
 
-	- !suggestionlist: gets a comma separated list of all suggestions made to improve the bot and posts them in chat
-
 	- !followage: returns the amount of time that a user has been following the stream. Currently says it in the chatroom, not whispers. 
 				  Would need to have the bot verified as a bot on Twitch to do so (for whispers).
 				  * Verification currently in progress
@@ -130,8 +128,8 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	*FOR IF/WHEN THE STREAM BECOMES BIG ENOUGH TO WARRANT THESE*
 	------------------------------------------------------------
 
-		- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/Native Twitch). When found, times out the 
-		  offending user, removes the message, and shames them in the chatroom. (Add in when stream is big enough to warrant it)
+		- a scanner for enabled emotes that the streamer has banned themselves (BTTV/FFZ/7TV/Native Twitch). When found, times out the offending user, removes the message, and shames them in the chatroom. 
+		(Add in when stream is big enough to warrant it)
 		  (or see long-term list below)
 				* will most likely have a .txt or .json file of all currently "banned" emotes for people to know what's banned or not
 

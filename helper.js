@@ -104,7 +104,7 @@ class Helper {
         //search the whole message for the symbols. If enough are found, remove the message for spam
         let match_list = inputMsg.match(sym_list);
         if (match_list != null && match_list.length > 15) {
-            client.timeout(target, user.username, 10, "No symbol spam in chat please");
+            client.timeout(target, user.username, 1, "No symbol spam in chat please");
             return true;
         }
         return false;
@@ -118,9 +118,9 @@ class Helper {
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(inputMsg, target, user, client) {
         let msg =  this.combineInput(inputMsg, true);
-        let regex = /[^\u0000-\u00ff]/;//range of all non-ascii characters available
+        let regex = /[^\x00-\xFF]/;//range of all non-ascii characters available
         if (regex.test(msg)) {
-            client.timeout(target, user.username, 20, "Please, english only in this chatroom");
+            client.timeout(target, user.username, 1, "Please, english only in this chatroom");
             return true;
         }
         return false;

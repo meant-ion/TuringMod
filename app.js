@@ -167,10 +167,6 @@ function onMessageHandler(target, user, msg, self) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
 			}
 
-		} else if (cmdName == '!suggestionlist') {//the user wants to see all of the current suggestions for the bot
-
-			async_functions.printAllSuggestions(user, target);
-
 		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
 
 			async_functions.getStreamTitle(user, target);
@@ -354,10 +350,7 @@ function lurkerHasTypedMsg(target, user) {
 function writeSuggestionToFile(inputMsg) {
 
 	//compile the message into a single string for better insertion into file
-	let compiledMsg = ""
-	for (let i = 1; i < inputMsg.length; ++i) {
-		compiledMsg += inputMsg[i] + " ";
-	}
+	let compiledMsg = helper.combineInput(inputMsg, true);
 
 	fs.appendFile('./data/suggestions.txt', compiledMsg + '\n', (err) => {
 		if (err) { console.error(err); }

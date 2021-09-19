@@ -13,6 +13,8 @@ class AsyncHolder {
 	#data_base;
 	#nasa_get;
 	#space_url;
+	#twitch_token_get_time;
+	#spotify_token_get_time;
 
 	//@param   c     The bot's Twitch client
 	//@param   d_b   The bot's client for accessing its database
@@ -24,14 +26,9 @@ class AsyncHolder {
 		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
 		this.#space_url = "";
 		this.#getTwitchToken();
-		setInterval(this.#refreshTwitchTokens, 3600000);//refreshes our oauth tokens every hour or so. Resets when the bot goes down
 		this.#initSpotifyStuff();
-		setInterval(this.#refreshSpotifyToken, 3600000);//refreshes our spotify oauth tokens every hour, and resets when the bot goes down
-    }
-
+	}
 //--------------------------------------TWITCH API FUNCTIONS-------------------------------------------------------------
-
-
 
 	//returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
@@ -39,6 +36,7 @@ class AsyncHolder {
 	//@param   target         The chatroom that the message will be sent into
 	async getFollowAge(user, target) {
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			let acct_found = false;
@@ -83,6 +81,7 @@ class AsyncHolder {
 	async getChannelSchedule(user, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
@@ -113,6 +112,7 @@ class AsyncHolder {
 	async getChannelSummary(user, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/users?id=71631229', data).then(result => result.json()).then(body => {
@@ -129,6 +129,7 @@ class AsyncHolder {
 	async getStreamUptime(user, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
@@ -154,6 +155,7 @@ class AsyncHolder {
 	async getStreamTitle(user, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
@@ -171,6 +173,7 @@ class AsyncHolder {
 	async getUserAcctAge(user, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
@@ -192,6 +195,7 @@ class AsyncHolder {
 	//@param   target         The chatroom that the message will be sent into
 	async getCategory(user, target) {
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
@@ -210,6 +214,7 @@ class AsyncHolder {
 	async getClipInformation(clip_id) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
@@ -233,6 +238,7 @@ class AsyncHolder {
 	async editChannelCategory(user, gameName, target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
 			gameName = gameName.slice(1);
@@ -285,6 +291,7 @@ class AsyncHolder {
 			this.client.say(target, "Cant change stream title to empty title");
 		} else {
 			try {
+				this.#hasTokenExpired(true);
 				const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 	
 				//nothing fancy like editing the category, we just make the header and use the provided title for updating
@@ -318,6 +325,7 @@ class AsyncHolder {
 	async shotgunTheChat(target) {
 
 		try {
+			this.#hasTokenExpired(true);
 			const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
 
 			const data = await this.#createTwitchDataHeader();
@@ -356,6 +364,7 @@ class AsyncHolder {
 		const url = `https://api.spotify.com/v1/me/player/currently-playing`;
 
 		try {
+			this.#hasTokenExpired(false);
 			//header for everything that we need; gets a promise from DB for access key
 			const data = await this.#generateSpotifyHeaders('GET');
 
@@ -377,6 +386,7 @@ class AsyncHolder {
 		const url = `https://api.spotify.com/v1/me/player/next`;
 
 		try {
+			this.#hasTokenExpired(false);
 			//header for everything that we need; gets a promise from DB for access key
 			const data = await this.#generateSpotifyHeaders('POST');
 
@@ -403,6 +413,7 @@ class AsyncHolder {
 		let need_to_search = true;
 
 		try {
+			this.#hasTokenExpired(false);
 			//build the headers needed for both searching for a track and adding it to the queue
 			const queue_data = await this.#generateSpotifyHeaders('POST');
 			const search_data = await this.#generateSpotifyHeaders('GET');
@@ -747,6 +758,27 @@ class AsyncHolder {
 		};
 	}
 
+	//simple helper to tell us if the token is expired for one of our two main APIs
+	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
+	#hasTokenExpired(which_token) {
+
+		//get the difference between the time the token was accquired and right now at this call
+		let cur_time = new Date();
+		let token_time;
+		//make sure to get the correct token here
+		if (which_token) { token_time = this.#twitch_token_get_time; } else { token_time = this.#spotify_token_get_time; } 
+		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
+
+		//if we have a large enough difference between the two times, refresh the specified token
+		if (diff >= 3600) {
+			if (which_token) {
+				this.#refreshTwitchTokens();
+			} else {
+				this.#refreshSpotifyToken();
+			}
+		}
+	}
+
 
 	//simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated
@@ -809,9 +841,9 @@ class AsyncHolder {
 			await open(url, {wait:true}).then(console.log("* Page opened"));
 
 			//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
-			//TODO: get these stored into a database
 			await fetch(post_url, post_data).then(result => result.json()).then(body => {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
+				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 				console.log("* Full OAuth Access Token to Helix API Accquired");
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, "pope_pontus");
@@ -840,7 +872,8 @@ class AsyncHolder {
 		//send the request and write the tokens to the DB for safe keeping
 		await fetch(url, data).then(result => result.json()).then(body => {
 			if (body.status == null) {
-				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token)
+				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
+				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 			}
 		});
 	}
@@ -889,6 +922,7 @@ class AsyncHolder {
 			await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )
 			.then(result => result.json()).then(body => {
 				this.#data_base.writeSpotifyTokensToDB(body.access_token, body.refresh_token);
+				this.#spotify_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 				console.log("* Spotify Tokens Get!");
 			}).catch(err => { console.error(err); });
 	
@@ -919,6 +953,7 @@ class AsyncHolder {
 		.then(result => result.json()).then(body => {
 			//no need to get a new refresh token, that's ours now. Just a new access token
 			this.#data_base.writeSpotifyTokensToDB(body.access_token, refresh_token);
+			this.#spotify_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 		});
 	}
 //--------------------------------------------------------------------------------------------------------

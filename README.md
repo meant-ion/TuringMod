@@ -122,6 +122,8 @@ MOD/STREAMER ONLY COMMANDS:
 	- !shotgun: takes 1 - 5 chat members and "bans" (times them out for ~10 seconds) them, like they got hit with a shotgun
 			* Not currently enabled, no point with how small my stream is
 
+	- !testviewers: tests the stream and chatroom's viewer counts to see if there's a good chance of a view botting issue
+
 
 PLANNED FUNCTIONALITIES/FEATURES:
 

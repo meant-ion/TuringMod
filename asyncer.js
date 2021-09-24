@@ -350,7 +350,58 @@ class AsyncHolder {
 				}
 			});
 		} catch (err) { console.error(err); }
+	}
 
+	//simple little function that will get a rough guess of whether or not the channel is a victim of view botting
+	//@param   target   The channel we are posting the message to
+	async getChancesStreamIsViewbotted(target) {
+		//get our URLs and counts set up here
+		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
+		const helix_url = 'https://api.twitch.tv/helix/users?id=71631229';
+		let chatroom_member_count, viewer_count;
+
+		try {
+			this.#hasTokenExpired(true);
+
+			//get the necessary headers, and send out the fetch requests
+			const chatroom_data = await this.#createTwitchDataHeader();
+			const helix_data = await this.#createTwitchDataHeader();
+
+			//get # of viewers watching the stream
+			await fetch(helix_url, helix_data).then(result => result.data()).then(body => {
+				viewer_count = body[0].viewer_count;
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+
+			//get # of poeple in the chatroom currently
+			await fetch(chatroom_url, chatroom_data).then(result => result.json()).then(body => {
+				chatroom_member_count = body.chatters.viewers.length;
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+
+			//if any one of the gathered values is zero, we send a msg and exit this function
+			if (chatroom_member_count <= 0 || viewer_count <= 0) {
+				this.client.say(target, "Cannot get that statistic due to divide by zero error");
+				return;
+			}
+
+			//get the ratio and then tell the chatroom what the verdict is
+			const viewers_to_chat_ratio = (chatroom_member_count / viewer_count) * 100.0;
+			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}`;
+
+			//arbitrarily chose 35% as the cutoff ratio to tell if there's viewbotting
+			//no real reason behind this being the cutoff, just seemed like a good place to leave it at
+			if (viewers_to_chat_ratio < 35.0) {
+				msg += `; This looks like a viewbotting issue to me :(`;
+			} else {
+				msg += `; This doesn't look like viewbotting to me at all :)`;
+			}
+
+			this.client.say(target, msg);
+
+		} catch (err) { console.error(err); }
 	}
 
 //---------------------------------------------------------------------------------------------------------------
@@ -411,6 +462,7 @@ class AsyncHolder {
 
 		//set up a var so we know if a url was passed through for the request
 		let need_to_search = true;
+		let uri;
 
 		try {
 			this.#hasTokenExpired(false);
@@ -422,7 +474,7 @@ class AsyncHolder {
 			let possible_url = this.helper.checkIfURL(search_params);
 			if (possible_url != "") {//its a url, so get the track id and go forward from there
 				let url = new URL(possible_url);
-				let uri = `spotify%3Atrack%3A${url.pathname.slice(7)}`;
+				uri = `spotify%3Atrack%3A${url.pathname.slice(7)}`;
 				queue_url += '?uri=' + uri;
 				need_to_search = false;
 			}
@@ -435,7 +487,13 @@ class AsyncHolder {
 
 				//searching fetch request to get the song's URI from Spotify
 				await fetch(search_url, search_data).then(result => result.json()).then(body => {
+					console.log(body.tracks.items[0]);
 					if (body != undefined) {
+						//making sure that we do not add in an explicit song into the queue
+						if (body.tracks.items[0].explicit != false) {
+							this.client.say(target, "Error: Cannot enter an explicit song into queue");
+							return;
+						}
 						queue_url += '?uri=' + body.tracks.items[0].uri;
 					} else {
 						this.client.say(target, "Error in adding in song from command. Please try again later");
@@ -446,11 +504,27 @@ class AsyncHolder {
 					console.error(err);
 					return;
 				});
+			} else {//no search, but we need to see if its explicit and prevent it from being added if so
+				search_url += uri;
+				await fetch(search_url, search_data).then(result => result.json()).then(body => {
+					if (body.tracks.items[0].explicit != false) {
+						this.client.say(target, "Error: Cannot enter an explicit song into queue");
+						return;
+					}
+				}).catch(err => {
+					this.client.say(target, "Error in getting response from Spotify");
+					console.error(err);
+					return;
+				});
 			}
 
-			//queue adding fetch request, this time to 
+			//queue adding fetch request
 			await fetch(queue_url, queue_data).then(() => {
 				this.client.say(target, `@${user.username}: Requested song was successfully added to song queue`);
+			}).catch(err => {
+				this.client.say(target, "Error in getting response from Spotify");
+				console.error(err);
+				return;
 			});
 
 		} catch (err) { console.error(err); }
@@ -929,8 +1003,6 @@ class AsyncHolder {
 			s.close();
 
 		} catch (err) { console.error(err); }
-
-
 	}
 
 	//refreshes the Spotify Web API access tokens after they have expired in one hour after generation

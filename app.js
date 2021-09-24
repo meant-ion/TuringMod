@@ -141,6 +141,10 @@ function onMessageHandler(target, user, msg, self) {
 			//as if that will ever happen of course
 			//async_functions.shotgunTheChat(client_id);
 
+		} else if (cmdName == '!testviewers' && helper.checkIfModOrStreamer(user, theStreamer)) {//mod/streamer wants to see chances channel is being viewbotted
+
+			async_functions.getChancesStreamIsViewbotted(target);
+
 		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
 
 			client.say(target, lurk_list.addLurker(user, inputMsg));

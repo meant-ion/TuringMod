@@ -236,6 +236,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.addSongToQueue(target, user, inputMsg);
 
+		} else if (cmdName == '!suggestionlist') {//user wants to see what has been suggested but not yet implemented currently
+
+			async_functions.getAllCurrentSuggestions(target);
+
 		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
 			async_functions.getRandomWordFromDictionary(user, target);
@@ -264,6 +268,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getNASAPicOfTheDay(target);
 
+		} else if (cmdName == '!randlang') {//user wants to look at a random esolang
+
+			async_functions.getRandEsoLang(user, target);
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmdName)) {
@@ -282,7 +290,6 @@ function onMessageHandler(target, user, msg, self) {
 
 			//detect if this message is either non-english (unicode) or symbol spam
 			} else if (!helper.detectUnicode(inputMsg, target, user, client)) {
-			//} else {
 				//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
 				linesCount++;

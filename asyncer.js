@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const h = require('./helper.js');
 const http = require('http');
 const open = require('open');
+const fs = require('fs');
 
 class AsyncHolder {
 
@@ -533,6 +534,20 @@ class AsyncHolder {
 //-----------------------------------------------------------------------------------------------------
 //-------------------------MISC API/ASYNC FUNCTIONS----------------------------------------------------
 
+	//prints out all current suggestions within suggestions.txt and sends it to chat
+	//needs testing for format and looks
+	//@param    target    The name of the channel the list of suggestions is being sent to
+	async getAllCurrentSuggestions(target) {
+		fs.readFile('./data/suggestions.txt', 'utf8', (err, data) => {
+			if (err) {
+				this.client.say(target, "Error in reading from suggestions file");
+				console.error(err);
+			} else {
+				this.client.say(target, data);
+			}
+		});
+	}
+
 	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another; most likely to staple this into a conversion calculator
 	//@param   user              The chat member that typed in the command
 	//@param   target            The chatroom that the message will be sent into
@@ -573,6 +588,32 @@ class AsyncHolder {
 			this.client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wiki_page_url}`);
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, target);
+		});
+
+	}
+
+	//gets a random esoteric programming language (esolang) from the esolang wiki and sends the link to chat
+	//@param   user     The chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
+	async getRandEsoLang(user, target) {
+
+		const eso_url = `https://esolangs.org/wiki/Special:RandomInCategory/Languages`;
+
+		await fetch(eso_url).then(result => result.text()).then(body => {
+			//split up the body (literally an HTML page), grab the title (4th line), slice off the <title> start tag,
+			//and then split the rest of the string into an array based on spaces
+			let l = body.split('\n')[4].slice(7).split(' ');
+			let str = "";
+			//we want only the name of the language, everything else is unwanted
+			for (let word of l) {
+				if (word == '-') {//when we get this char, we have gotten the whole name and break out
+					break;
+				}
+				str += word + '_';
+			}
+			str = str.slice(0, -1);//remove the extra '_' from the string so we can get the correct title
+			const url = 'https://esolangs.org/wiki/' + str;
+			this.client.say(target, `@${user.username}: Here is a link to a random esolang! Enjoy! ${url}`);
 		});
 
 	}

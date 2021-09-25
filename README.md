@@ -72,6 +72,8 @@ COMMANDS:
 
 	- !addsong: adds in a user requested song to the current Spotify playlist via search parameters given by the user
 
+	- !suggestionlist: gets the list of all ideas for the bot not yet implemented but suggested
+
 	- !dictrand: get a random word from the Merriam-Webster dictionary along with its function and definition and sends it to chat
 
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one and posts them in chat as a message
@@ -86,6 +88,8 @@ COMMANDS:
 	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
 	- !spacepic: gets the NASA Space Picture of the Day and sends it out to chat
+
+	- !randlang: gets a random esoteric programming language (esolang) from the esolang wiki
 
 
 MOD/STREAMER ONLY COMMANDS:

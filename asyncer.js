@@ -89,7 +89,6 @@ class AsyncHolder {
 				.then(body => {
 	
 					let streamDates = "";
-					console.log(body.data);
 					for (let i = 1; i < body.data.segments.length; ++i) {
 						let curDate = new Date(body.data.segments[i].start_time);
 						if (i + 1 == body.data.segments.length) {
@@ -488,7 +487,6 @@ class AsyncHolder {
 
 				//searching fetch request to get the song's URI from Spotify
 				await fetch(search_url, search_data).then(result => result.json()).then(body => {
-					console.log(body.tracks.items[0]);
 					if (body != undefined) {
 						//making sure that we do not add in an explicit song into the queue
 						if (body.tracks.items[0].explicit != false) {

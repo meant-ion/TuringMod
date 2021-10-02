@@ -36,11 +36,11 @@ class CommandArray {
 
 		//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
 		let creating_mod = user.username;
-		let name = inputMsg[2];
+		let name = inputMsg[1];
 		let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
 
 		//add in the remaining elements of the message to the command message variable
-		for (let i = 3; i < inputMsg.length; ++i) {
+		for (let i = 2; i < inputMsg.length; ++i) {
 			console.log(inputMsg[i]);
 			msg += inputMsg[i] + " ";
 		}

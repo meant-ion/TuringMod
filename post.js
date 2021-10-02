@@ -3,15 +3,20 @@
 
 const fetch = require('node-fetch');
 //using the readline-sync library in order to control if the message can be posted or not via the console. NEEDS TO BE SYNC
-const readline = require('readline-sync');
+//const readline = require('readline-sync');
 
 class Post {
 
+	//the response made from the actual generatePost() function being called
+	#generated_response = "";
+
     /*
-     * @param   c   the client that handles the posting for the bot
+     * @param   c    the client that handles the posting for the bot
+	 * @param   tc   the Twitch client for error messages
      */
-    constructor(c) {
-        this.client = c;
+    constructor(c, tc) {
+        this.discord_client = c;
+		this.twitch_client = tc;
     }
 
 
@@ -27,7 +32,7 @@ class Post {
      * 
      * @return               whether the prompt was able to be posted to the target room or not
      */
-    async generatePost(user, prompt, linesCount, target, key) {
+    async generatePost(prompt, linesCount, target, key) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
 		console.log("Number of lines in prompt: " + linesCount);
 		if (linesCount >= 10) {
@@ -69,7 +74,7 @@ class Post {
 					output_text = body.choices[0].text;
 					token_list = body.choices[0].logprobs.tokens;
 				}).catch(err => {
-					this.client.say(target, `Error in text generation`);
+					this.twitch_client.say(target, `Error in text generation`);
 					console.error(err);
 					return false;
 				});
@@ -97,7 +102,7 @@ class Post {
 						probs_output = body;
 						output_label = body.choices[0].text;
 					}).catch(err => {
-						this.client.say(target, `Error in text generation`);
+						this.twitch_client.say(target, `Error in text generation`);
 						console.error(err);
 						return false;
 					});
@@ -139,31 +144,42 @@ class Post {
 				testing_params.prompt = "<|endoftext|>" + token + "\n--\nLabel:";
 		 	}
 
-			//ask the question in the console to let the streamer see whats gonna be pushed before it goes out
-			let isPostable = readline.question(`Text is ${tested_output}, do you wish to publish this? `, function (answer) {
+			this.#generated_response = tested_output;
 
-				if (answer.toLowerCase() == "yes" || answer.toLowerCase() == "y") {
-					isPostable = true;
-				} else {
-					console.log("Post will be discarded then. Thank you!");
-					isPostable = false;
-				}
+			let responseMsg = `Generated response for the channel is `;
+			let askMsg = "Pass this message through? (Y/N): ";
 
-				rl.close();
-		 	});
-
-			//now, post the message after approval by the bot's admin
-			if (isPostable == "no") {
-				this.client.say(target, `@${user.username}: bot response rejected by bot admin`);
-				return false;
+			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(responseMsg);
+			if (tested_output == "" || tested_output == "\n" || this.#seeIfNothingButNewlines(tested_output)) {
+				this.discord_client.channels.cache.get(process.env.SERVER_ID).send("Empty Response");
 			} else {
-				this.client.say(target, `@${user.username}: MrDestructoid ${tested_output}`);
-				return true;
+				this.discord_client.channels.cache.get(process.env.SERVER_ID).send(tested_output);
 			}
+			
+			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(askMsg);
+			return true;
 		}
 		//there weren't enough comments to generate a post
-		this.client.say(target, `Not enough comments yet :(`);
+		this.twitch_client.say(target, `Not enough comments yet :(`);
 		return false;
+    }
+
+	//gets the response generated for the channel
+	//@returns   the response
+	getResponse() { return this.#generated_response; }
+
+	//checks to see if there are nothing but newline characters in the text.
+	//@returns   true or false depending on whether or not the message is made up entirely of '\n'
+	#seeIfNothingButNewlines(response) {
+		let msg = response.split('');
+		let is_empty = true;
+		msg.forEach(item => {
+			console.log(item != '\n');
+			if (item != '\n') {
+				is_empty = false;
+			}
+		});
+		return is_empty;
     }
 
 }

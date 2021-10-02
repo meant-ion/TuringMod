@@ -7,10 +7,10 @@
     "name": ""
   },
   "dependencies": {
+    "discord.js": "^13.1.0",
     "dotenv": "^8.6.0",
     "node-fetch": "^2.6.1",
     "open": "^8.2.1",
-    "readline-sync": "^1.4.10",
     "sqlite3": "^4.2.0",
     "tmi.js": "^1.8.3"
   }

@@ -2,6 +2,7 @@ require('dotenv').config({ path: './.env' });
 
 const tmi = require('tmi.js');
 const fs = require('fs');
+const { Client, Intents } = require('discord.js');
 const calculator = require('./calculator.js');
 const h = require('./helper');
 const loader = require('./sqlite_db.js');
@@ -10,6 +11,9 @@ const AsyncHolder = require('./asyncer.js');
 const dicee = require('./dice.js');
 const collector = require('./clipcollector.js');
 const poster_class = require('./post.js');
+
+const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const token = process.env.DISCORD_CLIENT_TOKEN;
 
 const opts = {
 	identity: {
@@ -38,6 +42,11 @@ let collectClips = false;
 //relevant command: !skipsong
 let skipThreshold = 0;
 
+//lets us know that bot is connected to the discord server we need it on
+discord_client.once('ready', () => {
+	console.log(`* Logged in as ${discord_client.user.tag} through Discord!`);
+});
+
 let client = new tmi.client(opts);
 
 client.connect();
@@ -54,6 +63,25 @@ let callThisFunctionNumber = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
+//when a message is sent out, we will take it and push it out to the Twitch chat
+discord_client.on('messageCreate', message => {
+	//take the message and split it up into separate words
+	const inputMsg = message.content.split(" ");
+	let response = "";
+	if (inputMsg[0] == '!send') {//the message generated was accepted by admin
+		response = post.getResponse();
+
+		//search through the list of responses and channels to find the correct one and then post that out
+		if (response != "") {
+			client.say(opts.channels[0], `MrDestructoid ${response}`);
+		} else {
+			client.say(opts.channels[0], `No response found for this channel`);
+		}
+	} else if (inputMsg[0] == '!reject') {
+		client.say(opts.channels[0], `Response rejected by bot admin`);
+	}
+});
+
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 let commands_holder = new loader();
 let helper = new h();
@@ -62,7 +90,7 @@ let async_functions = new AsyncHolder(client, commands_holder);
 let dice = new dicee(client);
 let Calculator = new calculator();
 let ClipCollector = new collector(async_functions);
-let post = new poster_class(client);
+let post = new poster_class(discord_client, client);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -110,7 +138,7 @@ function onMessageHandler(target, user, msg, self) {
 			//activates GPT-3 for a post. Heavily controlled
 		} else if (cmdName == '!post' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
-			generatePost(user, target);
+			generatePost(target);
 
 			//for mods/streamer to add a custom command
 		} else if (cmdName == '!addcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
@@ -179,9 +207,13 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getCategory(user, target);
 
-		} else if (cmdName == '!roulette' && isModerator) {//allows chat member to take a chance at being timed out
+		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
 
-			dice.takeAChanceAtBeingBanned(user, target);
+			if (isStreamer(user.username, theStreamer)) {//make sure it isnt the streamer trying to play russian roulette
+				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
+			} else {
+				dice.takeAChanceAtBeingBanned(user, target);
+			}
 
 		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
@@ -332,8 +364,10 @@ function resetPrompt() {
 	prompt = "";
 }
 
+function isStreamer(username, theStreamer) { return username == theStreamer; }
+
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
-async function generatePost(user, target) {
+async function generatePost(target) {
 	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
 	//take the last 2000 characters for the prompt and discard all other characters.
 	//An overly-large prompt will cause the API to return a 400 error
@@ -341,7 +375,7 @@ async function generatePost(user, target) {
 
 	try {
 		const key = await commands_holder.getAPIKeys(0);
-		post.generatePost(user, prompt, linesCount, target, key);
+		post.generatePost(prompt, linesCount, target, key);
 		resetPrompt();
 	
 		if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
@@ -369,3 +403,6 @@ function writeSuggestionToFile(inputMsg) {
 
 	return true;
 }
+
+//this goes last to prevent any issues on discord's end
+discord_client.login(token);

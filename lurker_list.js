@@ -20,7 +20,7 @@ class LurkList {
     //@return         Either a "see ya" message or a message telling them they're already lurking
     addLurker(user, msg) {
         if (this.isLurking(user) == -1) {
-            this.#lurker_list.push(new Lurker_Item(user.username, msg));
+            this.#lurker_list.push(new Lurker_Item(user.username, this.helper.combineInput(msg, true)));
             return `See you whenever you get back @${user.username}`;
         }
         return `You're already lurking @${user.username}`
@@ -38,7 +38,7 @@ class LurkList {
             let lurkMsg = this.#lurker_list[index].getMsg();
             const msg = `Welcome back @${user.username}! You were gone for ${timeMsg} because of "${lurkMsg}"`;
 
-            this.lurker_list.splice(index, 1);
+            this.#lurker_list.splice(index, 1);
             return msg;
         }
         //user wasn't already lurking
@@ -75,7 +75,7 @@ class Lurker_Item {
     constructor(username, msg) {
         this.#key = username;
         this.#value = new Date();
-        this.#msg = this.helper.combineInput(msg, true);
+        this.#msg = msg;
     }
 
     getKey() { return this.#key; }

@@ -304,6 +304,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getRandEsoLang(user, target);
 
+		} else if (cmdName == '!eeee' && helper.checkIfModOrStreamer(user, theStreamer)) {
+
+			async_functions.addEventSub();
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmdName)) {

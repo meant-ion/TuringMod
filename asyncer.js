@@ -5,7 +5,9 @@ require('dotenv').config({ path: './.env' });
 const fetch = require('node-fetch');
 const h = require('./helper.js');
 const http = require('http');
+const https = require('https');
 const open = require('open');
+const crypto = require('crypto');
 const fs = require('fs');
 
 class AsyncHolder {
@@ -257,13 +259,17 @@ class AsyncHolder {
 				this.#generateAPIErrorResponse(err, target);
 				return;
 			});
+
+			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
+			const c_id = await this.#data_base.getIdAndSecret();
+			const cc_id = c_id[0];
 	
 			//secondary data structure is meant for the editing, since we have to use PATCH and not GET
 			const editData = {
 				'method': 'PATCH',
 				'headers': {
 					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
-					'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
+					'Client-Id': `${cc_id}`,
 					'Content-Type': 'application/json'
 				},
 				'body': JSON.stringify({
@@ -283,8 +289,8 @@ class AsyncHolder {
 	}
 
 	//edits the stream's title to one requested by streamer/moderator
-	//@param   user           The name of the chat member that typed in the command
 	//@param   title          The title we wish to now use on the stream
+	//@param   target         The channel who's title we wish to change
 	async editStreamTitle(title, target) {
 
 		if (title.length == 0 || title == " ") {//catch if the title is empty and prevent it from passing through
@@ -293,13 +299,17 @@ class AsyncHolder {
 			try {
 				this.#hasTokenExpired(true);
 				const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+
+				//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
+				const c_id = await this.#data_base.getIdAndSecret();
+				const cc_id = c_id[0];
 	
 				//nothing fancy like editing the category, we just make the header and use the provided title for updating
 				const edit_data = {
 					'method': 'PATCH',
 					'headers': {
 						'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
-						'Client-Id': `${await this.#data_base.getIdAndSecret()[0]}`,
+						'Client-Id': `${cc_id}`,
 						'Content-Type': 'application/json'
 					},
 					'body': JSON.stringify({
@@ -308,8 +318,12 @@ class AsyncHolder {
 				};
 		
 				//send out the request and tell if there's been an issue on their end
-				await fetch(url, edit_data).then(() => {
-					this.client.say(target, `@${user.username}: Title successfully updated!`);
+				await fetch(url, edit_data).then((res) => {
+					if (res.status == 204) {
+						this.client.say(target, `Title successfully updated!`);
+					} else {
+						this.client.say(target, `Error, could not change title`);
+					}
 				}).catch(err => {
 					this.#generateAPIErrorResponse(err, target);
 				});
@@ -401,6 +415,69 @@ class AsyncHolder {
 
 			this.client.say(target, msg);
 
+		} catch (err) { console.error(err); }
+	}
+
+	//sets up an event sub as requested by the admin
+	async addEventSub() {
+		try {
+			//make sure that when the call is made the token isnt bad, and refresh it if it is
+			this.#hasTokenExpired(true);
+
+			const callback_url = 'https://localhost:443';
+			const post_url = 'https://api.twitch.tv/helix/eventsub/subscriptions';
+
+			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
+			const c_id = await this.#data_base.getIdAndSecret();
+			const cc_id = c_id[0];
+
+			const t = await this.#getTwitchAppToken();
+
+			//our horrid little request demon
+			const data = {
+				'method': 'POST',
+				//headers we need to make the eventsub
+				//in theory, should not need to make this more generic than it is
+				'headers': {
+					'Authorization': `Bearer ${t}`,
+					'Client-Id': `${cc_id}`,
+					'Content-Type': 'application/json'
+				},
+				//body for making the event sub
+				//TODO: make this more generic for other types of event subs
+				'body': JSON.stringify({
+					'type': 'channel.raid',
+					'version': '1',
+					'condition': {
+						'to_broadcaster_user_id': '71631229'
+					},
+					'transport': {
+						'method': 'webhook',
+						'callback': callback_url,
+						'secret': 'godwhydoiexisteverythingispain'
+					}
+				})
+			};
+
+			//send out request to make the event sub
+			await fetch(post_url, data).then(result => result.json()).then(body => {
+					console.log(body);
+			});
+
+			//set up the server we need to recieve the callback verification request
+			let s = https.createServer((req, res) => {
+				console.log("Popping open https server");
+				console.log(req);
+				console.log(res);
+				console.log(req.headers);
+				console.log(req.method.toUpperCase);
+				res.end();
+			}).listen(443);
+
+			await open(callback_url, {wait:true}).then(console.log("* Webhook page opened"));
+
+			//close the server to any new incoming connection when we are done
+			s.close();
 		} catch (err) { console.error(err); }
 	}
 
@@ -816,6 +893,10 @@ class AsyncHolder {
 		} catch (err) { console.error(err); }
     }
 
+	async refresh_me() {
+		await this.#refreshTwitchTokens();
+	}
+
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
 	//@param   target    The name of the chatroom we are posting the photo into
 	async getNASAPicOfTheDay(target) {
@@ -920,12 +1001,28 @@ class AsyncHolder {
 		};
 	}
 
+	//function needed in order to generate the eventsub requested by the user
+	//@return   the client credentials token needed to complete the eventsub transaction
+	async #getTwitchAppToken() {
+		const client_details = await this.#data_base.getIdAndSecret();
+		const scope = 'user:read:email';
+		const url = `https://id.twitch.tv/oauth2/token?client_id=${client_details[0]}&client_secret=${client_details[1]}&grant_type=client_credentials&scope=${scope}`;
+		const header = {
+			'method': 'POST'
+		};
+
+		let code;
+
+		await fetch(url, header).then(result => result.json()).then(body => {
+			console.log(body);
+			console.log(body.access_token);
+			code = body.access_token;
+		});
+
+		return code;
+	}
+
 	//gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
-	//@param   client_id       The bot's Twitch ID, so we can get to the API easier
-	//@param   client_secret   The bot's Twitch password so it can get a token
-	//@param   scopes          A list of all needed scopes for the Helix API so we can make certain requests
-	//@param   redirect_url    The URL that the user will be redirected to so we can get the auth code needed to generate the token
-	//@param   state           Security measure for the Twitch API to avoid certain attacks
 	async #getTwitchToken() {
 
 		try {
@@ -975,15 +1072,16 @@ class AsyncHolder {
 	   	};
 
 		//from the DB object passed into the class, we grab the refresh token we're gonna need for this to work
-		let refresh_token = this.#data_base.getTwitchInfo(1);
+		let refresh_token = await this.#data_base.getTwitchInfo(1);
 
 		//get the client secret and all that fun stuff so we can make the proper request
-		let client_stuff = this.#data_base.getIdAndSecret();
+		let client_stuff = await this.#data_base.getIdAndSecret();
 
 		let url = `https://id.twitch.tv/oauth2/token--data-urlencode?grant_type=refresh_token&refresh_token=${refresh_token}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
 		
 		//send the request and write the tokens to the DB for safe keeping
 		await fetch(url, data).then(result => result.json()).then(body => {
+			console.log(body);
 			if (body.status == null) {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes

@@ -25,14 +25,14 @@ class Calculator {
     //converts an expression to a Reverse Polish Notation (RPN) format so a calculator can better compute the math problem
     //allows for the calculator function to solve more complex mathematical formulas when entered
     //implementation of Djikstra's Shunting Yard algorithm
-    //@param   infixEq   The equation to be converted in infix (standard) form
+    //@param   infix_eq   The equation to be converted in infix (standard) form
     //return             The equation now in reverse polish notation
-    #convertToRPN(infixEq) {
+    #convertToRPN(infix_eq) {
         let output = "";
-        let operStack = [];
+        let oper_stack = [];
 
-        let lastCharChecked = '';
-        let isNegative = false;
+        let last_char_checked = '';
+        let is_negative = false;
 
         //our list of operators that we will be dealing with
         //may add the special operators 'x' and ':' that were mentioned by a viewer
@@ -68,17 +68,17 @@ class Calculator {
         };
 
         //remove all white space present and tokenize the equation
-        infixEq = infixEq.replace(/\s+/g, "");
-        infixEq = infixEq.split(/([\+\-\!\*\/\^\%\(\)])/).clean();
+        infix_eq = infix_eq.replace(/\s+/g, "");
+        infix_eq = infix_eq.split(/([\+\-\!\*\/\^\%\(\)])/).clean();
 
         //go through the whole eq array and compute from there
-        for (let i = 0; i < infixEq.length; ++i) {
-            let token = infixEq[i];
+        for (let i = 0; i < infix_eq.length; ++i) {
+            let token = infix_eq[i];
             if (this.helper.isNumeric(token)) {
 
-                if (isNegative) {//if we detected a unary negation before hand, we make the number negative before we output it
+                if (is_negative) {//if we detected a unary negation before hand, we make the number negative before we output it
                     token *= -1;
-                    isNegative = false;
+                    is_negative = false;
                 }
 
                 output += token + " ";
@@ -86,43 +86,43 @@ class Calculator {
             } else if ("^*/%!+-".indexOf(token) != -1) {//the token is an operator we are looking for
 
                 //first, we see if the operator is a '-' and check for negations for it
-                if (token == '-' && (lastCharChecked == '' || "^*/%!+-".indexOf(lastCharChecked) != -1 || lastCharChecked == '(')) {
+                if (token == '-' && (last_char_checked == '' || "^*/%!+-".indexOf(last_char_checked) != -1 || last_char_checked == '(')) {
                     //check now to see if the last character checked was an operator or if this character is the first in the eq
-                    isNegative = true;
+                    is_negative = true;
                 } else {//no negations, so just go to the next part
                     let o1 = token;
-                    let o2 = operStack[operStack.length - 1];
+                    let o2 = oper_stack[oper_stack.length - 1];
 
                     while ("^*/%!+-".indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
                         operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
                             operators[o1].precedence < operators[o2].precedence))) {
-                        output += operStack.pop() + " ";
-                        o2 = operStack[operStack.length - 1];
+                        output += oper_stack.pop() + " ";
+                        o2 = oper_stack[oper_stack.length - 1];
                     }
 
-                    operStack.push(o1);
+                    oper_stack.push(o1);
                 }
 
             } else if (token == "(") {
 
-                operStack.push(token);
+                oper_stack.push(token);
 
             } else if (token == ")") {
 
-                while (operStack[operStack.length - 1] != "(") {
-                    output += operStack.pop() + " ";
+                while (oper_stack[oper_stack.length - 1] != "(") {
+                    output += oper_stack.pop() + " ";
                 }
-                operStack.pop();
+                oper_stack.pop();
 
             } else if (token.toLowerCase() == "e") {//this condition and the one below it are for recognizing math constants; so far, e and pi
                 output += e.toString() + " ";
             } else if (token.toLowerCase() == "pi" || token == "?") {
                 output += pi.toString() + " ";
             } 
-            lastCharChecked = token;
+            last_char_checked = token;
         }
-        while (operStack.length > 0) {
-            output += operStack.pop() + " ";
+        while (oper_stack.length > 0) {
+            output += oper_stack.pop() + " ";
         }
         return output;
     }
@@ -130,74 +130,74 @@ class Calculator {
     //calculates a problem using RPN function defined above
     //can handle multiple different sized math problems
     //operators possible: =, -, *, /, %, :, x, ^, !
-    //@param   mathProblem   An equation to be solved in reverse polish notation
+    //@param   math_problem   An equation to be solved in reverse polish notation
     //@return                The end product of the solved equation
-    calculate(mathProblem) {
+    calculate(math_problem) {
 
-        mathProblem = this.#convertToRPN(mathProblem);
+        math_problem = this.#convertToRPN(math_problem);
 
-        let resultStack = []
-        mathProblem = mathProblem.split(" ");
+        let result_stack = []
+        math_problem = math_problem.split(" ");
 
-        for (let i = 0; i < mathProblem.length; ++i) {
-            if (this.helper.isNumeric(mathProblem[i])) {
+        for (let i = 0; i < math_problem.length; ++i) {
+            if (this.helper.isNumeric(math_problem[i])) {
 
-                resultStack.push(parseFloat(mathProblem[i]));
+                result_stack.push(parseFloat(math_problem[i]));
 
-            } else if (this.helper.isOperator(mathProblem[i])) {
-                let a = resultStack.pop();
+            } else if (this.helper.isOperator(math_problem[i])) {
+                let a = result_stack.pop();
                 let b;
-                if (resultStack.length != 0) {
-                    b = resultStack.pop();
+                if (result_stack.length != 0) {
+                    b = result_stack.pop();
                 } else {
                     b = 0;
                 }
-                let oper = mathProblem[i];
+                let oper = math_problem[i];
 
                 switch (oper) {
                     case '+':
-                        resultStack.push(b + a);
+                        result_stack.push(b + a);
                         break;
                     case '-':
-                        resultStack.push(b - a);
+                        result_stack.push(b - a);
                         break;
                     case 'x':
                     case '*':
-                        resultStack.push(b * a);
+                        result_stack.push(b * a);
                         break;
                     case '!':
-                        resultStack.push(this.#factorial(a));
+                        result_stack.push(this.#factorial(a));
                         break;
                     case ':':
                     case '/':
                         if (a == 0) {
                             return `Error: Cannot divide by zero.`;
                         }
-                        resultStack.push(b / a);
+                        result_stack.push(b / a);
                         break;
                     case '%':
-                        resultStack.push(b % a);
+                        result_stack.push(b % a);
                         break;
                     case '^':
-                        resultStack.push(Math.pow(b, a));
+                        result_stack.push(Math.pow(b, a));
                         break;
                 }
             }
         }
 
-        if (resultStack.length > 1) {
+        if (result_stack.length > 1) {
             return `Error: Not enough operators present or not enough numbers`;
         } else {
-            return resultStack.pop();
+            return result_stack.pop();
         }
     }
 
     //Calculates a factorial to the number given
-    //@param   cycleNum   The number that we need to calculate the factorial of
+    //@param   cycle_num   The number that we need to calculate the factorial of
     //@result             The product of the factorial
-    #factorial(cycleNum) {
+    #factorial(cycle_num) {
         let answer = 1;
-        for (let i = 2; i < cycleNum + 1; ++i) {
+        for (let i = 2; i < cycle_num + 1; ++i) {
             answer *= i;
         }
         return answer;

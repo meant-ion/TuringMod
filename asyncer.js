@@ -7,7 +7,6 @@ const h = require('./helper.js');
 const http = require('http');
 const https = require('https');
 const open = require('open');
-const crypto = require('crypto');
 const fs = require('fs');
 
 class AsyncHolder {
@@ -90,17 +89,17 @@ class AsyncHolder {
 			await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
 				.then(body => {
 	
-					let streamDates = "";
+					let stream_dates = "";
 					for (let i = 1; i < body.data.segments.length; ++i) {
 						let curDate = new Date(body.data.segments[i].start_time);
 						if (i + 1 == body.data.segments.length) {
-							streamDates += curDate.toDateString();
+							stream_dates += curDate.toDateString();
 						} else {
-							streamDates += curDate.toDateString() + ", ";
+							stream_dates += curDate.toDateString() + ", ";
 						}
 						
 					}
-					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${streamDates}`);
+					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 			});
@@ -140,9 +139,9 @@ class AsyncHolder {
 					this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
 						` the next stream is. Thank you! :)`);
 				} else {
-					let startTime = new Date(body.data[0].started_at);
-					let timeMsg = this.helper.getTimePassed(startTime, false);
-					this.client.say(target, `@${user.username}: ${timeMsg}`);
+					let start_time = new Date(body.data[0].started_at);
+					let time_msg = this.helper.getTimePassed(start_time, false);
+					this.client.say(target, `@${user.username}: ${time_msg}`);
 				}
 				
 			}).catch(err => {
@@ -181,9 +180,9 @@ class AsyncHolder {
 			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
-				let acctCreateDate = new Date(body.data[0].created_at);
-				let timePassed = this.helper.getTimePassed(acctCreateDate, true);
-				this.client.say(target, `@${user.username}, your account is ${timePassed} old`);
+				let acct_create_date = new Date(body.data[0].created_at);
+				let time_passed = this.helper.getTimePassed(acct_create_date, true);
+				this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 			});
@@ -236,25 +235,25 @@ class AsyncHolder {
 
 	//edits the channel category/game to one specified by a moderator
 	//@param   user           The name of the chat member that typed in the command
-	//@param   gameName       The name of the category that we wish to change the stream over to
-	async editChannelCategory(user, gameName, target) {
+	//@param   game_name       The name of the category that we wish to change the stream over to
+	async editChannelCategory(user, game_name, target) {
 
 		try {
 			this.#hasTokenExpired(true);
 			const data = await this.#createTwitchDataHeader();
 
-			gameName = gameName.slice(1);
-			gameName = gameName.replace(/&/g, "%26");
+			game_name = game_name.slice(1);
+			game_name = game_name.replace(/&/g, "%26");
 	
 			//first, we need to get the category id to change the channel's category
-			const gameIdURL = `https://api.twitch.tv/helix/games?name=` + `${gameName}`;
+			const game_id_URL = `https://api.twitch.tv/helix/games?name=` + `${game_name}`;
 	
-			let gameID = "";
-			let editChannelURL = "";
+			let game_ID = "";
+			let edit_channel_URL = "";
 	
-			await fetch(gameIdURL, data).then(result => result.json()).then(body => {
-				gameID = body.data[0].id;
-				editChannelURL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+			await fetch(game_id_URL, data).then(result => result.json()).then(body => {
+				game_ID = body.data[0].id;
+				edit_channel_URL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 				return;
@@ -265,7 +264,7 @@ class AsyncHolder {
 			const cc_id = c_id[0];
 	
 			//secondary data structure is meant for the editing, since we have to use PATCH and not GET
-			const editData = {
+			const edit_data = {
 				'method': 'PATCH',
 				'headers': {
 					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
@@ -273,12 +272,12 @@ class AsyncHolder {
 					'Content-Type': 'application/json'
 				},
 				'body': JSON.stringify({
-					"game_id": gameID,
+					"game_id": game_ID,
 				}),
 			};
 	
 			//send out the info and edit the channel's category
-			await fetch(editChannelURL, editData).then(() => {
+			await fetch(edit_channel_URL, edit_data).then(() => {
 				this.client.say(target, `@${user.username}: Category Successfully Updated`);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
@@ -419,12 +418,15 @@ class AsyncHolder {
 	}
 
 	//sets up an event sub as requested by the admin
+	//Note: need to have a SSL cert and key set up. Can do this in windows using git bash and the openssl program
+	//This is shelved until further notice. Literally need to get an actual web server to get this to work right
+	//and I dont have the money for that at all.
 	async addEventSub() {
 		try {
 			//make sure that when the call is made the token isnt bad, and refresh it if it is
 			this.#hasTokenExpired(true);
 
-			const callback_url = 'https://localhost:443';
+			const callback_url = 'https://0.0.0.0:443';
 			const post_url = 'https://api.twitch.tv/helix/eventsub/subscriptions';
 
 			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
@@ -464,20 +466,62 @@ class AsyncHolder {
 					console.log(body);
 			});
 
+			const server_options = {
+				key: fs.readFileSync('key.pem'),
+				cert: fs.readFileSync('cert.pem'),
+			};
+
 			//set up the server we need to recieve the callback verification request
-			let s = https.createServer((req, res) => {
-				console.log("Popping open https server");
-				console.log(req);
-				console.log(res);
-				console.log(req.headers);
-				console.log(req.method.toUpperCase);
-				res.end();
+			let s = https.createServer(server_options ,(req, res) => {
+				console.log(req.method);
+				console.log(req.body);
+				if (req.method == 'POST') {
+					let body = '';
+					req.on('data', data => {
+						body += data;
+					});
+					req.on('end', () => {
+						try {
+							console.log("Inside of end, trying something out here lol");
+							let post = JSON.parse(body);
+							console.log("Body parsed");
+							console.log(post);
+							res.writeHead(200, {"Content-Type": "text/plain"});
+							res.write(post);
+							res.end();
+							return;
+						} catch (err) {
+							console.error(err);
+							res.writeHead(500, {"Content-Type": "text/plain"});
+							res.write("Bad data is bad");
+							res.end();
+							return;
+						}
+					});
+				} else if (req.method == 'GET') {
+					try {
+						res.writeHead(200, {"Content-Type": "text/plain"});
+						//let g = JSON.parse(req);
+						//console.log(req);
+						//let gg = JSON.stringify(g);
+						//res.write(req);
+						res.end();
+						return;
+					} catch (err) { console.error(err); }
+				}
+				// console.log("Popping open https server");
+				// console.log(req);
+				// console.log("Res");
+				// console.log(res);
+				//console.log(req.method.toUpperCase);
+				//res.writeHead(200, {"Content-Type": "text/plain"});
+				//res.end();
 			}).listen(443);
 
-			await open(callback_url, {wait:true}).then(console.log("* Webhook page opened"));
+			//await open(callback_url, {wait:true}).then(console.log("* Webhook page opened"));
 
 			//close the server to any new incoming connection when we are done
-			s.close();
+			//s.close();
 		} catch (err) { console.error(err); }
 	}
 
@@ -828,7 +872,7 @@ class AsyncHolder {
 	async getRandomWordFromDictionary(user, target) {
 
 		//we can't get a random word through the dictionary API, so we get it through a different, free API
-		const randomWordURL = `https://random-words-api.herokuapp.com/w?n=1`;
+		const random_word_URL = `https://random-words-api.herokuapp.com/w?n=1`;
 		let dictionary_url;
 		let word = "";
 		let gr_abbrev = "";//the abbreviation of the grammatical function of the word
@@ -836,7 +880,7 @@ class AsyncHolder {
 		try {
 			let key = await this.#data_base.getAPIKeys(1);
 			//get the random word first for us to get access to the definition of it
-			await fetch(randomWordURL).then(result => result.json()).then(body => {
+			await fetch(random_word_URL).then(result => result.json()).then(body => {
 				word = body[0];
 				dictionary_url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${key}`;
 			}).catch(err => {
@@ -1014,8 +1058,6 @@ class AsyncHolder {
 		let code;
 
 		await fetch(url, header).then(result => result.json()).then(body => {
-			console.log(body);
-			console.log(body.access_token);
 			code = body.access_token;
 		});
 

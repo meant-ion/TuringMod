@@ -7,12 +7,12 @@ class Helper {
     constructor() { }
 
     //helper function to tell if a character is an operator that we want
-    //@param   charToCheck   self explanatory
+    //@param   char_to_check   self explanatory
     //@return                True/False
-    isOperator(charToCheck) {
+    isOperator(char_to_check) {
         const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!'];
         for (let i = 0; i < operators.length; ++i) {
-            if (charToCheck == operators[i]) {
+            if (char_to_check == operators[i]) {
                 return true;
             }
         }
@@ -20,69 +20,66 @@ class Helper {
     }
 
     //combines the input into a single string
-    //@param   inputMsg         The message that needs to be combined into one string
-    //@param   needWhiteSpace   Whether the string needs to have spaces between words
+    //@param   input_msg         The message that needs to be combined into one string
+    //@param   need_white_space   Whether the string needs to have spaces between words
     //@return                   A string made up of all elements of the inputMsg array
-    combineInput(inputMsg, needWhiteSpace) {
-        let combinedMsg = '';
-        //console.log("input length: " + inputMsg.length);
-        for (let i = 0; i < inputMsg.length; ++i) {
+    combineInput(input_msg, need_white_space) {
+        let combined_msg = '';
+        for (let i = 0; i < input_msg.length; ++i) {
             if (i != 0) {
-                combinedMsg += inputMsg[i];
+                combined_msg += input_msg[i];
             }
-            if (needWhiteSpace && (i + 1 != inputMsg.length)) {
-                combinedMsg += ' ';
+            if (need_white_space && (i + 1 != input_msg.length)) {
+                combined_msg += ' ';
             }
-            //console.log("After adding in char to string: " + combinedMsg);
         }
-        //console.log("After returning combined string: " + combinedMsg);
-        return combinedMsg;
+        return combined_msg;
     }
 
     //function to get the time passed from one point to another
-    //@param   startTime   The time and date we are calculating time passed from
-    //@param   needDay     Tell if we need the number of days passed since the start
+    //@param   start_time   The time and date we are calculating time passed from
+    //@param   need_day     Tell if we need the number of days passed since the start
     //@return              A message telling how much time has passed since the starting date to the current date
-    getTimePassed(startTime, needDay) {
+    getTimePassed(start_time, need_day) {
 
-        const curTime = new Date();
-        const difference = (curTime.getTime() - startTime.getTime()) / 1000;
-        const unflooredHours = difference / 3600;
-        const flooredHours = Math.floor(unflooredHours);
-        const days = Math.round(flooredHours / 24);
-        const mins = Math.round((unflooredHours - flooredHours) * 60);
-        const secs = Math.round((unflooredHours - flooredHours) * 3600);
-        if (!needDay) {
-            return `${flooredHours} hours ${mins % 60} minutes ${secs % 60} seconds`;
+        const cur_time = new Date();
+        const difference = (cur_time.getTime() - start_time.getTime()) / 1000;
+        const unfloored_hours = difference / 3600;
+        const floored_hours = Math.floor(unfloored_hours);
+        const days = Math.round(floored_hours / 24);
+        const mins = Math.round((unfloored_hours - floored_hours) * 60);
+        const secs = Math.round((unfloored_hours - floored_hours) * 3600);
+        if (!need_day) {
+            return `${floored_hours} hours ${mins % 60} minutes ${secs % 60} seconds`;
         }
-        return `${days} days ${flooredHours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
+        return `${days} days ${floored_hours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
     }
 
     //helper function to see if a character is a letter (english only I think)
-    //@param   charToCheck   self explanatory
+    //@param   char_to_check   self explanatory
     //@return                True/False
-    isLetter(charToCheck) { return charToCheck.match(/[a-z]/i); }
+    isLetter(char_to_theck) { return char_to_theck.match(/[a-z]/i); }
 
     //helper function to see if a character is a number
-    //@param   charToCheck   self explanatory
+    //@param   char_to_check   self explanatory
     //@return                True/False
-    isNumeric(charToCheck) { return !isNaN(parseFloat(charToCheck)) && isFinite(charToCheck); }
+    isNumeric(char_to_check) { return !isNaN(parseFloat(char_to_check)) && isFinite(char_to_check); }
 
     //simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
     //@param   user          The name of the chat member that typed in the command
-    //@param   theStreamer   The name of the channel owner
+    //@param   the_streamer   The name of the channel owner
     //@return                True or false, depending on if the user is a mod or the streamer
-    checkIfModOrStreamer(user, theStreamer) { return user.mod || user.username == theStreamer; }
+    checkIfModOrStreamer(user, the_streamer) { return user.mod || user.username == the_streamer; }
 
     //checks the whole of a message to tell if there is a URL present. If so, it will return the url
-    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@param   input_msg   The message that is being read through to detect symbol spam
     //@return             The URL, or an empty string if not valid
-    checkIfURL(inputMsg) {
+    checkIfURL(input_msg) {
         //do not have this be a forEach loop, it will not work lol
-        for (let i = 0; i < inputMsg.length; ++i) {
+        for (let i = 0; i < input_msg.length; ++i) {
             try {
-                new url(inputMsg[i]);
-                return inputMsg[i];
+                new url(input_msg[i]);
+                return input_msg[i];
             } catch (err) { }
         }
         return "";
@@ -91,18 +88,18 @@ class Helper {
     //very rudimentary symbol spam detector. To be worked on and improved as time goes on
     //currently justs sees if there's a lot of symbols in the message, not whether or not those symbols are in a correct place
     //(i.e. "Hello there! Y'all'd've ain't done that, if you'd've been smarter" could get caught as spam (assuming enough contractions happen))
-    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@param   input_msg   The message that is being read through to detect symbol spam
     //@param   target     The chatroom that the message will be sent into
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
-    detectSymbolSpam(inputMsg, target, user, client) {
+    detectSymbolSpam(input_msg, target, user, client) {
 
         //the regex that we will use to detect the symbol spam in a message
         let sym_list = /[|]|{|}|\(|\)|\\|`|~|!|@|#|\$|%|\^|&|\*|;|:|'|"|,|<|.|>|\/|\?|-|_|=|\+|\|/;
 
-        inputMsg = this.combineInput(inputMsg, true);
+        input_msg = this.combineInput(input_msg, true);
         //search the whole message for the symbols. If enough are found, remove the message for spam
-        let match_list = inputMsg.match(sym_list);
+        let match_list = input_msg.match(sym_list);
         if (match_list != null && match_list.length > 15) {
             client.timeout(target, user.username, 1, "No symbol spam in chat please");
             return true;
@@ -112,12 +109,12 @@ class Helper {
 
     //Due to the recent issue on twitch with hate raids, figured that it would be a good idea to make this little thing
     //detects if the message passed in contains any unicode characters at all. If so (as to protect from hate spam) it deletes the message
-    //@param   inputMsg   The message that is being read through to detect symbol spam
+    //@param   input_msg   The message that is being read through to detect symbol spam
     //@param   target     The chatroom that the message will be sent into
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
-    detectUnicode(inputMsg, target, user, client) {
-        let msg =  this.combineInput(inputMsg, true);
+    detectUnicode(input_msg, target, user, client) {
+        let msg =  this.combineInput(input_msg, true);
         let regex = /[^\x00-\xFF]/;//range of all non-ascii characters available
         if (regex.test(msg)) {
             client.timeout(target, user.username, 1, "Please, english only in this chatroom");
@@ -126,40 +123,48 @@ class Helper {
         return false;
     }
 
+    //Tells if the message sent by the user is @-ing the streamer
+    //@param   input_msg      The whole message sent by the user
+    //@returns                T/F if the streamer is @'ed in the message
+    isStreamerMentioned(input_msg) {
+        input_msg = input_msg.map(item => item.toLowerCase());
+        return input_msg.includes('@pope_pontus');
+    }
+
     //gets the current time in Central Standard Time in AM/PM configuration
     //@param   client   The bot's client for accessing the chat room
     //@param   target   The chatroom that the message will be sent into
     //@param   user     The name of the chat member that typed in the command
     getCurrentTime(client, target, user) {
         const curTime = new Date();
-        let isAM = false;
+        let is_AM = false;
 
         //calculate the hours in military configuration
-        const unflooredHours = (curTime.getTime() / 1000) / 3600;
-        const flooredHours = Math.floor(unflooredHours);
-        const militaryHours = (flooredHours % 24) - 5;
+        const unfloored_hours = (curTime.getTime() / 1000) / 3600;
+        const floored_hours = Math.floor(unfloored_hours);
+        const military_hours = (floored_hours % 24) - 5;
 
-        let trueHours = 0;
+        let true_hours = 0;
 
         //figure out what the military time converts to in standard configuration
-        if (militaryHours > 0 && militaryHours < 12) {
-            trueHours = militaryHours;
-            isAM = true;
-        } else if (militaryHours == 12) {
-            trueHours = militaryHours;
-            isAM = false;
-        } else if (militaryHours > 12) {
-            trueHours = militaryHours - 12;
-            isAM = false;
-        } else if (militaryHours == 0) {
-            trueHours = 12;
-            isAM = true;
+        if (military_hours > 0 && military_hours < 12) {
+            true_hours = military_hours;
+            is_AM = true;
+        } else if (military_hours == 12) {
+            true_hours = military_hours;
+            is_AM = false;
+        } else if (military_hours > 12) {
+            true_hours = military_hours - 12;
+            is_AM = false;
+        } else if (military_hours == 0) {
+            true_hours = 12;
+            is_AM = true;
         }
 
         //calculate the minutes, craft the message, and then send to chat
-        const mins = Math.round((unflooredHours - flooredHours) * 60);
-        let msg = `@${user.username}: Currently ${trueHours}:${mins % 60}`;
-        if (isAM) {
+        const mins = Math.round((unfloored_hours - floored_hours) * 60);
+        let msg = `@${user.username}: Currently ${true_hours}:${mins % 60}`;
+        if (is_AM) {
             msg += ` A.M. `;
         } else {
             msg += ` P.M. `;

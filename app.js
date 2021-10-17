@@ -28,19 +28,22 @@ const opts = {
 	]
 };
 
-const theStreamer = opts.channels[0];
+const the_streamer = opts.channels[0];
 
 //we want at least 5 lines of text to be able to make Turing-Bot
 //be able to emulate chat the best it can
-let linesCount = 0;
+let lines_count = 0;
 let prompt = "";
 
 //what we set when we want to collect clips to be seen later
-let collectClips = false;
+let collect_clips = false;
+
+//what we use to tell if quiet mode (i.e. no @-ing the streamer) is enabled
+let quiet_mode_enabled = false;
 
 //what we use to measure how many viewers/commenters wish to change the song currently playing (needs to be 5 and over)
 //relevant command: !skipsong
-let skipThreshold = 0;
+let skip_threshold = 0;
 
 //lets us know that bot is connected to the discord server we need it on
 discord_client.once('ready', () => {
@@ -48,9 +51,7 @@ discord_client.once('ready', () => {
 });
 
 let client = new tmi.client(opts);
-
 client.connect();
-
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
@@ -58,7 +59,7 @@ client.on('connected', onConnectedHandler);
 setInterval(intervalMessages, 600000);
 
 //separate variable to tell the program which function gets called
-let callThisFunctionNumber = 0;
+let call_this_function_number = 0;
 
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
@@ -89,7 +90,7 @@ let lurk_list = new lrk();
 let async_functions = new AsyncHolder(client, commands_holder);
 let dice = new dicee(client);
 let Calculator = new calculator();
-let ClipCollector = new collector(async_functions);
+let clip_collector = new collector(async_functions);
 let post = new poster_class(discord_client, client);
 
 //called every time a message gets sent in
@@ -97,22 +98,22 @@ function onMessageHandler(target, user, msg, self) {
 	if (self) { return; }
 
 	//split the message up into an array so we can see what's actually going on in it
-	const inputMsg = msg.split(" ");
+	const input_msg = msg.split(" ");
 
 	//get the command name from the array as the first word in the message array
-	const cmdName = inputMsg[0].toLowerCase();
+	const cmd_name = input_msg[0].toLowerCase();
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {
 		//check to see if the command is one that can only be accessed by the streamer, their mods, or myself (pope_pontus)
 
 		//mods/streamer wish to give a shoutout to a chat member/streamer
-		if (cmdName == '!so' && inputMsg.length > 1 && helper.checkIfModOrStreamer(user, theStreamer)) {
+		if (cmd_name == '!so' && input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${inputMsg[1]}`);
+			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
 
 			//a moderator or the streamer wishes to flush the bot's posting prompt
-		} else if (cmdName == '!flush' && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			if (prompt.length == 0) {//make sure we don't waste time flushing a prompt that is just empty
 				client.say(target, "Cannot flush and erase an empty prompt");
@@ -122,46 +123,46 @@ function onMessageHandler(target, user, msg, self) {
 			}
 
 			//starts clip collection services
-		} else if (cmdName == '!startcollect' && !collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!startcollect' && !collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			collectClips = true;
+			collect_clips = true;
 			client.say(target, "Clip collection is turned on!");
 
 			//ends clip collection services
-		} else if (cmdName == '!endcollect' && collectClips && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!endcollect' && collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			async_functions.getClipList();
-			ClipCollector.writeClipsToHTMLFile();
-			collectClips = false;
+			clip_collector.writeClipsToHTMLFile();
+			collect_clips = false;
 			client.say(target, "All collected clips are written to file!");
 
 			//activates GPT-3 for a post. Heavily controlled
-		} else if (cmdName == '!post' && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!post' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			generatePost(target);
 
 			//for mods/streamer to add a custom command
-		} else if (cmdName == '!addcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!addcommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			commands_holder.createAndWriteCommandsToFile(client, target, user, inputMsg);
+			commands_holder.createAndWriteCommandsToFile(client, target, user, input_msg);
 
 			//for mods/streamer to remove a custom command
-		} else if (cmdName == '!removecommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!removecommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			commands_holder.removeCommand(client, target, user, inputMsg[2], (inputMsg[1] == true));
+			commands_holder.removeCommand(client, target, user, input_msg[2], (input_msg[1] == true));
 
 			//for mods/streamer to edit a custom command
-		} else if (cmdName == '!editcommand' && helper.checkIfModOrStreamer(user, theStreamer)) {
+		} else if (cmd_name == '!editcommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			commands_holder.editCommand(client, target, user, inputMsg);
+			commands_holder.editCommand(client, target, user, input_msg);
 
-		} else if (cmdName == '!changegame' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the category of the stream
+		} else if (cmd_name == '!changegame' && helper.checkIfModOrStreamer(user, the_streamer)) {//moderator/streamer wishes to change the category of the stream
 
-			async_functions.editChannelCategory(user, helper.combineInput(inputMsg, true), target);
+			async_functions.editChannelCategory(user, helper.combineInput(input_msg, true), target);
 
-		} else if (cmdName == '!changetitle' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wishes to change the title of the stream
+		} else if (cmd_name == '!changetitle' && helper.checkIfModOrStreamer(user, the_streamer)) {//moderator/streamer wishes to change the title of the stream
 
-			async_functions.editStreamTitle(helper.combineInput(inputMsg, true), target);
+			async_functions.editStreamTitle(helper.combineInput(input_msg, true), target);
 
 		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wants to have the "banhammer" hit randomly
 
@@ -169,167 +170,181 @@ function onMessageHandler(target, user, msg, self) {
 			//as if that will ever happen of course
 			//async_functions.shotgunTheChat(client_id);
 
-		} else if (cmdName == '!testviewers' && helper.checkIfModOrStreamer(user, theStreamer)) {//mod/streamer wants to see chances channel is being viewbotted
+		} else if (cmd_name == '!testviewers' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer wants to see chances channel is being viewbotted
 
 			async_functions.getChancesStreamIsViewbotted(target);
 
-		} else if (cmdName == '!lurk') {//the user wishes to enter lurk mode
+		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			client.say(target, lurk_list.addLurker(user, inputMsg));
+			quiet_mode_enabled = !quiet_mode_enabled;
+			let msg;
+			if (quiet_mode_enabled) {
+				msg = `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off`;
+			} else {
+				msg = `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer`;
+			}
+			client.say(target, msg);
 
-		} else if (cmdName == '!unlurk') {//the user wishes to exit lurk mode
+		} else if (cmd_name == '!lurk') {//the user wishes to enter lurk mode
+
+			client.say(target, lurk_list.addLurker(user, input_msg));
+
+		} else if (cmd_name == '!unlurk') {//the user wishes to exit lurk mode
 
 			client.say(target, lurk_list.removeLurker(user));
 
-		} else if (cmdName == '!customlist') {//gets a list of all custom commands on the channel
+		} else if (cmd_name == '!customlist') {//gets a list of all custom commands on the channel
 
 			commands_holder.postListOfCreatedCommands(client, target, user);
 
-		} else if (cmdName == '!followage') {//user wants to know how long they've followed the stream
+		} else if (cmd_name == '!followage') {//user wants to know how long they've followed the stream
 
-			if (user.username == theStreamer) {//make sure the streamer isn't the one trying to get a follow age lol
+			if (user.username == the_streamer) {//make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 			} else {
 				async_functions.getFollowAge(user, target);
 			}
 
-		} else if (cmdName == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
+		} else if (cmd_name == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
 
-			if (writeSuggestionToFile(inputMsg)) {
+			if (writeSuggestionToFile(input_msg)) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
 			}
 
-		} else if (cmdName == '!title') {//tells asking user what the current title of the stream is
+		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
 
 			async_functions.getStreamTitle(user, target);
 
-		} else if (cmdName == '!game') {//tells user what category stream is under
+		} else if (cmd_name == '!game') {//tells user what category stream is under
 
 			async_functions.getCategory(user, target);
 
-		} else if (cmdName == '!roulette') {//allows chat member to take a chance at being timed out
+		} else if (cmd_name == '!roulette') {//allows chat member to take a chance at being timed out
 
-			if (isStreamer(user.username, theStreamer)) {//make sure it isnt the streamer trying to play russian roulette
+			if (isStreamer(user.username, the_streamer)) {//make sure it isnt the streamer trying to play russian roulette
 				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
 			} else {
 				dice.takeAChanceAtBeingBanned(user, target);
 			}
 
-		} else if (cmdName == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
+		} else if (cmd_name == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
 			commands_holder.getAndUpdateVoiceCracks(client, target);
 
-		} else if (cmdName == '!wikirand') {//chat member wants to know about something random off wikipedia
+		} else if (cmd_name == '!wikirand') {//chat member wants to know about something random off wikipedia
 
 			async_functions.getRandWikipediaArticle(user, target);
 
-		} else if (cmdName.substring(0, 5) == '!roll') {//simple dice rolling command. Can do many sided dice, not just a d20 or d6
+		} else if (cmd_name.substring(0, 5) == '!roll') {//simple dice rolling command. Can do many sided dice, not just a d20 or d6
 
-			dice.getDiceRoll(cmdName, user, target);
+			dice.getDiceRoll(cmd_name, user, target);
 
-		} else if (cmdName == "!flip") {//flips a coin and returns the result to chat
+		} else if (cmd_name == "!flip") {//flips a coin and returns the result to chat
 
 			dice.flipCoin(user, target);
 
-		} else if (cmdName == '!uptime') {//user wants to know how long the stream has been going for
+		} else if (cmd_name == '!uptime') {//user wants to know how long the stream has been going for
 
 			async_functions.getStreamUptime(user, target);
 
-		} else if (cmdName == '!calc') {//chat member wants to do basic math with the bot
+		} else if (cmd_name == '!calc') {//chat member wants to do basic math with the bot
 
-			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(inputMsg, false));
+			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(input_msg, false));
 			client.say(target, msg);
 
-		} else if (cmdName == "!time") {//gets the current time in Central Standard Time (CST)
+		} else if (cmd_name == "!time") {//gets the current time in Central Standard Time (CST)
 
 			helper.getCurrentTime(client, target, user);
 
-		} else if (cmdName == '!schedule') {//returns a link to the stream schedule
+		} else if (cmd_name == '!schedule') {//returns a link to the stream schedule
 
 			async_functions.getChannelSchedule(user, target);
 
-		} else if (cmdName == '!who') {//returns the bio of the streamer
+		} else if (cmd_name == '!who') {//returns the bio of the streamer
 
 			async_functions.getChannelSummary(user, target);
 
-		} else if (cmdName == '!accountage') {//returns the age of the account asking
+		} else if (cmd_name == '!accountage') {//returns the age of the account asking
 
 			async_functions.getUserAcctAge(user, target);
 
-		} else if (cmdName == '!song') {//returns the song and artist playing through Spotify
+		} else if (cmd_name == '!song') {//returns the song and artist playing through Spotify
 
 		 	async_functions.getCurrentSongTitleFromSpotify(target, user);
 
-		} else if (cmdName == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
+		} else if (cmd_name == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
 		    thresholdCalc(target, user);
 
-		} else if (cmdName == '!addsong') {//user wants to add a song to the playlist queue
+		} else if (cmd_name == '!addsong') {//user wants to add a song to the playlist queue
 
-			async_functions.addSongToQueue(target, user, inputMsg);
+			async_functions.addSongToQueue(target, user, input_msg);
 
-		} else if (cmdName == '!suggestionlist') {//user wants to see what has been suggested but not yet implemented currently
+		} else if (cmd_name == '!suggestionlist') {//user wants to see what has been suggested but not yet implemented currently
 
 			async_functions.getAllCurrentSuggestions(target);
 
-		} else if (cmdName == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
+		} else if (cmd_name == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
 			async_functions.getRandomWordFromDictionary(user, target);
 
-		} else if (cmdName == '!gitchanges') {//user wants to see how much changed from the last two commits
+		} else if (cmd_name == '!gitchanges') {//user wants to see how much changed from the last two commits
 			
 			async_functions.getGithubRepoInfo(target);
 		
-		} else if (cmdName == '!convert') {//user wants to convert an amount of one currency to another
+		} else if (cmd_name == '!convert') {//user wants to convert an amount of one currency to another
 
-			async_functions.getCurrencyExchangeRate(user, target, inputMsg[1], inputMsg[2], Number(inputMsg[3]));
+			async_functions.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
 
-		} else if (cmdName == '!pokerand') {//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
+		} else if (cmd_name == '!pokerand') {//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
 
 			async_functions.getRandomPokemon(target);
 
-		} else if (cmdName == '!numrand') {//user wants a fact about a random number
+		} else if (cmd_name == '!numrand') {//user wants a fact about a random number
 
 			async_functions.getRandomNumberFact(target);
 
-		} else if (cmdName == '!8ball') {//user wants a magic 8 ball fortune
+		} else if (cmd_name == '!8ball') {//user wants a magic 8 ball fortune
 
 			commands_holder.magic8Ball(client, user, target);
 
-		} else if (cmdName == '!spacepic') {//user wants to see the NASA Space Pic of the Day
+		} else if (cmd_name == '!spacepic') {//user wants to see the NASA Space Pic of the Day
 
 			async_functions.getNASAPicOfTheDay(target);
 
-		} else if (cmdName == '!randlang') {//user wants to look at a random esolang
+		} else if (cmd_name == '!randlang') {//user wants to look at a random esolang
 
 			async_functions.getRandEsoLang(user, target);
 
-		} else if (cmdName == '!eeee' && helper.checkIfModOrStreamer(user, theStreamer)) {
-
-			async_functions.addEventSub();
-
 		} else {
 			//check to see if the message is a custom command
-			if (commands_holder.getCustomCommand(client, target, cmdName)) {
+			if (commands_holder.getCustomCommand(client, target, cmd_name)) {
 
 				console.log("Custom command executed");
 
-			} else if (collectClips) {//if enabled, check to see if it's a clip
+			} else if (collect_clips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
-				let possibleClipURL = helper.checkIfURL(inputMsg);
+				let possibleClipURL = helper.checkIfURL(input_msg);
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
-					ClipCollector.validateAndStoreClipLink(async_functions, possibleClipURL);
+					clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
 				}
 
 			//detect if this message is either non-english (unicode) or symbol spam
-			} else if (!helper.detectUnicode(inputMsg, target, user, client)) {
-				//if it isn't, we send the message through the prompt and check for other fun things
-				prompt += cmdName + helper.combineInput(inputMsg, true) + '\n';
-				linesCount++;
-				lurkerHasTypedMsg(target, user);
+			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
+				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
+				//if both are true, remove the msg via a 1-second timeout
+				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
+					!isStreamer(user.username, the_streamer)) {
+					client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
+				} else {//if it isn't, we send the message through the prompt and check for other fun things
+					prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';
+					lines_count++;
+					lurkerHasTypedMsg(target, user);
+				}
+
 			}
 		}
 	}
@@ -342,33 +357,32 @@ function onConnectedHandler(addy, prt) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	commands_holder.getIntervalCommand(callThisFunctionNumber, client);
-	callThisFunctionNumber = await commands_holder.getLengthOfIntervals(callThisFunctionNumber);
-
+	commands_holder.getIntervalCommand(call_this_function_number, client);
+	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 
 //hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
 function thresholdCalc(target, user) {
-	if (skipThreshold < 5) {
+	if (skip_threshold < 5) {
 		if (!skip_list.includes(user.username)) {
-			++skipThreshold;
+			++skip_threshold;
 			skip_list.push(user.username);
-			client.say(target, `@${user.username}: Skip request recorded. ${skipThreshold}/5 requests put through`);
+			client.say(target, `@${user.username}: Skip request recorded. ${skip_threshold}/5 requests put through`);
         }
 	} else {
 		async_functions.skipToNextSong(target, user);
-		skipThreshold = 0;
+		skip_threshold = 0;
 		skip_list = [];
 	}
 }
 
 //resets the prompt message and sets the line count down to zero
 function resetPrompt() {
-	linesCount = 0;
+	lines_count = 0;
 	prompt = "";
 }
 
-function isStreamer(username, theStreamer) { return username == theStreamer; }
+function isStreamer(username, the_streamer) { return username == the_streamer; }
 
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
 async function generatePost(target) {
@@ -379,7 +393,7 @@ async function generatePost(target) {
 
 	try {
 		const key = await commands_holder.getAPIKeys(0);
-		post.generatePost(prompt, linesCount, target, key);
+		post.generatePost(prompt, lines_count, target, key);
 		resetPrompt();
 	
 		if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
@@ -389,9 +403,9 @@ async function generatePost(target) {
 
 //if the user types again as a lurker, we display that they unlurked from chat
 function lurkerHasTypedMsg(target, user) {
-	let lurkMsg = lurk_list.removeLurker(user);
-	if (lurkMsg != `You needed to be lurking already in order to stop lurking @${user.username}`) {
-		client.say(target, lurkMsg);
+	let lurk_msg = lurk_list.removeLurker(user);
+	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) {
+		client.say(target, lurk_msg);
     }
 }
 
@@ -399,9 +413,9 @@ function lurkerHasTypedMsg(target, user) {
 function writeSuggestionToFile(inputMsg) {
 
 	//compile the message into a single string for better insertion into file
-	let compiledMsg = helper.combineInput(inputMsg, true);
+	let compiled_msg = helper.combineInput(inputMsg, true);
 
-	fs.appendFile('./data/suggestions.txt', compiledMsg + '\n', (err) => {
+	fs.appendFile('./data/suggestions.txt', compiled_msg + '\n', (err) => {
 		if (err) { console.error(err); }
 	});
 

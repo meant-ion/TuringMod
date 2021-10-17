@@ -139,9 +139,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 		  (or see long-term list below)
 				* will most likely have a .txt or .json file of all currently "banned" emotes for people to know what's banned or not
 
-		- a "quiet mode" for the stream
-				* will automatically remove all messages trying to directly @ the streamer from chat
-
 		- link permitting and removing
 				* a !permit command that will allow for one user to post one link
 				* automatically removes all links that are not permittied

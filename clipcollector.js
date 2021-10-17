@@ -32,17 +32,19 @@ class ClipCollector {
     //currently just does this with a .txt file, hope to be able to get this onto an actual html file
     //so that the links are actually hyperlinks and they dont have to be copy/pasted to see them
     writeClipsToHTMLFile() {
+        //start building the basic body for the HTML page and get the clips
         let rtf_body = `<body>\n<div>\n<p>\n`
         let list = this.#async_functions.getClipList();
 
-        console.log(list);
-
+        //add in the clips to the HTML page
         for (let i = 0; i < list.length; ++i) {
              rtf_body += list[i] + '\n';
         }
 
+        //add in the end tags for all HTML elements
         rtf_body += "</p>\n</div>\n</body>";
 
+        //write the new HTML page to file
         fs.truncate('./data/clip_links.html', 0, function () {
             fs.writeFile('./data/clip_links.html', rtf_body,
                 { flag: 'a+' }, err => { });

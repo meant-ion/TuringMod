@@ -26,16 +26,16 @@ class Post {
      * 
      * @param   user         the user that asked for the response from the bot (may be removed in the future)
      * @param   prompt       the combined total comments from the chatroom that will be used to generate the prompt
-     * @param   linesCount   total lines within the prompt; needs to be over certain value to generate a post
+     * @param   lines_count   total lines within the prompt; needs to be over certain value to generate a post
      * @param   target       chatroom that the command was called from and response will be posted into
 	 * @param   key          The API key we need for GPT-3, gathered from a DB
      * 
      * @return               whether the prompt was able to be posted to the target room or not
      */
-    async generatePost(prompt, linesCount, target, key) {
+    async generatePost(prompt, lines_count, target, key) {
 		//check first if minimum posting requirements have been met (enough comments made to post)
-		console.log("Number of lines in prompt: " + linesCount);
-		if (linesCount >= 10) {
+		console.log("Number of lines in prompt: " + lines_count);
+		if (lines_count >= 10) {
 
 			//the urls for GPT-3's engines; we will use the the content filter to keep compliance with OpenAI's TOS
 			const gen_url = 'https://api.openai.com/v1/engines/davinci/completions';

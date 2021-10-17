@@ -34,9 +34,9 @@ class LurkList {
         let index = this.isLurking(user);//ensures that we know if there's an issue
         if (index != -1) {
 
-            let timeMsg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
-            let lurkMsg = this.#lurker_list[index].getMsg();
-            const msg = `Welcome back @${user.username}! You were gone for ${timeMsg} because of "${lurkMsg}"`;
+            let time_msg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
+            let lurk_msg = this.#lurker_list[index].getMsg();
+            const msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
 
             this.#lurker_list.splice(index, 1);
             return msg;

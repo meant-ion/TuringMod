@@ -62,12 +62,12 @@ class CommandArray {
 	//@param   target       The chatroom that the message will be sent into
 	//@param   client       The Twitch chat client we will send the message through
 	//@param   command      The command that needs to be deleted
-	//@param   isInterval   Tells us if the command that needs to be deleted is one that is called on an interval
-	removeCommand(client, target, user, command, isInterval) {
+	//@param   is_interval   Tells us if the command that needs to be deleted is one that is called on an interval
+	removeCommand(client, target, user, command, is_interval) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
 		let del_sql;
-		if (!isInterval) {
+		if (!is_interval) {
 			del_sql = `DELETE FROM stdcommands WHERE name = ?;`;
 		} else {
 			del_sql = `DELETE FROM intervalcommands WHERE name = ?;`;
@@ -91,23 +91,22 @@ class CommandArray {
 	//@param   target       The chatroom that the message will be sent into
 	//@param   client       The Twitch chat client we will send the message through
 	//@param   command      The command that needs to be deleted
-	//@param   isInterval   Tells us if the command that needs to be deleted is one that is called on an interval
-	editCommand(client, target, user, inputMsg) {
+	editCommand(client, target, user, input_msg) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
-		let isInterval = (inputMsg[1] == 'true');
+		let is_interval = (input_msg[1] == 'true');
 		let update_sql;
-		if (!isInterval) {
+		if (!is_interval) {
 			update_sql = `UPDATE stdcommands SET msg = ? WHERE name = ?;`;
 		} else {
 			update_sql = `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
 		}
 
 		//assemble the message to post back into place
-		let commandToEdit = inputMsg[2];
+		let commandToEdit = input_msg[2];
 		let message = "";
-		for (let i = 3; i < inputMsg.length; ++i) {
-			message += inputMsg[i] + " ";
+		for (let i = 3; i < input_msg.length; ++i) {
+			message += input_msg[i] + " ";
 		}
 
 		//run the sql command and spit out the result

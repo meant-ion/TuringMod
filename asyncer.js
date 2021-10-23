@@ -684,7 +684,7 @@ class AsyncHolder {
 			//get the rates from the api and then do the conversion by multiplication
 			await fetch(currency_url).then(result => result.json()).then(body => {
 				const rate = Number(body.conversion_rates[target_abbrev]);
-				let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate)} ${target_abbrev}`;
+				let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate), false} ${target_abbrev}`;
 				this.client.say(target, msg);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
@@ -780,12 +780,12 @@ class AsyncHolder {
 			if (current_val > last_val) {//more changes on current repo than last
 
 				temp_indic = "up";
-				temp_percent = this.helper.roundToTwoDecimals((current_val / last_val) * 100);
+				temp_percent = this.helper.roundToTwoDecimals((current_val / last_val) * 100, true);
 
 			} else if (current_val < last_val) {//more changes on last repo than current
 
 				temp_indic = "down";
-				temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100);
+				temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100, true);
 
 			} else {//no change in amount of changes for both repos
 

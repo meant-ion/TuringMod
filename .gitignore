@@ -5,3 +5,5 @@ TuringMod.sln
 Microsoft.NodejsTools.WebRole.dll
 /data/suggestions.txt
 /data/clip_links.html
+key.pem
+cert.pem

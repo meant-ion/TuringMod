@@ -37,6 +37,7 @@ COMMANDS:
 	- !calc: a twitch chat calculator. Users can put in somewhat complex calculations and get answers. Currently supports:
 				* Basic operators (+, -, *, /)
 				* More complex operators (!(factorial), %(modulo/remainder), ^(exponents))
+				* Equality operators (<, >)
 				* Parentheses in the problems (i.e. 4 + (3-1))
 				* Values for Euler's Number (e) and Pi
 				* Negative numbers and decimals

@@ -10,7 +10,7 @@ class Helper {
     //@param   char_to_check   self explanatory
     //@return                True/False
     isOperator(char_to_check) {
-        const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!'];
+        const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!', '<', '>'];
         for (let i = 0; i < operators.length; ++i) {
             if (char_to_check == operators[i]) {
                 return true;
@@ -115,7 +115,7 @@ class Helper {
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(input_msg, target, user, client) {
         let msg =  this.combineInput(input_msg, true);
-        let regex = /[^\x00-\xFF]/;//range of all non-ascii characters available
+        let regex = /[^\x00-\xFF-\u203C-\u3299]/;//range of all non-ascii characters and of all emojis available
         if (regex.test(msg)) {
             client.timeout(target, user.username, 1, "Please, english only in this chatroom");
             return true;
@@ -174,11 +174,12 @@ class Helper {
     }
 
     //takes a number and rounds it out to two decimal points (for use as percentages)
-    //@param   num   The number we wish to round
-    //@return        The parameter passed in, but rounded to two decimal points
-    roundToTwoDecimals(num) {
+    //@param   num             The number we wish to round
+    //@param   is_percentage   Boolean to tell us if we are rounding a percentage or not
+    //@return                  The parameter passed in, but rounded to two decimal points
+    roundToTwoDecimals(num, is_percentage) {
         let neg = false;
-        if (num < 0) {
+        if (num < 0 && is_percentage) {
             neg = true;
             num *= -1;
         }

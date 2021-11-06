@@ -4,9 +4,9 @@
 // the command goes through, or some other file type that can store a link as a hyperlink. 
 // In the future, maybe it will be stored on a personal page for an actual website and handle YT links also
 
-const fs = require('fs');
+import fs from 'fs';
 
-class ClipCollector {
+export class ClipCollector {
 
     #regexp_checker;//what we will use to verify that the link is a correct one
     #async_functions;//for verifying that the link is an actual clip
@@ -62,4 +62,4 @@ class ClipCollector {
     }
 }
 
-module.exports = ClipCollector;
+export default ClipCollector;

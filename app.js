@@ -1,16 +1,19 @@
-require('dotenv').config({ path: './.env' });
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env'});
 
-const tmi = require('tmi.js');
-const fs = require('fs');
-const { Client, Intents } = require('discord.js');
-const calculator = require('./calculator.js');
-const h = require('./helper');
-const loader = require('./sqlite_db.js');
-const lrk = require('./lurker_list.js');
-const AsyncHolder = require('./asyncer.js');
-const dicee = require('./dice.js');
-const collector = require('./clipcollector.js');
-const poster_class = require('./post.js');
+import { client as _client } from 'tmi.js';
+import { appendFile } from 'fs';
+import { Client, Intents } from 'discord.js';
+import Calculator from './calculator.js';
+import Helper from './helper.js';
+import CommandArray from './sqlite_db.js';
+import LurkList from './lurker_list.js';
+import AsyncHolder from './asyncer.js';
+import Dice from './dice.js';
+import ClipCollector from './clipcollector.js';
+import Post from './post.js';
+import PubSubHandler from './pubsub_handler.js';
+
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const token = process.env.DISCORD_CLIENT_TOKEN;
@@ -50,7 +53,7 @@ discord_client.once('ready', () => {
 	console.log(`* Logged in as ${discord_client.user.tag} through Discord!`);
 });
 
-let client = new tmi.client(opts);
+let client = new _client(opts);
 client.connect();
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
@@ -84,14 +87,15 @@ discord_client.on('messageCreate', message => {
 });
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
-let commands_holder = new loader();
-let helper = new h();
-let lurk_list = new lrk();
+let commands_holder = new CommandArray();
+let helper = new Helper();
+let lurk_list = new LurkList();
 let async_functions = new AsyncHolder(client, commands_holder);
-let dice = new dicee(client);
-let Calculator = new calculator();
-let clip_collector = new collector(async_functions);
-let post = new poster_class(discord_client, client);
+let dice = new Dice(client);
+let calculator = new Calculator();
+let clip_collector = new ClipCollector(async_functions);
+let post = new Post(discord_client, client);
+let pubsubs = new PubSubHandler();
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -112,7 +116,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
 
-			//a moderator or the streamer wishes to flush the bot's posting prompt
+		} else if (cmd_name == '!makesub' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			makePubSubscription(input_msg[1]);
+
+		//a moderator or the streamer wishes to flush the bot's posting prompt
 		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			if (prompt.length == 0) {//make sure we don't waste time flushing a prompt that is just empty
@@ -191,7 +199,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!unlurk') {//the user wishes to exit lurk mode
 
-			client.say(target, lurk_list.removeLurker(user));
+			client.say(target, lurk_list.removeLurker(user, false));
+
+		} else if (cmd_name == '!leave') {//user is letting the stream know they're heading out for the stream
+
+			client.say(target, lurk_list.removeLurker(user, true));
 
 		} else if (cmd_name == '!customlist') {//gets a list of all custom commands on the channel
 
@@ -205,7 +217,7 @@ function onMessageHandler(target, user, msg, self) {
 				async_functions.getFollowAge(user, target);
 			}
 
-		} else if (cmd_name == '!suggestion') {//a chatmember has a suggestion on what to add to the bot
+		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
 
 			if (writeSuggestionToFile(input_msg)) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
@@ -249,7 +261,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!calc') {//chat member wants to do basic math with the bot
 
-			const msg = `@${user.username}: ` + ` ` + Calculator.calculate(helper.combineInput(input_msg, false));
+			const msg = `@${user.username}: ` + ` ` + calculator.calculate(helper.combineInput(input_msg, false));
 			client.say(target, msg);
 
 		} else if (cmd_name == "!time") {//gets the current time in Central Standard Time (CST)
@@ -361,6 +373,11 @@ async function intervalMessages() {
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 
+async function makePubSubscription(topic) {
+	const tkn = await commands_holder.getTwitchInfo(0);
+	pubsubs.requestToListen(topic, tkn);
+}
+
 //hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
 function thresholdCalc(target, user) {
 	if (skip_threshold < 5) {
@@ -403,7 +420,7 @@ async function generatePost(target) {
 
 //if the user types again as a lurker, we display that they unlurked from chat
 function lurkerHasTypedMsg(target, user) {
-	let lurk_msg = lurk_list.removeLurker(user);
+	let lurk_msg = lurk_list.removeLurker(user, false);
 	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) {
 		client.say(target, lurk_msg);
     }
@@ -415,7 +432,7 @@ function writeSuggestionToFile(inputMsg) {
 	//compile the message into a single string for better insertion into file
 	let compiled_msg = helper.combineInput(inputMsg, true);
 
-	fs.appendFile('./data/suggestions.txt', compiled_msg + '\n', (err) => {
+	appendFile('./data/suggestions.txt', compiled_msg + '\n', (err) => {
 		if (err) { console.error(err); }
 	});
 

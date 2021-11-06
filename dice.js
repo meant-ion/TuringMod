@@ -1,12 +1,12 @@
 // rewrite of dice.js, specifically to shove it into a class for better use. Same functionality, but as a class
 // rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
-const h = require('./helper');
+import Helper from './helper.js';
 
-class Dice {
+export class Dice {
 
 	client = undefined;
-	helper = new h();
+	helper = new Helper();
 
 	//@param   c   The Twitch chat client
     constructor(c) {
@@ -190,4 +190,4 @@ class Dice {
 
 }
 
-module.exports = Dice;
+export default Dice;

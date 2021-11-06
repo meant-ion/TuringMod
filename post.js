@@ -1,11 +1,11 @@
 //file that holds the post generating class; moved from asyncer.js to help clean up the code and make it easier
 //to use this separately if necessary
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 //using the readline-sync library in order to control if the message can be posted or not via the console. NEEDS TO BE SYNC
 //const readline = require('readline-sync');
 
-class Post {
+export class Post {
 
 	//the response made from the actual generatePost() function being called
 	#generated_response = "";
@@ -184,4 +184,4 @@ class Post {
 
 }
 
-module.exports = Post;
+export default Post;

@@ -1,8 +1,8 @@
 //file to hold our helper functions so that we can use them across files in the project
 
-const url = require('url').URL;
+import {URL as url} from 'url';
 
-class Helper {
+export class Helper {
 
     constructor() { }
 
@@ -205,4 +205,4 @@ class Helper {
     }
 }
 
-module.exports = Helper;
+export default Helper;

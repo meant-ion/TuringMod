@@ -1,15 +1,14 @@
 // file that holds all async functions that the bot will be using
 //i.e. !followage, !post, etc...
-require('dotenv').config({ path: './.env' });
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env'});
+import fetch from 'node-fetch';
+import Helper from './helper.js';
+import http from 'http';
+import open from 'open';
+import fs from 'fs';
 
-const fetch = require('node-fetch');
-const h = require('./helper.js');
-const http = require('http');
-const https = require('https');
-const open = require('open');
-const fs = require('fs');
-
-class AsyncHolder {
+export class AsyncHolder {
 
 	#clip_list;
 	#data_base;
@@ -22,7 +21,7 @@ class AsyncHolder {
 	//@param   d_b   The bot's client for accessing its database
 	constructor(c, d_b) {
 		this.client = c;
-		this.helper = new h();
+		this.helper = new Helper();
 		this.#data_base = d_b;
 		this.#clip_list = [];
 		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
@@ -414,114 +413,6 @@ class AsyncHolder {
 
 			this.client.say(target, msg);
 
-		} catch (err) { console.error(err); }
-	}
-
-	//sets up an event sub as requested by the admin
-	//Note: need to have a SSL cert and key set up. Can do this in windows using git bash and the openssl program
-	//This is shelved until further notice. Literally need to get an actual web server to get this to work right
-	//and I dont have the money for that at all.
-	async addEventSub() {
-		try {
-			//make sure that when the call is made the token isnt bad, and refresh it if it is
-			this.#hasTokenExpired(true);
-
-			const callback_url = 'https://0.0.0.0:443';
-			const post_url = 'https://api.twitch.tv/helix/eventsub/subscriptions';
-
-			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
-			const c_id = await this.#data_base.getIdAndSecret();
-			const cc_id = c_id[0];
-
-			const t = await this.#getTwitchAppToken();
-
-			//our horrid little request demon
-			const data = {
-				'method': 'POST',
-				//headers we need to make the eventsub
-				//in theory, should not need to make this more generic than it is
-				'headers': {
-					'Authorization': `Bearer ${t}`,
-					'Client-Id': `${cc_id}`,
-					'Content-Type': 'application/json'
-				},
-				//body for making the event sub
-				//TODO: make this more generic for other types of event subs
-				'body': JSON.stringify({
-					'type': 'channel.raid',
-					'version': '1',
-					'condition': {
-						'to_broadcaster_user_id': '71631229'
-					},
-					'transport': {
-						'method': 'webhook',
-						'callback': callback_url,
-						'secret': 'godwhydoiexisteverythingispain'
-					}
-				})
-			};
-
-			//send out request to make the event sub
-			await fetch(post_url, data).then(result => result.json()).then(body => {
-					console.log(body);
-			});
-
-			const server_options = {
-				key: fs.readFileSync('key.pem'),
-				cert: fs.readFileSync('cert.pem'),
-			};
-
-			//set up the server we need to recieve the callback verification request
-			let s = https.createServer(server_options ,(req, res) => {
-				console.log(req.method);
-				console.log(req.body);
-				if (req.method == 'POST') {
-					let body = '';
-					req.on('data', data => {
-						body += data;
-					});
-					req.on('end', () => {
-						try {
-							console.log("Inside of end, trying something out here lol");
-							let post = JSON.parse(body);
-							console.log("Body parsed");
-							console.log(post);
-							res.writeHead(200, {"Content-Type": "text/plain"});
-							res.write(post);
-							res.end();
-							return;
-						} catch (err) {
-							console.error(err);
-							res.writeHead(500, {"Content-Type": "text/plain"});
-							res.write("Bad data is bad");
-							res.end();
-							return;
-						}
-					});
-				} else if (req.method == 'GET') {
-					try {
-						res.writeHead(200, {"Content-Type": "text/plain"});
-						//let g = JSON.parse(req);
-						//console.log(req);
-						//let gg = JSON.stringify(g);
-						//res.write(req);
-						res.end();
-						return;
-					} catch (err) { console.error(err); }
-				}
-				// console.log("Popping open https server");
-				// console.log(req);
-				// console.log("Res");
-				// console.log(res);
-				//console.log(req.method.toUpperCase);
-				//res.writeHead(200, {"Content-Type": "text/plain"});
-				//res.end();
-			}).listen(443);
-
-			//await open(callback_url, {wait:true}).then(console.log("* Webhook page opened"));
-
-			//close the server to any new incoming connection when we are done
-			//s.close();
 		} catch (err) { console.error(err); }
 	}
 
@@ -1210,4 +1101,4 @@ class AsyncHolder {
 //--------------------------------------------------------------------------------------------------------
 }
 
-module.exports = AsyncHolder;
+export default AsyncHolder;

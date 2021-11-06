@@ -1,14 +1,14 @@
 // holds the classes necessary to make the lurker list for the !lurk and !unlurk commands
 
-const h = require('./helper');
+import Helper from './helper.js';
 
-class LurkList {
+export class LurkList {
 
     //the list that will hold all lurkers in the chatroom. Lurkers are added with the !lurk command and removed with the 
     //!unlurk command. Firing off the !unlurk command will return from here how long the lurker has been lurking for 
 
     #lurker_list;
-    helper = new h();
+    helper = new Helper();
 
     constructor() {
         this.#lurker_list = [];
@@ -28,16 +28,22 @@ class LurkList {
 
     //finds the user in lurker_list if there, removes them from the list, and returns a string containing the amount of time
     //they were gone for. 
-    //@param   user   Who we're removing in the lurker list
-    //@return         Either the last message they said, or a message telling them they never !lurk'd in the first place
-    removeLurker(user) {
+    //@param   user         Who we're removing in the lurker list
+    //@param   is_leaving   Boolean to tell us if the command was !leave or not
+    //@return               Either the last message they said, or a message telling them they never !lurk'd in the first place
+    removeLurker(user, is_leaving) {
         let index = this.isLurking(user);//ensures that we know if there's an issue
         if (index != -1) {
 
             let time_msg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
             let lurk_msg = this.#lurker_list[index].getMsg();
-            const msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
-
+            let msg;
+            if (is_leaving) {
+                msg = `Goodbye for now @${user.username}! See you later!`;
+            } else {
+                msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
+            }
+            
             this.#lurker_list.splice(index, 1);
             return msg;
         }
@@ -86,4 +92,4 @@ class Lurker_Item {
 
 }
 
-module.exports = LurkList;
+export default LurkList;

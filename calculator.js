@@ -11,12 +11,12 @@ Array.prototype.clean = function () {
     return this;
 }
 
-const h = require('./helper');
+import Helper from './helper.js';
 
-class Calculator {
+export class Calculator {
 
     //mathematical constants for the calculator
-    helper = new h();
+    helper = new Helper();
 
     constructor() {}
 
@@ -150,8 +150,6 @@ class Calculator {
                 return 'Error: illegal combination of equality and arithmetic operators';
             }
         }
-
-        console.log(output);
         return output;
     }
 
@@ -260,4 +258,4 @@ class Calculator {
 
 }
 
-module.exports = Calculator;
+export default Calculator;

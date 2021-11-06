@@ -2,9 +2,10 @@
 //trying something different with this one, in stuffing the relevant functions into a class
 //if this goes well, I'll probably do the same with calculator.js and dice.js
 
-const sqlite3 = require('sqlite3').verbose();
+import sqlite3 from 'sqlite3';
+//const {verbose: sqlite3} = pkg;
 
-class CommandArray {
+export class CommandArray {
 
 	#db;//the database holding all the custom commands
 
@@ -433,5 +434,5 @@ class CommandArray {
 	}
 }
 
-module.exports = CommandArray;
+export default CommandArray;
 

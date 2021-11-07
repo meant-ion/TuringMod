@@ -8,16 +8,20 @@ export class PubSubHandler {
     #pubsub;//our WebSocket that we need to connect to the PubSub API
     #ping;//object we need to keep the connection for the PubSub open
     #twitch_chat_client;//handles posting of messages automatically/activating turret
+    #topics_list;//an array holding the topics we are listening to with the bot
 
+    //@param   c   The Twitch Chat IRC client we need to send messages through
     constructor(c) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
         this.#twitch_chat_client = c;
+        this.#topics_list = [];
 
         //with the pubsub made, we can now get it working handling msgs
         this.start();
     }
 
+    //starts up execution and listening for the WebSocket
     start() {
         //handler for closing and opening of the WebSocket
         this.#pubsub.on('close', () => {
@@ -55,6 +59,7 @@ export class PubSubHandler {
     }
 
     //handler for all specially made, redeemed channel points rewards
+    //@param   parsed_data   The bulk of the data received from the WebSocket
     #rewardHandler(parsed_data) {
         switch (parsed_data.data.reward.title) {
             case '!timeout'://auto-timeout a viewer chosen by the redeemer
@@ -73,6 +78,8 @@ export class PubSubHandler {
 
     //from user input of the topic (assuming that the correct scopes are in the token)
     //send out a request to listen to a specific PubSub subscription
+    //@param   topic        The topic we wish to listen to/stop listening to
+    //@param   auth_token   Token we need to send out these requests
     requestToListen(topics, auth_token) {
         let req = {
             type: 'LISTEN',
@@ -83,7 +90,36 @@ export class PubSubHandler {
             },
         };
 
+        this.#topics_list.push(topics);
+
         this.#pubsub.send(JSON.stringify(req));
+    }
+
+    //when called, unlistens to all pubsubs we have listened to and stops the WebSocket executing. 
+    //only called when a shutdown command is read by the bot
+    killAllSubs(auth_token) {
+        this.#topics_list.forEach(topic => {
+            let req = this.#makeReq(topic, auth_token, false);
+            this.#topics_list.pop();
+            this.#pubsub.send(JSON.stringify(req));
+        });
+    }
+
+    //makes the PubSub request; can be used to listen to a topic or stop listening to a topic
+    //@param   topic        The topic we wish to listen to/stop listening to
+    //@param   auth_token   Token we need to send out these requests
+    //@param   is_listen    Tells us if we want to start listening to (true) or stop listening to (false) a topic
+    //@returns              A request object for the PubSub WebSocket
+    #makeReq(topic, auth_token, is_listen) {
+        let _type = is_listen ? 'LISTEN' : 'UNLISTEN';
+        return {
+            type: _type,
+            nonce: `pope_pontus-${new Date().getTime()}`,
+            data: {
+                topics: [topic],
+                auth_token: auth_token
+            }
+        }
     }
 }
 

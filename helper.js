@@ -66,10 +66,16 @@ export class Helper {
     isNumeric(char_to_check) { return !isNaN(parseFloat(char_to_check)) && isFinite(char_to_check); }
 
     //simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
-    //@param   user          The name of the chat member that typed in the command
+    //@param   user           The name of the chat member that typed in the command
     //@param   the_streamer   The name of the channel owner
-    //@return                True or false, depending on if the user is a mod or the streamer
+    //@return                 True or false, depending on if the user is a mod or the streamer
     checkIfModOrStreamer(user, the_streamer) { return user.mod || user.username == the_streamer; }
+
+    //helper function that tells us only if the user is the streamer or not
+    //@param   user           The name of the chat member that typed in the command
+    //@param   the_streamer   The name of the channel owner
+    //@return                 True or false, depending on if the user is the streamer
+    isStreamer(username, the_streamer) { return username == the_streamer; }
 
     //checks the whole of a message to tell if there is a URL present. If so, it will return the url
     //@param   input_msg   The message that is being read through to detect symbol spam

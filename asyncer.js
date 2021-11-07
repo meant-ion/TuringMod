@@ -936,25 +936,6 @@ export class AsyncHolder {
 		};
 	}
 
-	//function needed in order to generate the eventsub requested by the user
-	//@return   the client credentials token needed to complete the eventsub transaction
-	async #getTwitchAppToken() {
-		const client_details = await this.#data_base.getIdAndSecret();
-		const scope = 'user:read:email';
-		const url = `https://id.twitch.tv/oauth2/token?client_id=${client_details[0]}&client_secret=${client_details[1]}&grant_type=client_credentials&scope=${scope}`;
-		const header = {
-			'method': 'POST'
-		};
-
-		let code;
-
-		await fetch(url, header).then(result => result.json()).then(body => {
-			code = body.access_token;
-		});
-
-		return code;
-	}
-
 	//gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
 	async #getTwitchToken() {
 

@@ -49,14 +49,12 @@ let quiet_mode_enabled = false;
 let skip_threshold = 0;
 
 //lets us know that bot is connected to the discord server we need it on
-discord_client.once('ready', () => {
-	console.log(`* Logged in as ${discord_client.user.tag} through Discord!`);
-});
+discord_client.once('ready', () => console.log(`* Logged in as ${discord_client.user.tag} through Discord!`));
 
 let client = new _client(opts);
 client.connect();
 client.on('message', onMessageHandler);
-client.on('connected', onConnectedHandler);
+client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
 
 //setting up the interval for giving people info about the streams every 15-20 mins
 setInterval(intervalMessages, 600000);
@@ -70,9 +68,9 @@ let skip_list = [];
 //when a message is sent out, we will take it and push it out to the Twitch chat
 discord_client.on('messageCreate', message => {
 	//take the message and split it up into separate words
-	const inputMsg = message.content.split(" ");
+	const input_msg = message.content.split(" ");
 	let response = "";
-	if (inputMsg[0] == '!send') {//the message generated was accepted by admin
+	if (input_msg[0] == '!send') {//the message generated was accepted by admin
 		response = post.getResponse();
 
 		//search through the list of responses and channels to find the correct one and then post that out
@@ -81,7 +79,7 @@ discord_client.on('messageCreate', message => {
 		} else {
 			client.say(opts.channels[0], `No response found for this channel`);
 		}
-	} else if (inputMsg[0] == '!reject') {
+	} else if (input_msg[0] == '!reject') {
 		client.say(opts.channels[0], `Response rejected by bot admin`);
 	}
 });
@@ -109,18 +107,18 @@ function onMessageHandler(target, user, msg, self) {
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {
-		//check to see if the command is one that can only be accessed by the streamer, their mods, or myself (pope_pontus)
 
 		//mods/streamer wish to give a shoutout to a chat member/streamer
 		if (cmd_name == '!so' && input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
 
+		  //mod/streamer wants to have the bot listen in on a PubSub topic
 		} else if (cmd_name == '!makesub' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			makePubSubscription(input_msg[1]);
 
-		//a moderator or the streamer wishes to flush the bot's posting prompt
+		  //a moderator or the streamer wishes to flush the bot's posting prompt
 		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			if (prompt.length == 0) {//make sure we don't waste time flushing a prompt that is just empty
@@ -139,10 +137,7 @@ function onMessageHandler(target, user, msg, self) {
 			//ends clip collection services
 		} else if (cmd_name == '!endcollect' && collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			async_functions.getClipList();
-			clip_collector.writeClipsToHTMLFile();
-			collect_clips = false;
-			client.say(target, "All collected clips are written to file!");
+			getClipsInOrder(target);
 
 			//activates GPT-3 for a post. Heavily controlled
 		} else if (cmd_name == '!post' && helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -159,30 +154,34 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.removeCommand(client, target, user, input_msg[2], (input_msg[1] == true));
 
-			//for mods/streamer to edit a custom command
+		  //for mods/streamer to edit a custom command
 		} else if (cmd_name == '!editcommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			commands_holder.editCommand(client, target, user, input_msg);
 
-		} else if (cmd_name == '!changegame' && helper.checkIfModOrStreamer(user, the_streamer)) {//moderator/streamer wishes to change the category of the stream
+		  //moderator/streamer wishes to change the category of the stream
+		} else if (cmd_name == '!changegame' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			async_functions.editChannelCategory(user, helper.combineInput(input_msg, true), target);
 
-		} else if (cmd_name == '!changetitle' && helper.checkIfModOrStreamer(user, the_streamer)) {//moderator/streamer wishes to change the title of the stream
+		  //moderator/streamer wishes to change the title of the stream
+		} else if (cmd_name == '!changetitle' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			async_functions.editStreamTitle(helper.combineInput(input_msg, true), target);
 
-		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {//moderator/streamer wants to have the "banhammer" hit randomly
+		  //moderator/streamer wants to have the "banhammer" hit randomly
+		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
 			//as if that will ever happen of course
 			//async_functions.shotgunTheChat(client_id);
 
-		} else if (cmd_name == '!testviewers' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer wants to see chances channel is being viewbotted
+		  //mod/streamer wants to see chances channel is being viewbotted
+		} else if (cmd_name == '!testviewers' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			async_functions.getChancesStreamIsViewbotted(target);
 
-		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {
+		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer toggles quiet mode
 
 			quiet_mode_enabled = !quiet_mode_enabled;
 			let msg;
@@ -192,6 +191,11 @@ function onMessageHandler(target, user, msg, self) {
 				msg = `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer`;
 			}
 			client.say(target, msg);
+
+		  //mod/streamer wants to shut bot down safely
+		} else if (cmd_name == '!shutdown' && helper.checkIfModOrStreamer(user, the_streamer)) {
+			
+			shutDownBot(target);
 
 		} else if (cmd_name == '!lurk') {//the user wishes to enter lurk mode
 
@@ -233,7 +237,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!roulette') {//allows chat member to take a chance at being timed out
 
-			if (isStreamer(user.username, the_streamer)) {//make sure it isnt the streamer trying to play russian roulette
+			if (helper.isStreamer(user.username, the_streamer)) {//make sure it isnt the streamer trying to play russian roulette
 				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
 			} else {
 				dice.takeAChanceAtBeingBanned(user, target);
@@ -247,7 +251,8 @@ function onMessageHandler(target, user, msg, self) {
 
 			async_functions.getRandWikipediaArticle(user, target);
 
-		} else if (cmd_name.substring(0, 5) == '!roll') {//simple dice rolling command. Can do many sided dice, not just a d20 or d6
+		  //simple dice rolling command. Can do many sided dice, not just a d20 or d6
+		} else if (cmd_name.substring(0, 5) == '!roll') {
 
 			dice.getDiceRoll(cmd_name, user, target);
 
@@ -261,8 +266,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!calc') {//chat member wants to do basic math with the bot
 
-			const msg = `@${user.username}: ` + ` ` + calculator.calculate(helper.combineInput(input_msg, false));
-			client.say(target, msg);
+			client.say(target, `@${user.username}: ` + ` ` + calculator.calculate(helper.combineInput(input_msg, false)));
 
 		} else if (cmd_name == "!time") {//gets the current time in Central Standard Time (CST)
 
@@ -337,19 +341,19 @@ function onMessageHandler(target, user, msg, self) {
 			} else if (collect_clips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
-				let possibleClipURL = helper.checkIfURL(input_msg);
+				const possibleClipURL = helper.checkIfURL(input_msg);
 
 				//if it does, pass it into the collector for processing
 				if (possibleClipURL != "") {
 					clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
 				}
 
-			//detect if this message is either non-english (unicode) or symbol spam
+			  //detect if this message is either non-english (unicode) or symbol spam
 			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
 				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
 				//if both are true, remove the msg via a 1-second timeout
 				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
-					!isStreamer(user.username, the_streamer)) {
+					!helper.isStreamer(user.username, the_streamer)) {
 					client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
 				} else {//if it isn't, we send the message through the prompt and check for other fun things
 					prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';
@@ -362,23 +366,22 @@ function onMessageHandler(target, user, msg, self) {
 	}
 }
 
-//lets me know that the script has connected to twitch servers for their API
-function onConnectedHandler(addy, prt) {
-	console.log(`* Connected to ${addy}:${prt}`);
-}
-
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
 	commands_holder.getIntervalCommand(call_this_function_number, client);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 
+//creates a PubSub subscription of the topic deigned by the user
+//@param   topic   The topic we wish to listen to
 async function makePubSubscription(topic) {
 	const tkn = await commands_holder.getTwitchInfo(0);
 	pubsubs.requestToListen(topic, tkn);
 }
 
 //hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
+//@param   target   The chatroom that the message will be sent into
+//@param   user     The chat member that typed in the command
 function thresholdCalc(target, user) {
 	if (skip_threshold < 5) {
 		if (!skip_list.includes(user.username)) {
@@ -399,9 +402,8 @@ function resetPrompt() {
 	prompt = "";
 }
 
-function isStreamer(username, the_streamer) { return username == the_streamer; }
-
 //handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
+//@param   target   The chatroom that the message will be sent into
 async function generatePost(target) {
 	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
 	//take the last 2000 characters for the prompt and discard all other characters.
@@ -419,6 +421,8 @@ async function generatePost(target) {
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat
+//@param   target   The chatroom that the message will be sent into
+//@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
 	let lurk_msg = lurk_list.removeLurker(user, false);
 	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) {
@@ -427,16 +431,38 @@ function lurkerHasTypedMsg(target, user) {
 }
 
 //appends a suggestion from a viewer to a suggestions file for later consideration
-function writeSuggestionToFile(inputMsg) {
+//@param   input_msg   The whole message gathered by the bot 
+function writeSuggestionToFile(input_msg) {
 
-	//compile the message into a single string for better insertion into file
-	let compiled_msg = helper.combineInput(inputMsg, true);
-
-	appendFile('./data/suggestions.txt', compiled_msg + '\n', (err) => {
+	appendFile('./data/suggestions.txt', helper.combineInput(input_msg, true) + '\n', (err) => {
 		if (err) { console.error(err); }
 	});
 
 	return true;
+}
+
+//safely shuts down the bot when the shutdown command goes through
+//@param   target   The chat room we are getting clips from 
+async function shutDownBot(target) {
+
+	//if we have the clip collection turned on, write everything to file and shut down
+	if (collect_clips) { getClipsInOrder(target); }
+	//now, shut off the PubSub WebSocket and stop all subscriptions through it
+	const auth_key = await commands_holder.getTwitchInfo(0);
+	pubsubs.killAllSubs(auth_key);
+	client.say(target, "Shutting Down");
+	//now, we just kill execution of the program
+	process.exit(0);
+
+}
+
+//writes all collected Twitch clips onto an HTML file and stops collecting them
+//@param   target   The chat room we are getting clips from 
+function getClipsInOrder(target) {
+	async_functions.getClipList();
+	clip_collector.writeClipsToHTMLFile();
+	collect_clips = false;
+	client.say(target, "All collected clips are written to file!");
 }
 
 //this goes last to prevent any issues on discord's end

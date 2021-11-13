@@ -104,7 +104,7 @@ MOD/STREAMER ONLY COMMANDS:
 	- !editcommand: allows a moderator or the streamer to edit a custom command on the list of commands
 					* Can specify whether the command is a callable or interval command
 
-	- !so: gives a shoutout to a specified user into the chatroom
+	- !so: gives a shoutout to a specified user into the chatroom; attached to an EventSub listener for automatic posting of msg
 
 	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API and the number of 			  lines posted so far.
 

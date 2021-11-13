@@ -42,7 +42,7 @@ export class PubSubHandler {
                     this.#ping.pongGet();
                     break;
                 case 'RESPONSE':
-                    console.log(`RESPONSE: ${(parsed_data.error != '' ? parsed_data.error : 'OK')}`);
+                    console.log(`* RESPONSE: ${(parsed_data.error != '' ? parsed_data.error : 'OK')}`);
                     break;
                 case 'MESSAGE':
                     console.log(parsed_data.data.message);
@@ -136,6 +136,7 @@ class Ping {
         this.#pinger;
     }
 
+    //starts up the ping timer
     start() {
         if (this.#pinger) {
             clearInterval(this.#pinger);
@@ -149,6 +150,7 @@ class Ping {
         }, (4*60*1000));
     }
 
+    //sends out a ping message to the PubSub API
     sendPing() {
         try {
             let pingus = { 'type': 'PING' };
@@ -160,16 +162,11 @@ class Ping {
         }
     }
 
-    awaitPong() {
-        this.#ping_timeout = setTimeout(() => {
-            console.log("WebSocket timeout");
-            this.#pubsub.close();
-        }, 10000);
-    }
+    //listener for the pong message from the PubSub API
+    awaitPong() { this.#ping_timeout = setTimeout(() => { this.#pubsub.close(); }, 10000); }
 
-    pongGet() {
-        clearTimeout(this.#ping_timeout);
-    }
+    //called when we get the pong message, so we get rid of the ping response timer
+    pongGet() { clearTimeout(this.#ping_timeout); }
 
 }
 

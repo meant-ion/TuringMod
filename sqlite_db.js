@@ -3,7 +3,6 @@
 //if this goes well, I'll probably do the same with calculator.js and dice.js
 
 import sqlite3 from 'sqlite3';
-//const {verbose: sqlite3} = pkg;
 
 export class CommandArray {
 
@@ -198,7 +197,7 @@ export class CommandArray {
 
 				//now we update the count by 1 and push that new count to the DB
 				this.#db.run(update_sql, [count.toString()], (err) => {
-					if (err) { console.error(err); } else { console.log("Voice cracks count updated"); }
+					if (err) { console.error(err); } else { console.log("* Voice cracks count updated"); }
 				});
 			}
 		})
@@ -353,7 +352,7 @@ export class CommandArray {
 		let update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
-			if (err) { console.error(err); } else { console.log("New Twitch Tokens written to DB successfully!"); }
+			if (err) { console.error(err); } else { console.log("* New Twitch Tokens written to DB successfully!"); }
 		});
 	}
 
@@ -429,7 +428,7 @@ export class CommandArray {
 		let update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
-			if (err) { console.error(err); } else { console.log("New Spotify Tokens Written Successfully!"); }
+			if (err) { console.error(err); } else { console.log("* New Spotify Tokens Written Successfully!"); }
 		})
 	}
 }

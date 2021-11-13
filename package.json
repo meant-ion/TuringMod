@@ -7,6 +7,10 @@
     "name": ""
   },
   "dependencies": {
+    "@twurple/api": "^5.0.9",
+    "@twurple/auth": "^5.0.9",
+    "@twurple/eventsub": "^5.0.9",
+    "@twurple/eventsub-ngrok": "^5.0.9",
     "discord.js": "^13.1.0",
     "dotenv": "^8.6.0",
     "node-fetch": "^2.6.1",

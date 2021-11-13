@@ -13,6 +13,7 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
+import EventSubHandler from './eventsub_handler.js';
 
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -94,6 +95,7 @@ let calculator = new Calculator();
 let clip_collector = new ClipCollector(async_functions);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler();
+let eventsubs = new EventSubHandler(commands_holder, client);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -450,6 +452,7 @@ async function shutDownBot(target) {
 	//now, shut off the PubSub WebSocket and stop all subscriptions through it
 	const auth_key = await commands_holder.getTwitchInfo(0);
 	pubsubs.killAllSubs(auth_key);
+	eventsubs.shutdown();
 	client.say(target, "Shutting Down");
 	//now, we just kill execution of the program
 	process.exit(0);

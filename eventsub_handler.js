@@ -33,9 +33,12 @@ export class EventSubHandler {
         });
         
         //automatically posts the raid msg to the chatroom
-        this.#channel_raided = await listener.subscribeToChannelRaidEventsTo('71631229', e => {
-            this.#twitch_client.say('#pope_pontus', `Please check out and follow this cool dude here! https://www.twitch.tv/${e.raidingBroadcasterName}`);
-        });
+        try {
+            this.#channel_raided = await listener.subscribeToChannelRaidEventsTo('71631229', e => {
+                this.#twitch_client.say('#pope_pontus', `Please check out and follow this cool dude here! https://www.twitch.tv/${e.raidingBroadcasterName}`);
+            });
+        } catch (err) { console.error(err); }
+
 
         await listener.listen();
     }

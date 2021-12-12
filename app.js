@@ -95,7 +95,10 @@ let calculator = new Calculator();
 let clip_collector = new ClipCollector(async_functions);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler();
-let eventsubs = new EventSubHandler(commands_holder, client);
+//let eventsubs = new EventSubHandler(commands_holder, client);
+
+//set the timer for the ad warning function so we can get the async_functions object fully initialized
+setTimeout(adsIntervalHandler, 30000);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -227,6 +230,8 @@ function onMessageHandler(target, user, msg, self) {
 
 			if (writeSuggestionToFile(input_msg)) {
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
+			} else {
+				client.say(target, `@${user.username}, empty suggestion not written to file`);
 			}
 
 		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
@@ -351,7 +356,7 @@ function onMessageHandler(target, user, msg, self) {
 				}
 
 			  //detect if this message is either non-english (unicode) or symbol spam
-			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
+			} //else if (!helper.detectUnicode(input_msg, target, user, client)) {
 				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
 				//if both are true, remove the msg via a 1-second timeout
 				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
@@ -362,8 +367,7 @@ function onMessageHandler(target, user, msg, self) {
 					lines_count++;
 					lurkerHasTypedMsg(target, user);
 				}
-
-			}
+			//}
 		}
 	}
 }
@@ -436,6 +440,10 @@ function lurkerHasTypedMsg(target, user) {
 //@param   input_msg   The whole message gathered by the bot 
 function writeSuggestionToFile(input_msg) {
 
+	if (input_msg.length == 1 && input_msg[0] == '!sg') {
+		return false;
+	}
+
 	appendFile('./data/suggestions.txt', helper.combineInput(input_msg, true) + '\n', (err) => {
 		if (err) { console.error(err); }
 	});
@@ -452,7 +460,7 @@ async function shutDownBot(target) {
 	//now, shut off the PubSub WebSocket and stop all subscriptions through it
 	const auth_key = await commands_holder.getTwitchInfo(0);
 	pubsubs.killAllSubs(auth_key);
-	eventsubs.shutdown();
+	//eventsubs.shutdown();
 	client.say(target, "Shutting Down");
 	//now, we just kill execution of the program
 	process.exit(0);
@@ -466,6 +474,49 @@ function getClipsInOrder(target) {
 	clip_collector.writeClipsToHTMLFile();
 	collect_clips = false;
 	client.say(target, "All collected clips are written to file!");
+}
+
+//handles automatically posting that ads will be coming soon
+async function adsIntervalHandler() {
+	const curr_time = await async_functions.getUneditedStreamUptime();
+	const mins = Math.round(curr_time / 60);
+	let intervalTime = 0;
+	//the mid-roll ads start 30 mins after stream start (at least for me)
+	//so we start the interval command after 30 mins
+	if (mins == 30) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
+
+		client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
+		intervalTime = 360000;//call this function again in 1 hour
+
+	} else if (mins > 30) {//we called it after the 30 min mark is passed
+		const time_since_midrolls_started = mins - 30;
+		const remainder_to_hour = time_since_midrolls_started % 60;
+
+		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
+			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
+				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
+			client.say('#pope_pontus', msg);
+			intervalTime = 360000;
+		} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
+			client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
+			intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
+		}
+
+	} else {
+
+		client.say('#pope_pontus', `Midrolls will be starting within ${mins} minutes. You have been warned`);
+		//we set a timer callback to this function so we can check again 
+		intervalTime = mins * 60000;//needs to be in milliseconds, so quick conversions for both
+
+	}
+
+	//actually set up the callback to this function so the warning goes through
+	if (intervalTime <= 0) {
+		console.log("Interval time not positive, error occurred");
+	} else {
+		setTimeout(adsIntervalHandler, intervalTime);
+	}
+	
 }
 
 //this goes last to prevent any issues on discord's end

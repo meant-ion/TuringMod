@@ -26,6 +26,7 @@ export class AsyncHolder {
 		this.#clip_list = [];
 		this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
 		this.#space_url = "";
+		//make call to ad warning function after everything else has been created
 		this.#getTwitchToken();
 		this.#initSpotifyStuff();
 	}
@@ -146,6 +147,29 @@ export class AsyncHolder {
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 			});
+		} catch (err) { console.error(err); }
+	}
+
+	//returns stream uptime for use in ad warning system
+	//@return    The uptime of the stream in seconds
+	async getUneditedStreamUptime() {
+		try {
+			
+			this.#hasTokenExpired(true);
+			const data = await this.#createTwitchDataHeader();
+			let time = 0;
+
+			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+				if (body.data[0].started_at == undefined) {
+					time = NaN;
+				} else {
+					time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
+				}
+
+			}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+
+			return time;
+
 		} catch (err) { console.error(err); }
 	}
 
@@ -894,6 +918,7 @@ export class AsyncHolder {
 		//get the difference between the time the token was accquired and right now at this call
 		let cur_time = new Date();
 		let token_time;
+		console.log(this.#twitch_token_get_time);
 		//make sure to get the correct token here
 		if (which_token) { token_time = this.#twitch_token_get_time; } else { token_time = this.#spotify_token_get_time; } 
 		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
@@ -995,7 +1020,6 @@ export class AsyncHolder {
 		
 		//send the request and write the tokens to the DB for safe keeping
 		await fetch(url, data).then(result => result.json()).then(body => {
-			console.log(body);
 			if (body.status == null) {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes

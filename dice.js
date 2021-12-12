@@ -62,7 +62,7 @@ export class Dice {
 					}
 					break;
 				} else {
-					client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
+					this.client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
 					is_valid_cmd = false;
 					break;
 				}

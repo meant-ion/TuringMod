@@ -39,7 +39,10 @@ COMMANDS:
 				* Parentheses in the problems (i.e. 4 + (3-1))
 				* Values for Euler's Number (e) and Pi
 				* Negative numbers and decimals
-			 Further features (trigonometric functions, logarithms) may be added in the future
+				* Trigonometric functions (sine, cosine, tangent, secant, cosecant, cotangent)
+				* Hyperbolic trigonometric functions (sinh, cosh, tanh, sech, cosech, coth)
+				* Bitwise operators (&(AND), |(OR), ~(NOT))
+			 Further features may be added in the future
 
 	- !time: gets the time currently where I am located (Chicagoland Metro Area) in Central Standard Time (CST)
 			 * format: HH:MM A.M. or P.M.
@@ -129,6 +132,11 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution
 
+FUNCTIONS HANDLED BY THE BOT AUTOMATICALLY:
+
+	- Posting a warning about an incoming midroll ad break to the chatroom
+
+	- (Coming Soon) Posting a shoutout message whenever a streamer raids my channel
 
 PLANNED FUNCTIONALITIES/FEATURES:
 

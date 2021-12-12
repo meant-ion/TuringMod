@@ -13,6 +13,11 @@ Array.prototype.clean = function () {
 
 import Helper from './helper.js';
 
+//for searching to see if its in the problem
+//annoying, but will save time
+const ops = ['^','sin','cos','tan','sec','csc','cot','sinh','cosh',
+            'tanh','sech','csch','coth','*','/',':','%','!','+','-','|','&','~','<','>'];
+
 export class Calculator {
 
     //mathematical constants for the calculator
@@ -33,10 +38,59 @@ export class Calculator {
         let is_negative = false;
         let eq_oper_found = false;
 
-        //our list of operators that we will be dealing with
-        //includes arithmetic operators and equality operators
+        //our list/dictionary of operators/functions that we will be dealing with
+        //includes arithmetic operators, equality operators, trig functions, and hyperbolic trig
         let operators = {
             "^": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            //all below and before the '/' are trig functions
+            "sin": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "cos": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "tan": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "sec": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "csc": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "cot": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "sinh": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "cosh": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "tanh": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "sech": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "csch": {
+                precedence: 4,
+                associativity: "Right"
+            },
+            "coth": {
                 precedence: 4,
                 associativity: "Right"
             },
@@ -68,6 +122,18 @@ export class Calculator {
                 precedence: 2,
                 associativity: "Left"
             },
+            "&": {
+                precedence: 1,
+                associativity: "Left"
+            },
+            "|": {
+                precedence: 1,
+                associativity: "Left"
+            },
+            "~": {
+                precedence: 1,
+                associativity: "Left"
+            },
             "<": {
                 precedence: 1,
                 associativity: "Right"
@@ -80,7 +146,7 @@ export class Calculator {
 
         //remove all white space present and tokenize the equation
         infix_eq = infix_eq.replace(/\s+/g, "");
-        infix_eq = infix_eq.split(/([\+\-\<\>\!\*\:\/\^\%\(\)])/).clean();
+        infix_eq = infix_eq.split(/([\+\-\&\|\~\<\>\!\*\:\/\^\%\(\)])/).clean();
 
         //go through the whole eq array and compute from there
         for (let i = 0; i < infix_eq.length; ++i) {
@@ -94,10 +160,10 @@ export class Calculator {
 
                 output += token + " ";
 
-            } else if ("^*/:%!+-<>".indexOf(token) != -1) {//the token is an operator we are looking for
+            } else if (ops.indexOf(token) != -1) {//the token is an operator we are looking for
 
                 //first, we see if the operator is a '-' and check for negations for it
-                if (token == '-' && (last_char_checked == '' || "^*/:%!+-<>".indexOf(last_char_checked) != -1 || last_char_checked == '(')) {
+                if (token == '-' && (last_char_checked == '' || ops.indexOf(last_char_checked) != -1 || last_char_checked == '(')) {
                     //check now to see if the last character checked was an operator or if this character is the first in the eq
                     is_negative = true;
                 } else {//no negations, so just go to the next part
@@ -108,7 +174,7 @@ export class Calculator {
                         eq_oper_found = true;
                     }
 
-                    while ("^*/:%!+-<>".indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
+                    while (ops.indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
                         operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
                             operators[o1].precedence < operators[o2].precedence))) {
                         output += oper_stack.pop() + " ";
@@ -150,12 +216,15 @@ export class Calculator {
                 return 'Error: illegal combination of equality and arithmetic operators';
             }
         }
+
+        console.log(output);
         return output;
     }
 
     //calculates a problem using RPN function defined above
     //can handle multiple different sized math problems
     //operators possible: =, -, *, /, %, :, ^, !, <, >
+    //functions possible (treated as operators in execution): sin(), cos(), tan(), sec(), csc(), cot()
     //@param   math_problem   An equation to be solved in reverse polish notation
     //@return                The end product of the solved equation
     calculate(math_problem) {
@@ -171,7 +240,7 @@ export class Calculator {
         }
 
         //get the stack to handle the result set up and split the problem into tokens
-        let result_stack = []
+        let result_stack = [];
         math_problem = math_problem.split(" ");
 
         for (let i = 0; i < math_problem.length; ++i) {
@@ -179,15 +248,16 @@ export class Calculator {
 
                 result_stack.push(parseFloat(math_problem[i]));
 
-            } else if (this.helper.isOperator(math_problem[i])) {//this is an operator, so now we can start to simplify what we have in the stack
+            } else if (ops.indexOf(math_problem[i]) != -1) {//this is an operator, so now we can start to simplify what we have in the stack
                 let a = result_stack.pop();
                 let b;
+                let no_b_in_stack = false;
                 //error handling in case there's an operator before two numbers get put in
-                //TODO: get this to not crash without the if/else
                 if (result_stack.length != 0) {
                     b = result_stack.pop();
                 } else {
                     b = 0;
+                    no_b_in_stack = true;//if there was no 'b' in the stack, we will not push it back on
                 }
                 let oper = math_problem[i];
 
@@ -203,6 +273,7 @@ export class Calculator {
                         result_stack.push(b * a);
                         break;
                     case '!':
+                        if (!no_b_in_stack) { result_stack.push(b); }
                         result_stack.push(this.#factorial(a));
                         break;
                     case ':':
@@ -227,7 +298,66 @@ export class Calculator {
                         is_eq_oper_present = true;
                         result_stack.push(b > a);
                         break;
+                    case 'sin':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.sin(this.#degToRad(a)));
+                        break;
+                    case 'cos':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.cos(this.#degToRad(a)));
+                        break;
+                    case 'tan':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.tan(this.#degToRad(a)));
+                        break;
+                    case 'sec':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.cos(this.#degToRad(a)));
+                        break;
+                    case 'csc':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.sin(this.#degToRad(a)));
+                        break;
+                    case 'cot':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.tan(this.#degToRad(a)));
+                        break;
+                    case 'sinh':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.sinh(this.#degToRad(a)));
+                        break;
+                    case 'cosh':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.cosh(this.#degToRad(a)));
+                        break;
+                    case 'tanh':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(Math.tanh(this.#degToRad(a)));
+                        break;
+                    case 'sech':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.cosh(this.#degToRad(a)));
+                        break;
+                    case 'csch':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.sinh(this.#degToRad(a)));
+                        break;
+                    case 'coth':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(1/Math.tanh(this.#degToRad(a)));
+                        break;
+                    case '&':
+                        result_stack.push(b & a);
+                        break;
+                    case '|':
+                        result_stack.push(b | a);
+                        break;
+                    case '~':
+                        if (!no_b_in_stack) { result_stack.push(b); }
+                        result_stack.push(~a);
+                        break;
                 }
+                no_b_in_stack = false;
             }
         }
 
@@ -253,6 +383,13 @@ export class Calculator {
             answer *= i;
         }
         return answer;
+    }
+
+    //for use in the various trig functions for the calculator. Converts a degree value to radians
+    //@param   degrees   the value to convert, given as degrees
+    //@return            The given value now in radians
+    #degToRad(degrees) {
+        return degrees * (Math.PI / 180);
     }
 
 

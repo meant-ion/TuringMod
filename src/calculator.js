@@ -11,7 +11,7 @@ Array.prototype.clean = function () {
     return this;
 }
 
-import Helper from './src/helper.js';
+import Helper from './helper.js';
 
 //for searching to see if its in the problem
 //annoying, but will save time

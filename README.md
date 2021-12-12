@@ -128,6 +128,10 @@ MOD/STREAMER ONLY COMMANDS:
 	- !shotgun: takes 1 - 5 chat members and "bans" (times them out for ~10 seconds) them, like they got hit with a shotgun
 			    * Not currently enabled, no point with how small my stream is
 
+	- !died: increments the death counter by one whenever I die in a game
+
+	- !rdeaths: resets the death counter back to zero 
+
 	- !testviewers: tests the stream and chatroom's viewer counts to see if there's a good chance of a view botting issue
 
 	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution

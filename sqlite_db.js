@@ -190,7 +190,6 @@ export class CommandArray {
 		this.#db.get(vcrack_sql, (err, row) => {
 
 			if (err) { console.error(err); } else {
-				console.log(row);
 				let count = parseInt(row['num']) + 1;
 				client.say(target, `Streamer's voice has cracked ${count} times.`);
 				let update_sql = `UPDATE voicecracks SET num = ?;`
@@ -200,8 +199,42 @@ export class CommandArray {
 					if (err) { console.error(err); } else { console.log("* Voice cracks count updated"); }
 				});
 			}
-		})
+		});
+	}
 
+	//updates the death count for when I play a difficult game and/or just bad at games
+	//syntactically similar to above function for voice cracks
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
+	getAndUpdateDeathCount(client, target) {
+		
+		let death_sql = 'SELECT deaths FROM death_count;';
+
+		this.#db.get(death_sql, (err, row) => {
+
+			if (err) { console.error(err); } else {
+				let count = parseInt(row['deaths']) + 1;
+				client.say(target, `Death Count: ${count}`);
+
+				let update_sql = 'UPDATE death_count SET num = ?;';
+				this.#db.run(update_sql, [count], (err) => {
+					if (err) { console.error(err); } else { console.log("* Death count updated"); }
+				})
+			}
+		});
+	}
+
+	//sets the death counts for a game back to zero
+	//@param   target       The chatroom that the message will be sent into
+	//@param   client       The Twitch chat client we will send the message through
+	setDeathsToZero(client, target) {
+		let zero_sql = 'UPDATE death_count SET num = 0;';
+
+		this.#db.get(zero_sql, (err) => {
+			if (err) { console.error(err); } else {
+				client.say(target, 'Death count reset back to zero');
+			}
+		});
 	}
 
 	//fetches the custom commands stored in the database for posting in the chat room
@@ -429,7 +462,7 @@ export class CommandArray {
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) { console.error(err); } else { console.log("* New Spotify Tokens Written Successfully!"); }
-		})
+		});
 	}
 }
 

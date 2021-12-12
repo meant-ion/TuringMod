@@ -202,6 +202,14 @@ function onMessageHandler(target, user, msg, self) {
 			
 			shutDownBot(target);
 
+		} else if (cmd_name == '!died' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			commands_holder.getAndUpdateDeathCount(client, target);
+
+		} else if (cmd_name == '!rdeaths' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			commands_holder.setDeathsToZero(client, target);
+
 		} else if (cmd_name == '!lurk') {//the user wishes to enter lurk mode
 
 			client.say(target, lurk_list.addLurker(user, input_msg));

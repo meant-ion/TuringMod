@@ -1,6 +1,6 @@
 // holds the classes necessary to make the lurker list for the !lurk and !unlurk commands
 
-import Helper from './helper.js';
+import Helper from './src/helper.js';
 
 export class LurkList {
 

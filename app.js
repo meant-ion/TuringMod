@@ -4,16 +4,16 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
-import Calculator from './calculator.js';
-import Helper from './helper.js';
-import CommandArray from './sqlite_db.js';
-import LurkList from './lurker_list.js';
-import AsyncHolder from './asyncer.js';
-import Dice from './dice.js';
-import ClipCollector from './clipcollector.js';
-import Post from './post.js';
-import PubSubHandler from './pubsub_handler.js';
-import EventSubHandler from './eventsub_handler.js';
+import Calculator from './src/calculator.js';
+import Helper from './src/helper.js';
+import CommandArray from './src/sqlite_db.js';
+import LurkList from './src/lurker_list.js';
+import AsyncHolder from './src/asyncer.js';
+import Dice from './src/dice.js';
+import ClipCollector from './src/clipcollector.js';
+import Post from './src/post.js';
+import PubSubHandler from './src/pubsub_handler.js';
+import EventSubHandler from './src/eventsub_handler.js';
 
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });

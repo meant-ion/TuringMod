@@ -1,7 +1,7 @@
 // rewrite of dice.js, specifically to shove it into a class for better use. Same functionality, but as a class
 // rather than a pile of functions. Slowly becoming more of a file holding all probability functions needed for the bot
 
-import Helper from './helper.js';
+import Helper from './src/helper.js';
 
 export class Dice {
 

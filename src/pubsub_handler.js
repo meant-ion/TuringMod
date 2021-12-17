@@ -73,6 +73,8 @@ export class PubSubHandler {
                 this.#twitch_chat_client.say('#pope_pontus', `@${new_vip} has become a new VIP!`);
                 this.#twitch_chat_client.say('#pope_pontus', `/vip ${new_vip}`);
                 break;
+            case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
+                break;
         }
     }
 

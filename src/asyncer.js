@@ -150,27 +150,57 @@ export class AsyncHolder {
 		} catch (err) { console.error(err); }
 	}
 
-	//returns stream uptime for use in ad warning system
-	//@return    The uptime of the stream in seconds
-	async getUneditedStreamUptime() {
-		try {
-			
-			this.#hasTokenExpired(true);
-			const data = await this.#createTwitchDataHeader();
-			let time = 0;
+	//handles automatically posting that ads will be coming soon
+	async adsIntervalHandler() {
+		const curr_time = await this.#getUneditedStreamUptime();
+		const mins = Math.round(curr_time / 60);
+		let intervalTime = 0;
+		//the mid-roll ads start 30 mins after stream start (at least for me)
+		//so we start the interval command after 30 mins
+		if (mins == 30) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
 
-			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-				if (body.data[0].started_at == undefined) {
-					time = NaN;
-				} else {
-					time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
-				}
+			this.client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
+			intervalTime = 360000;//call this function again in 1 hour
 
-			}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+		} else if (mins > 30) {//we called it after the 30 min mark is passed
+			const time_since_midrolls_started = mins - 30;
+			const remainder_to_hour = 60 - time_since_midrolls_started;
 
-			return time;
+			if (remainder_to_hour == 0) {//we called it exactly within an hour mark
+				const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
+					"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
+				this.client.say('#pope_pontus', msg);
+				intervalTime = 360000;
+			} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
+				this.client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
+				intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
+			}
 
-		} catch (err) { console.error(err); }
+		} else {
+
+			const _mins = 30 - mins;
+			this.client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
+			//we set a timer callback to this function so we can check again 
+			intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
+
+		}
+
+		//actually set up the callback to this function so the warning goes through
+		if (intervalTime <= 0) {
+			console.log("Interval time not positive, error occurred");
+		} else {
+			setTimeout(this.adsIntervalHandler, intervalTime);
+		}
+		
+	}
+
+	//creates a PubSub subscription of the topic deigned by the user
+	//@param   topic             The topic we wish to listen to
+	//@param   commands_holder   The database manipulation object so we can get the oauth token
+	//@param   pubsubs           The PubSub object
+	async makePubSubscription(topic, commands_holder, pubsubs) {
+		const tkn = await commands_holder.getTwitchInfo(0);
+		pubsubs.requestToListen(topic, tkn);
 	}
 
 	//gets and returns the title of the stream
@@ -1102,6 +1132,29 @@ export class AsyncHolder {
 			this.#data_base.writeSpotifyTokensToDB(body.access_token, refresh_token);
 			this.#spotify_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 		});
+	}
+
+	//returns stream uptime for use in ad warning system
+	//@return    The uptime of the stream in seconds
+	async #getUneditedStreamUptime() {
+		try {
+			
+			this.#hasTokenExpired(true);
+			const data = await this.#createTwitchDataHeader();
+			let time = 0;
+
+			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
+				if (body.data[0].started_at == undefined) {
+					time = NaN;
+				} else {
+					time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
+				}
+
+			}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+
+			return time;
+
+		} catch (err) { console.error(err); }
 	}
 //--------------------------------------------------------------------------------------------------------
 }

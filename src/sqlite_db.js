@@ -11,7 +11,7 @@ export class CommandArray {
 	constructor() {
 
 		//connect the db to the program so we can access the little bugger
-		this.#db = new sqlite3.Database('C:/sqlite3/test.db', (err) => {
+		this.#db = new sqlite3.Database('/home/pi/db/test.db', (err) => {
 			if (err) { console.error(err); }
 			console.log("* Connected to on-disk SQLite DB");
 		});
@@ -26,35 +26,43 @@ export class CommandArray {
 	createAndWriteCommandsToFile(client, target, user, inputMsg) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
-		let isInterval = (inputMsg[1] == 'true');
-		let ins_sql;
-		if (!isInterval) {
-			ins_sql = `INSERT INTO stdcommands VALUES(?,?,?);`;
+
+		if (inputMsg?.length) {//just a check for a valid input from the mod/streamer
+
+			client.say(target, `@${user.username}: Invalid input for a command`);
+
 		} else {
-			ins_sql = `INSERT INTO intervalcommands VALUES(?,?,?);`;
-        }
 
-		//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
-		let creating_mod = user.username;
-		let name = inputMsg[1];
-		let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
-
-		//add in the remaining elements of the message to the command message variable
-		for (let i = 2; i < inputMsg.length; ++i) {
-			console.log(inputMsg[i]);
-			msg += inputMsg[i] + " ";
-		}
-
-		//run the sql command and spit out the result
-		this.#db.run(ins_sql, [name, creating_mod, msg], (err) => {
-			if (err) {
-				client.say(target, `@${user.username}: Error adding command to database`);
-				console.error(err);
+			let isInterval = (inputMsg[1] == 'true');
+			let ins_sql;
+			if (!isInterval) {
+				ins_sql = `INSERT INTO stdcommands VALUES(?,?,?);`;
 			} else {
-				client.say(target, `@${user.username}: Command successfully added to database`);
-            }
-			
-		});
+				ins_sql = `INSERT INTO intervalcommands VALUES(?,?,?);`;
+			}
+	
+			//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
+			let creating_mod = user.username;
+			let name = inputMsg[2];
+			let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
+	
+			//add in the remaining elements of the message to the command message variable
+			for (let i = 2; i < inputMsg.length; ++i) {
+				console.log(inputMsg[i]);
+				msg += inputMsg[i] + " ";
+			}
+	
+			//run the sql command and spit out the result
+			this.#db.run(ins_sql, [name, creating_mod, msg], (err) => {
+				if (err) {
+					client.say(target, `@${user.username}: Error adding command to database`);
+					console.error(err);
+				} else {
+					client.say(target, `@${user.username}: Command successfully added to database`);
+				}
+				
+			});
+		}
 	}
 
 	//removes a command from the list of custom commands

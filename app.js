@@ -14,7 +14,6 @@ import ClipCollector from './src/clipcollector.js';
 import Post from './src/post.js';
 import PubSubHandler from './src/pubsub_handler.js';
 
-
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const token = process.env.DISCORD_CLIENT_TOKEN;
 

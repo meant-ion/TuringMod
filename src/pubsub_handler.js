@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
-import SerialPort from 'serialport/lib';
-import { Readline } from 'serialport/lib/parsers';
+import SerialPort from 'serialport';
+import pkg from '@serialport/parser-readline';
+const { Readline } = pkg;
 
 //a little class that will manage and handle our PubSubs and notifications coming from them
 //this will be the main operator when dealing with the (eventual) chat-activated turret, as activating it will
@@ -20,11 +21,13 @@ export class PubSubHandler {
         this.#ping = new Ping(this.#pubsub);
         this.#twitch_chat_client = c;
         this.#topics_list = [];
+        /* Uncomment when moved to rpi with arduino port written to it 
         this.#port = new SerialPort('/dev/ttyACM0', {baudRate: 9600});
-        this.#parser = this.#port.pipe(new Readline({ delimeter: '\n'}));
+        this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
 
         this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
         this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
+        */
 
         //with the pubsub made, we can now get it working handling msgs
         this.start();
@@ -81,10 +84,10 @@ export class PubSubHandler {
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
-                this.#port.write("f", (err) => {
+                /*this.#port.write("f", (err) => {
                     if (err) return console.error(err);
                     console.log("* Fire command sent out!");
-                })
+                })*/
                 break;
         }
     }

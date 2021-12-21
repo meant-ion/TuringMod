@@ -13,7 +13,6 @@ import Dice from './src/dice.js';
 import ClipCollector from './src/clipcollector.js';
 import Post from './src/post.js';
 import PubSubHandler from './src/pubsub_handler.js';
-import EventSubHandler from './src/eventsub_handler.js';
 
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -93,10 +92,12 @@ let calculator = new Calculator();
 let clip_collector = new ClipCollector(async_functions);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler();
-//let eventsubs = new EventSubHandler(commands_holder, client);
 
 //set the timer for the ad warning function so we can get the async_functions object fully initialized
 setTimeout(adsIntervalHandler, 30000);
+
+//set timer to make the pubsub subscription so I dont have to type a command for it
+setTimeout(makeSub, 30000);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -447,12 +448,15 @@ async function shutDownBot(target) {
 	//now, shut off the PubSub WebSocket and stop all subscriptions through it
 	const auth_key = await commands_holder.getTwitchInfo(0);
 	pubsubs.killAllSubs(auth_key);
-	//eventsubs.shutdown();
 	client.say(target, "Shutting Down");
 	//now, we just kill execution of the program
 	process.exit(0);
 
 }
+
+//for setting up the pubsub for the channel points redemptions; async_functions function returns a promise, so 
+//setTimeout freaks out over it. Have to do it this way for it to function properly
+function makeSub() {async_functions.makePubSubscription('channel-points-channel-v1.71631229', commands_holder, pubsubs)}
 
 //writes all collected Twitch clips onto an HTML file and stops collecting them
 //@param   target   The chat room we are getting clips from 

@@ -38,11 +38,8 @@ export class LurkList {
             let time_msg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
             let lurk_msg = this.#lurker_list[index].getMsg();
             let msg;
-            if (is_leaving) {
-                msg = `Goodbye for now @${user.username}! See you later!`;
-            } else {
-                msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
-            }
+            if (is_leaving) msg = `Goodbye for now @${user.username}! See you later!`;
+            else msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
             
             this.#lurker_list.splice(index, 1);
             return msg;
@@ -55,11 +52,8 @@ export class LurkList {
     //@param   user   Who we're looking for in the lurker list
     //return          Either the index of the person in the list, or -1 if they aren't there
     isLurking(user) {
-        for (let i = 0; i < this.#lurker_list.length; ++i) {
-            if (this.#lurker_list[i].getKey() == user.username) {
-                return i;
-            }
-        }
+        for (let i = 0; i < this.#lurker_list.length; ++i) 
+            if (this.#lurker_list[i].getKey() == user.username) return i;
         return -1;
     }
 

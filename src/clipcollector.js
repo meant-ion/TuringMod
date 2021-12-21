@@ -37,9 +37,7 @@ export class ClipCollector {
         let list = this.#async_functions.getClipList();
 
         //add in the clips to the HTML page
-        for (let i = 0; i < list.length; ++i) {
-             rtf_body += list[i] + '\n';
-        }
+        for (let i = 0; i < list.length; ++i) rtf_body += list[i] + '\n';
 
         //add in the end tags for all HTML elements
         rtf_body += "</p>\n</div>\n</body>";
@@ -56,9 +54,7 @@ export class ClipCollector {
     //really just a debug function, but maybe useful somewhere else?
     dumpClipListToCLI() {
         let list = this.#async_functions.getClipList();
-        for (let i = 0; i < list.length; ++i) {
-            console.log(list[i]);
-        }
+        for (let i = 0; i < list.length; ++i) console.log(list[i]);
     }
 }
 

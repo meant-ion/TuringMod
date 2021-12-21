@@ -11,28 +11,30 @@ export class Helper {
     //@return                True/False
     isOperator(char_to_check) {
         const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!', '<', '>'];
-        for (let i = 0; i < operators.length; ++i) {
-            if (char_to_check == operators[i]) {
-                return true;
-            }
-        }
+        for (let i = 0; i < operators.length; ++i) 
+            if (char_to_check == operators[i]) return true;
         return false;
     }
 
     //combines the input into a single string
-    //@param   input_msg         The message that needs to be combined into one string
+    //@param   input_msg          The message that needs to be combined into one string
     //@param   need_white_space   Whether the string needs to have spaces between words
-    //@return                   A string made up of all elements of the inputMsg array
+    //@return                     A string made up of all elements of the inputMsg array
     combineInput(input_msg, need_white_space) {
         let combined_msg = '';
         for (let i = 0; i < input_msg.length; ++i) {
-            if (i != 0) {
-                combined_msg += input_msg[i];
-            }
-            if (need_white_space && (i + 1 != input_msg.length)) {
-                combined_msg += ' ';
-            }
+            if (i != 0) combined_msg += input_msg[i];
+            if (need_white_space && (i + 1 != input_msg.length)) combined_msg += ' ';
         }
+        return combined_msg;
+    }
+
+    //removes any commas present within the input message
+    //@param   input_msg   The message that needs to have its commas removed
+    //@returns             An array of strings without any commas present
+    replaceCommasWithSpaces(input_msg) {
+        let combined_msg = [];
+        input_msg.forEach(item => {if (item != ',') combined_msg.push(item);});
         return combined_msg;
     }
 
@@ -49,9 +51,7 @@ export class Helper {
         const days = Math.round(floored_hours / 24);
         const mins = Math.round((unfloored_hours - floored_hours) * 60);
         const secs = Math.round((unfloored_hours - floored_hours) * 3600);
-        if (!need_day) {
-            return `${floored_hours} hours ${mins % 60} minutes ${secs % 60} seconds`;
-        }
+        if (!need_day) return `${floored_hours} hours ${mins % 60} minutes ${secs % 60} seconds`;
         return `${days} days ${floored_hours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
     }
 
@@ -82,12 +82,12 @@ export class Helper {
     //@return             The URL, or an empty string if not valid
     checkIfURL(input_msg) {
         //do not have this be a forEach loop, it will not work lol
-        for (let i = 0; i < input_msg.length; ++i) {
+        for (let i = 0; i < input_msg.length; ++i) 
             try {
                 new url(input_msg[i]);
                 return input_msg[i];
             } catch (err) { }
-        }
+        
         return "";
     }
 
@@ -170,11 +170,7 @@ export class Helper {
         //calculate the minutes, craft the message, and then send to chat
         const mins = Math.round((unfloored_hours - floored_hours) * 60);
         let msg = `@${user.username}: Currently ${true_hours}:${mins % 60}`;
-        if (is_AM) {
-            msg += ` A.M. `;
-        } else {
-            msg += ` P.M. `;
-        }
+        if (is_AM) msg += ` A.M. `; else msg += ` P.M. `;
         msg += `CST for the streamer`;
         client.say(target, msg);
     }
@@ -192,9 +188,7 @@ export class Helper {
         let multiplier = Math.pow(10,2);
         num = parseFloat((num * multiplier).toFixed(11));
         num = (Math.round(num) / multiplier).toFixed(2);
-        if (neg) {
-            num = (num * -1).toFixed(2);
-        }
+        if (neg) num = (num * -1).toFixed(2);
         return num;
     }
 
@@ -204,9 +198,7 @@ export class Helper {
     getGitStatsArray(obj) {
         const keys = Object.keys(obj);
         const r = [];
-        keys.forEach(item => {
-            r.push(obj[item]);
-        });
+        keys.forEach(item => r.push(obj[item]));
         return r;
     }
 }

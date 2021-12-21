@@ -51,7 +51,7 @@ export class AsyncHolder {
 
 					//loop through the list of followers to find the one that requested their follow age
 					if (body.data != undefined) {
-						for (let i = 0; i < body.data.length; ++i) {
+						for (let i = 0; i < body.data.length; ++i) 
 							if (body.data[i].from_login == user.username) {//finally found the user following
 								acct_found = true;
 								let followedDate = new Date(body.data[i].followed_at);
@@ -59,7 +59,6 @@ export class AsyncHolder {
 									+ `${this.helper.getTimePassed(followedDate, true)}`);
 								break;
 							}
-						}
 	
 						//not found yet, so set the cursor forward and remake request
 						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + `&after=${body.pagination.cursor}`;
@@ -92,11 +91,8 @@ export class AsyncHolder {
 					let stream_dates = "";
 					for (let i = 1; i < body.data.segments.length; ++i) {
 						let curDate = new Date(body.data.segments[i].start_time);
-						if (i + 1 == body.data.segments.length) {
-							stream_dates += curDate.toDateString();
-						} else {
-							stream_dates += curDate.toDateString() + ", ";
-						}
+						if (i + 1 == body.data.segments.length) stream_dates += curDate.toDateString();
+						else stream_dates += curDate.toDateString() + ", ";
 						
 					}
 					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
@@ -148,50 +144,6 @@ export class AsyncHolder {
 				this.#generateAPIErrorResponse(err, target);
 			});
 		} catch (err) { console.error(err); }
-	}
-
-	//handles automatically posting that ads will be coming soon
-	async adsIntervalHandler() {
-		const curr_time = await this.#getUneditedStreamUptime();
-		const mins = Math.round(curr_time / 60);
-		let intervalTime = 0;
-		//the mid-roll ads start 30 mins after stream start (at least for me)
-		//so we start the interval command after 30 mins
-		if (mins == 30) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
-
-			this.client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
-			intervalTime = 360000;//call this function again in 1 hour
-
-		} else if (mins > 30) {//we called it after the 30 min mark is passed
-			const time_since_midrolls_started = mins - 30;
-			const remainder_to_hour = 60 - time_since_midrolls_started;
-
-			if (remainder_to_hour == 0) {//we called it exactly within an hour mark
-				const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
-					"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
-				this.client.say('#pope_pontus', msg);
-				intervalTime = 360000;
-			} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
-				this.client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
-				intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
-			}
-
-		} else {
-
-			const _mins = 30 - mins;
-			this.client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
-			//we set a timer callback to this function so we can check again 
-			intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
-
-		}
-
-		//actually set up the callback to this function so the warning goes through
-		if (intervalTime <= 0) {
-			console.log("Interval time not positive, error occurred");
-		} else {
-			setTimeout(this.adsIntervalHandler, intervalTime);
-		}
-		
 	}
 
 	//creates a PubSub subscription of the topic deigned by the user
@@ -274,9 +226,7 @@ export class AsyncHolder {
 			const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
-				if (body.data[0].url != undefined) {
-					this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
-				}
+				if (body.data[0].url != undefined) this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
 			});
@@ -371,11 +321,8 @@ export class AsyncHolder {
 		
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
-					if (res.status == 204) {
-						this.client.say(target, `Title successfully updated!`);
-					} else {
-						this.client.say(target, `Error, could not change title`);
-					}
+					if (res.status == 204) this.client.say(target, `Title successfully updated!`);
+					else this.client.say(target, `Error, could not change title`);
 				}).catch(err => {
 					this.#generateAPIErrorResponse(err, target);
 				});
@@ -459,11 +406,8 @@ export class AsyncHolder {
 
 			//arbitrarily chose 35% as the cutoff ratio to tell if there's viewbotting
 			//no real reason behind this being the cutoff, just seemed like a good place to leave it at
-			if (viewers_to_chat_ratio < 35.0) {
-				msg += `; This looks like a viewbotting issue to me :(`;
-			} else {
-				msg += `; This doesn't look like viewbotting to me at all :)`;
-			}
+			if (viewers_to_chat_ratio < 35.0) msg += `; This looks like a viewbotting issue to me :(`;
+			else msg += `; This doesn't look like viewbotting to me at all :)`;
 
 			this.client.say(target, msg);
 
@@ -606,9 +550,7 @@ export class AsyncHolder {
 			if (err) {
 				this.client.say(target, "Error in reading from suggestions file");
 				console.error(err);
-			} else {
-				this.client.say(target, data);
-			}
+			} else this.client.say(target, data);
 		});
 	}
 
@@ -670,9 +612,8 @@ export class AsyncHolder {
 			let str = "";
 			//we want only the name of the language, everything else is unwanted
 			for (let word of l) {
-				if (word == '-') {//when we get this char, we have gotten the whole name and break out
-					break;
-				}
+				//when we get this char, we have gotten the whole name and break out
+				if (word == '-') break;
 				str += word + '_';
 			}
 			str = str.slice(0, -1);//remove the extra '_' from the string so we can get the correct title
@@ -732,11 +673,7 @@ export class AsyncHolder {
 				temp_indic = "down";
 				temp_percent = this.helper.roundToTwoDecimals((last_val / current_val) * -100, true);
 
-			} else {//no change in amount of changes for both repos
-
-				temp_indic = "with no change";
-
-			}
+			} else temp_indic = "with no change"; //no change in amount of changes for both repos
 
 			indicators[i] = temp_indic;
 			percentages_array[i] = temp_percent;
@@ -771,19 +708,13 @@ export class AsyncHolder {
 
 			//now, we search through the entries for the correct (read: in english) versions of them
 			flavor_text_array.forEach(item => {
-				if (this.#isLangEn(item)) {
-					en_array[2] = item.flavor_text;
-				}
+				if (this.#isLangEn(item)) en_array[2] = item.flavor_text;
 			});
 			genus_array.forEach(item => {
-				if (this.#isLangEn(item)) {
-					en_array[1] = item.genus;
-				}
+				if (this.#isLangEn(item)) en_array[1] = item.genus;
 			});
 			pokemon_name_array.forEach(item => {
-				if (this.#isLangEn(item)) {
-					en_array[0] = item.name;
-				}
+				if (this.#isLangEn(item)) en_array[0] = item.name;
 			});
 			let msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
 			this.client.say(target, msg);
@@ -914,11 +845,8 @@ export class AsyncHolder {
 			}
 	
 			//assuming that there was something to get, we send out the link
-			if (this.#space_url != "") {
-				this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
-			} else {
-				this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
-			}
+			if (this.#space_url != "") this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
+			else this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
 
 		} catch (err) { console.error(err); }
 		
@@ -950,17 +878,13 @@ export class AsyncHolder {
 		let token_time;
 		console.log(this.#twitch_token_get_time);
 		//make sure to get the correct token here
-		if (which_token) { token_time = this.#twitch_token_get_time; } else { token_time = this.#spotify_token_get_time; } 
+		if (which_token) token_time = this.#twitch_token_get_time; else token_time = this.#spotify_token_get_time; 
 		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
 
 		//if we have a large enough difference between the two times, refresh the specified token
-		if (diff >= 3600) {
-			if (which_token) {
-				this.#refreshTwitchTokens();
-			} else {
-				this.#refreshSpotifyToken();
-			}
-		}
+		if (diff >= 3600)
+			if (which_token) this.#refreshTwitchTokens();
+			else this.#refreshSpotifyToken();
 	}
 
 
@@ -1076,9 +1000,7 @@ export class AsyncHolder {
 	
 				//get the auth code
 				let u = new URL(req.url, "http://localhost:4000");
-				if (u.searchParams.get('code') != null) {
-					code = u.searchParams.get('code');
-				}
+				if (u.searchParams.get('code') != null) code = u.searchParams.get('code');
 	
 				//build the items necessary to get the tokens
 				let b = Buffer.from(session_data[0] + ':' + session_data[1], 'utf-8')
@@ -1136,7 +1058,7 @@ export class AsyncHolder {
 
 	//returns stream uptime for use in ad warning system
 	//@return    The uptime of the stream in seconds
-	async #getUneditedStreamUptime() {
+	async getUneditedStreamUptime() {
 		try {
 			
 			this.#hasTokenExpired(true);
@@ -1144,11 +1066,8 @@ export class AsyncHolder {
 			let time = 0;
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-				if (body.data[0].started_at == undefined) {
-					time = NaN;
-				} else {
-					time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
-				}
+				if (body.data[0].started_at == undefined) time = NaN;
+				else time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
 
 			}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
 

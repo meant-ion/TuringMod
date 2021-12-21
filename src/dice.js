@@ -50,16 +50,15 @@ export class Dice {
 		let i;
 		for (i = cmd_name.substring(0, 5).length; i < cmd_name.length; ++i) {
 			checker_char = cmd_name.substring(i, i + 1);
-			if (this.helper.isNumeric(checker_char)) {//the character was a number, so append it to the list
-				num_dice_to_roll += checker_char;
-			} else if (this.helper.isLetter(checker_char)) {//the character was a letter
+			//the character was a number, so append it to the list
+			if (this.helper.isNumeric(checker_char)) num_dice_to_roll += checker_char;
+			else if (this.helper.isLetter(checker_char)) {//the character was a letter
 				//check to make sure that the alphabetical character is a d for the roll to go through
 				if (checker_char.toLowerCase() == 'd') {
 					has_d = true;
 					d_index = i;
-					if (num_dice_to_roll == '') {//just in case the user only wanted to roll 1 die
-						num_dice_to_roll = '1'
-					}
+					//just in case the user only wanted to roll 1 die
+					if (num_dice_to_roll == '') num_dice_to_roll = '1';
 					break;
 				} else {
 					this.client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
@@ -74,14 +73,11 @@ export class Dice {
 			//now we see if the remaining characters are numbers or not, and add them to a new variable to act as the sides of the die
 			let i;
 			for (i = d_index + 1; i < cmd_name.length; ++i) {
-				if (i == cmd_name.length) {
-					checker_char = cmd_name.substring(i);
-				} else {
-					checker_char = cmd_name.substring(i, i + 1);
-				}
-				if (this.helper.isNumeric(checker_char)) {//if it is a number, add it to the numSides var
-					num_sides += checker_char;
-				} else if (checker_char.toLowerCase() == 'r') {
+				if (i == cmd_name.length) checker_char = cmd_name.substring(i);
+				else checker_char = cmd_name.substring(i, i + 1);
+				//if it is a number, add it to the numSides var
+				if (this.helper.isNumeric(checker_char)) num_sides += checker_char;
+				else if (checker_char.toLowerCase() == 'r') {
 					has_r = true;
 					r_index = i;
 					break;
@@ -95,14 +91,10 @@ export class Dice {
 			//we have a minimum roll for this roll, so we are gonna see how low we can go
 			if (is_valid_cmd && has_r) {
 				for (let j = r_index + 1; j < cmd_name.length; ++j) {
-					if (j == cmd_name.length) {
-						checker_char = cmd_name.substring(j);
-					} else {
-						checker_char = cmd_name.substring(j, j + 1);
-					}
-					if (this.helper.isNumeric(checker_char)) {
-						min_roll += checker_char;
-					} else {
+					if (j == cmd_name.length) checker_char = cmd_name.substring(j);
+					else checker_char = cmd_name.substring(j, j + 1);
+					if (this.helper.isNumeric(checker_char)) min_roll += checker_char;
+					else {
 						this.client.say(target, `Invalid minimum roll requirment, please try again`);
 						is_valid_cmd = false;
 						break;
@@ -113,12 +105,8 @@ export class Dice {
 			//now, we can begin calculations. First, we make sure the command is correct
 			if (is_valid_cmd) {
 				const total = this.#rollDice(num_dice_to_roll, num_sides, min_roll);
-				if (total != null) {
-					this.client.say(target, `@${user.username} You rolled ${num_dice_to_roll} d${num_sides} and got ${total}`);
-				} else {
-					this.client.say(target, `@${user.username} Minimum roll was higher than possible highest roll`);
-				}
-
+				if (total != null) this.client.say(target, `@${user.username} You rolled ${num_dice_to_roll} d${num_sides} and got ${total}`);
+				else this.client.say(target, `@${user.username} Minimum roll was higher than possible highest roll`);
 			}
 
 		}
@@ -133,11 +121,7 @@ export class Dice {
 
 		let side = "";
 
-		if (coin_flip == 1) {
-			side = "Heads"
-		} else {
-			side = "Tails";
-		}
+		if (coin_flip == 1) side = "Heads"; else side = "Tails";
 
 		this.client.say(target, `@${user.username}: ${side}`);
 	}
@@ -150,9 +134,7 @@ export class Dice {
 		if (will_they_be_banned >= 999) {
 			this.client.say(target, `How very unfortunate`);
 			this.client.timeout(target, user.username, 10);
-		} else {
-			this.client.say(target, `Lucky you!`);
-		}
+		} else this.client.say(target, `Lucky you!`);
 	}
 
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
@@ -164,27 +146,19 @@ export class Dice {
 		const dice_count = parseInt(num_dice);//number of times we will roll
 		const sides_count = parseInt(sides);//number of sides on the die that will be rolled
 		let min_count = 0;
-		if (min_roll == '') {
-			min_count = 0;
-		} else {
-			min_count = parseInt(min_roll);
-		}
+		if (min_roll == '') min_count = 0;
+		else min_count = parseInt(min_roll);
 
 
 		//error check to make sure that the minimum isnt greater than highest possible roll
-		if (min_count > (sides_count * dice_count)) {
-			return null;
-		}
+		if (min_count > (sides_count * dice_count)) return null;
 
 		//and now we do the rolling
 		let total_roll = 0;
 		let i;
-		for (i = 0; i < dice_count; ++i) {
-			total_roll += (Math.floor(Math.random() * sides_count) + 1);
-		}
-		if (total_roll < min_count && min_count != 0) {//if we didnt roll high enough, return the minimum roll
-			return min_count;
-		}
+		for (i = 0; i < dice_count; ++i) total_roll += (Math.floor(Math.random() * sides_count) + 1);
+		//if we didnt roll high enough, return the minimum roll
+		if (total_roll < min_count && min_count != 0) return min_count;
 		return total_roll;
 	}
 

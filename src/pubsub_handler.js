@@ -140,9 +140,7 @@ class Ping {
 
     //starts up the ping timer
     start() {
-        if (this.#pinger) {
-            clearInterval(this.#pinger);
-        }
+        if (this.#pinger) clearInterval(this.#pinger);
         this.sendPing();
 
         this.#pinger = setInterval(() => {

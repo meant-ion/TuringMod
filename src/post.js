@@ -119,27 +119,19 @@ export class Post {
 					if ((logprob_0 != null) && (logprob_1 != null)) {
 	 					if (logprob_0 >= logprob_1) {
 								output_label = "0";
-							} else {
+							} else 
 								output_label = "1";
-							}
-						} else if (logprob_0 != null) {
-							output_label = "0";
-						} else if (logprob_1 != null) {
-							output_label = "1";
-						}
+						} else if (logprob_0 != null) output_label = "0";
+						else if (logprob_1 != null) output_label = "1";
 					}
 		 		}
 
 		 		//if the output is not 0, 1, or 2, we set it as 2 for safety
-		 		if ((output_label != "0") && (output_label != "1") && (output_label != "2")) {
-		 			output_label = "2";
-		 		}
+		 		if ((output_label != "0") && (output_label != "1") && (output_label != "2")) output_label = "2";
 
 		 		//if the token has been proven to not fall into a bad area/level of toxicity, 
 		 		//we add it to the output text and send that out for approval for the bot's administrator
-		 		if (output_label != "2") {
-		 			tested_output += token;
-		 		}
+		 		if (output_label != "2") tested_output += token;
 
 				testing_params.prompt = "<|endoftext|>" + token + "\n--\nLabel:";
 		 	}
@@ -150,11 +142,9 @@ export class Post {
 			let askMsg = "Pass this message through? (Y/N): ";
 
 			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(responseMsg);
-			if (tested_output == "" || tested_output == "\n" || this.#seeIfNothingButNewlines(tested_output)) {
+			if (tested_output == "" || tested_output == "\n" || this.#seeIfNothingButNewlines(tested_output)) 
 				this.discord_client.channels.cache.get(process.env.SERVER_ID).send("Empty Response");
-			} else {
-				this.discord_client.channels.cache.get(process.env.SERVER_ID).send(tested_output);
-			}
+			else this.discord_client.channels.cache.get(process.env.SERVER_ID).send(tested_output);
 			
 			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(askMsg);
 			return true;
@@ -174,10 +164,7 @@ export class Post {
 		let msg = response.split('');
 		let is_empty = true;
 		msg.forEach(item => {
-			console.log(item != '\n');
-			if (item != '\n') {
-				is_empty = false;
-			}
+			if (item != '\n') is_empty = false;
 		});
 		return is_empty;
     }

@@ -75,14 +75,12 @@ discord_client.on('messageCreate', message => {
 		response = post.getResponse();
 
 		//search through the list of responses and channels to find the correct one and then post that out
-		if (response != "") {
+		if (response != "") 
 			client.say(opts.channels[0], `MrDestructoid ${response}`);
-		} else {
+		else 
 			client.say(opts.channels[0], `No response found for this channel`);
-		}
-	} else if (input_msg[0] == '!reject') {
-		client.say(opts.channels[0], `Response rejected by bot admin`);
-	}
+
+	} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
 });
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
@@ -98,7 +96,7 @@ let pubsubs = new PubSubHandler();
 //let eventsubs = new EventSubHandler(commands_holder, client);
 
 //set the timer for the ad warning function so we can get the async_functions object fully initialized
-setTimeout(ads, 30000);
+setTimeout(adsIntervalHandler, 30000);
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -126,9 +124,10 @@ function onMessageHandler(target, user, msg, self) {
 		  //a moderator or the streamer wishes to flush the bot's posting prompt
 		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			if (prompt.length == 0) {//make sure we don't waste time flushing a prompt that is just empty
+			//make sure we don't waste time flushing a prompt that is just empty
+			if (prompt.length == 0) 
 				client.say(target, "Cannot flush and erase an empty prompt");
-			} else {
+			else {
 				resetPrompt();
 				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
 			}
@@ -190,11 +189,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			quiet_mode_enabled = !quiet_mode_enabled;
 			let msg;
-			if (quiet_mode_enabled) {
+			if (quiet_mode_enabled)
 				msg = `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off`;
-			} else {
+			else 
 				msg = `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer`;
-			}
 			client.say(target, msg);
 
 		  //mod/streamer wants to shut bot down safely
@@ -228,19 +226,16 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!followage') {//user wants to know how long they've followed the stream
 
-			if (user.username == the_streamer) {//make sure the streamer isn't the one trying to get a follow age lol
+			if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
-			} else {
-				async_functions.getFollowAge(user, target);
-			}
+			else async_functions.getFollowAge(user, target);
 
 		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
 
-			if (writeSuggestionToFile(input_msg)) {
+			if (writeSuggestionToFile(input_msg)) 
 				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
-			} else {
+			else 
 				client.say(target, `@${user.username}, empty suggestion not written to file`);
-			}
 
 		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
 
@@ -252,11 +247,10 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!roulette') {//allows chat member to take a chance at being timed out
 
-			if (helper.isStreamer(user.username, the_streamer)) {//make sure it isnt the streamer trying to play russian roulette
+			if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
 				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
-			} else {
+			else 
 				dice.takeAChanceAtBeingBanned(user, target);
-			}
 
 		} else if (cmd_name == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
 
@@ -349,19 +343,15 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-			if (commands_holder.getCustomCommand(client, target, cmd_name)) {
+			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");
 
-				console.log("Custom command executed");
-
-			} else if (collect_clips) {//if enabled, check to see if it's a clip
+			else if (collect_clips) {//if enabled, check to see if it's a clip
 
 				//verify that the message has no URLs in it
 				const possibleClipURL = helper.checkIfURL(input_msg);
 
 				//if it does, pass it into the collector for processing
-				if (possibleClipURL != "") {
-					clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
-				}
+				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
 
 			  //detect if this message is either non-english (unicode) or symbol spam
 			} //else if (!helper.detectUnicode(input_msg, target, user, client)) {
@@ -415,14 +405,14 @@ async function generatePost(target) {
 	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
 	//take the last 2000 characters for the prompt and discard all other characters.
 	//An overly-large prompt will cause the API to return a 400 error
-	if (prompt.length > 2000) { prompt = prompt.substr(prompt.length - 2000); }
+	if (prompt.length > 2000) prompt = prompt.substr(prompt.length - 2000);
 
 	try {
 		const key = await commands_holder.getAPIKeys(0);
 		post.generatePost(prompt, lines_count, target, key);
 		resetPrompt();
 	
-		if (prompt == "") { console.log("prompt flushed after response generation successfully!"); }
+		if (prompt == "") console.log("prompt flushed after response generation successfully!");
 	} catch (err) { console.error(err); }
 
 }
@@ -432,18 +422,14 @@ async function generatePost(target) {
 //@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
 	let lurk_msg = lurk_list.removeLurker(user, false);
-	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) {
-		client.say(target, lurk_msg);
-    }
+	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) client.say(target, lurk_msg);
 }
 
 //appends a suggestion from a viewer to a suggestions file for later consideration
 //@param   input_msg   The whole message gathered by the bot 
 function writeSuggestionToFile(input_msg) {
 
-	if (input_msg.length == 1 && input_msg[0] == '!sg') {
-		return false;
-	}
+	if (input_msg.length == 1 && input_msg[0] == '!sg') return false;
 
 	appendFile('./data/suggestions.txt', helper.combineInput(input_msg, true) + '\n', (err) => {
 		if (err) { console.error(err); }
@@ -457,7 +443,7 @@ function writeSuggestionToFile(input_msg) {
 async function shutDownBot(target) {
 
 	//if we have the clip collection turned on, write everything to file and shut down
-	if (collect_clips) { getClipsInOrder(target); }
+	if (collect_clips) getClipsInOrder(target);
 	//now, shut off the PubSub WebSocket and stop all subscriptions through it
 	const auth_key = await commands_holder.getTwitchInfo(0);
 	pubsubs.killAllSubs(auth_key);
@@ -477,7 +463,46 @@ function getClipsInOrder(target) {
 	client.say(target, "All collected clips are written to file!");
 }
 
-function ads() { async_functions.adsIntervalHandler(); }
+//handles automatically posting that ads will be coming soon
+async function adsIntervalHandler() {
+	const curr_time = await async_functions.getUneditedStreamUptime();
+	const mins = Math.round(curr_time / 60);
+	let intervalTime = 0;
+	//the mid-roll ads start 30 mins after stream start (at least for me)
+	//so we start the interval command after 30 mins
+	if (mins == 30) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
+
+		client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
+		intervalTime = 360000;//call this function again in 1 hour
+
+	} else if (mins > 30) {//we called it after the 30 min mark is passed
+		const time_since_midrolls_started = mins - 30;
+		const remainder_to_hour = 60 - time_since_midrolls_started;
+
+		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
+			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
+				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
+			client.say('#pope_pontus', msg);
+			intervalTime = 360000;
+		} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
+			client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
+			intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
+		}
+
+	} else {
+
+		const _mins = 30 - mins;
+		client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
+		//we set a timer callback to this function so we can check again 
+		intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
+
+	}
+
+	//actually set up the callback to this function so the warning goes through
+	if (intervalTime <= 0) console.log("Interval time not positive, error occurred");
+	else setTimeout(adsIntervalHandler, intervalTime);
+	
+}
 
 //this goes last to prevent any issues on discord's end
 discord_client.login(token);

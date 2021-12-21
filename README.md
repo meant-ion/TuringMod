@@ -170,7 +170,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
-		- Figure out weird error where typing in the same problem twice gets two different results (last value of eq is being deleted, but why tho?)
 
 	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 

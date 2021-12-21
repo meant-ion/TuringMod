@@ -11,8 +11,8 @@ export class CommandArray {
 	constructor() {
 
 		//connect the db to the program so we can access the little bugger
-		this.#db = new sqlite3.Database('/home/pi/db/test.db', (err) => {
-			if (err) { console.error(err); }
+		this.#db = new sqlite3.Database('C:/sqlite3/test.db', (err) => {
+			if (err) console.error(err);
 			console.log("* Connected to on-disk SQLite DB");
 		});
 	}
@@ -27,19 +27,15 @@ export class CommandArray {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
 
-		if (inputMsg?.length) {//just a check for a valid input from the mod/streamer
+		//just a check for a valid input from the mod/streamer
+		if (inputMsg?.length) client.say(target, `@${user.username}: Invalid input for a command`);
 
-			client.say(target, `@${user.username}: Invalid input for a command`);
-
-		} else {
+		else {
 
 			let isInterval = (inputMsg[1] == 'true');
 			let ins_sql;
-			if (!isInterval) {
-				ins_sql = `INSERT INTO stdcommands VALUES(?,?,?);`;
-			} else {
-				ins_sql = `INSERT INTO intervalcommands VALUES(?,?,?);`;
-			}
+			if (!isInterval) ins_sql = `INSERT INTO stdcommands VALUES(?,?,?);`;
+			else ins_sql = `INSERT INTO intervalcommands VALUES(?,?,?);`;
 	
 			//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
 			let creating_mod = user.username;
@@ -57,9 +53,7 @@ export class CommandArray {
 				if (err) {
 					client.say(target, `@${user.username}: Error adding command to database`);
 					console.error(err);
-				} else {
-					client.say(target, `@${user.username}: Command successfully added to database`);
-				}
+				} else client.say(target, `@${user.username}: Command successfully added to database`);
 				
 			});
 		}
@@ -75,11 +69,8 @@ export class CommandArray {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
 		let del_sql;
-		if (!is_interval) {
-			del_sql = `DELETE FROM stdcommands WHERE name = ?;`;
-		} else {
-			del_sql = `DELETE FROM intervalcommands WHERE name = ?;`;
-		}
+		if (!is_interval) del_sql = `DELETE FROM stdcommands WHERE name = ?;`;
+		else del_sql = `DELETE FROM intervalcommands WHERE name = ?;`;
 
 		//run the sql command and spit out the result
 		this.#db.run(del_sql, command, (err) => {
@@ -104,18 +95,13 @@ export class CommandArray {
 		//determine if this command is freely callable or called on an interval (different tables for them)
 		let is_interval = (input_msg[1] == 'true');
 		let update_sql;
-		if (!is_interval) {
-			update_sql = `UPDATE stdcommands SET msg = ? WHERE name = ?;`;
-		} else {
-			update_sql = `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
-		}
+		if (!is_interval) update_sql = `UPDATE stdcommands SET msg = ? WHERE name = ?;`;
+		else update_sql = `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
 
 		//assemble the message to post back into place
 		let commandToEdit = input_msg[2];
 		let message = "";
-		for (let i = 3; i < input_msg.length; ++i) {
-			message += input_msg[i] + " ";
-		}
+		for (let i = 3; i < input_msg.length; ++i) message += input_msg[i] + " ";
 
 		//run the sql command and spit out the result
 		this.#db.run(update_sql, [message, commandToEdit], (err) => {
@@ -138,10 +124,8 @@ export class CommandArray {
 		let msg = `@${user.username}: These are the current custom commands available: `;
 
 		this.#db.all('SELECT name, msg FROM stdcommands;', [], (err, rows) => {
-			if (err) { console.error(err); }
-			rows.forEach((row) => {
-				msg += row.name + ", ";
-			});
+			if (err) console.error(err);
+			rows.forEach((row) => msg += row.name + ", ");
 			client.say(target, msg);
 		});
 	}
@@ -151,12 +135,9 @@ export class CommandArray {
 	getIntervalCommand(index, client) {
 		let search_sql = `SELECT msg FROM intervalcommands;`;
 		 this.#db.all(search_sql, (err, rows) => {
-		 	if (err) {
-		 		console.error(err);
-		 	} else {
-				//just using the hard-coded target channel here since this version of the bot will only be used on this channel
-				client.say('#pope_pontus', rows[index].msg);
-            }
+		 	if (err)console.error(err);
+			//just using the hard-coded target channel here since this version of the bot will only be used on this channel
+		 	else client.say('#pope_pontus', rows[index].msg);
          });
 	}
 
@@ -171,18 +152,10 @@ export class CommandArray {
 		return new Promise((resolve, reject) => {
 
 			this.#db.get(length_sql, (err, row) => {
-
-				if (err) { reject(err); } else {
-
+				if (err) reject(err);  else 
 					//send out either 0 if we reach the end of the entries in the DB, or the index + 1 otherwise
-					if (row['COUNT(*)'] <= index + 1) {
-						resolve(0);
-					} else {
-						resolve(index + 1);
-					}
-
-				}
-
+					if (row['COUNT(*)'] <= index + 1) resolve(0);
+					else resolve(index + 1);
 			});
 		});
 	}
@@ -197,14 +170,14 @@ export class CommandArray {
 		//get the current count and push it out to the chat room
 		this.#db.get(vcrack_sql, (err, row) => {
 
-			if (err) { console.error(err); } else {
+			if (err) console.error(err); else {
 				let count = parseInt(row['num']) + 1;
 				client.say(target, `Streamer's voice has cracked ${count} times.`);
 				let update_sql = `UPDATE voicecracks SET num = ?;`
 
 				//now we update the count by 1 and push that new count to the DB
 				this.#db.run(update_sql, [count.toString()], (err) => {
-					if (err) { console.error(err); } else { console.log("* Voice cracks count updated"); }
+					if (err) console.error(err); else console.log("* Voice cracks count updated");
 				});
 			}
 		});
@@ -220,13 +193,13 @@ export class CommandArray {
 
 		this.#db.get(death_sql, (err, row) => {
 
-			if (err) { console.error(err); } else {
+			if (err) console.error(err); else {
 				let count = parseInt(row['deaths']) + 1;
 				client.say(target, `Death Count: ${count}`);
 
 				let update_sql = 'UPDATE death_count SET num = ?;';
 				this.#db.run(update_sql, [count], (err) => {
-					if (err) { console.error(err); } else { console.log("* Death count updated"); }
+					if (err) console.error(err); else console.log("* Death count updated");
 				})
 			}
 		});
@@ -239,9 +212,7 @@ export class CommandArray {
 		let zero_sql = 'UPDATE death_count SET num = 0;';
 
 		this.#db.get(zero_sql, (err) => {
-			if (err) { console.error(err); } else {
-				client.say(target, 'Death count reset back to zero');
-			}
+			if (err) console.error(err); else client.say(target, 'Death count reset back to zero');
 		});
 	}
 
@@ -257,11 +228,9 @@ export class CommandArray {
 		//i.e. search each found row and post out the message it has
 		this.#db.serialize(() => {
 			this.#db.each(search_sql, command, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row == undefined) {
-					return false;
-				} else {
+				if (err) console.error(err);
+				else if (row == undefined) return false;
+				else {
 					client.say(target, row.msg);
 					return true;
                 }	
@@ -283,9 +252,8 @@ export class CommandArray {
 
 		this.#db.serialize(() => {
 			this.#db.each(search_sql, phrase_index, (err, row) => {
-				if (err) { console.error(err); } else if (row == undefined) {
-					return false;
-				} else {
+				if (err) console.error(err); else if (row == undefined) return false;
+				else {
 					client.say(target, `@${user.username}: ${row.saying}`);
 					return true;
 				}
@@ -316,9 +284,7 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
-				if(err) { reject(err); } else {
-					resolve(row[item]);
-				}
+				if(err) reject(err); else resolve(row[item]);
 			});
 		});
 		
@@ -332,7 +298,7 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
-				if (err) { reject(err); } else {
+				if (err) reject(err); else {
 					let arr = ["","","","",""];
 					arr[0] = row["client_id"];
 					arr[1] = row["client_secret"];
@@ -353,7 +319,7 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(spotify_sql, (err, row) => {
-				if (err) { reject(err); } else {
+				if (err) reject(err); else {
 					let arr = ["","","","",""];
 					arr[0] = row["client_id"];
 					arr[1] = row["client_secret"];
@@ -375,7 +341,7 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
-				if (err) { reject(err); } else {
+				if (err) reject(err); else {
 					let arr = [``,``];
 					arr[0] = row.client_id;
 					arr[1] = row.client_secret;
@@ -393,7 +359,7 @@ export class CommandArray {
 		let update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
-			if (err) { console.error(err); } else { console.log("* New Twitch Tokens written to DB successfully!"); }
+			if (err) console.error(err); else console.log("* New Twitch Tokens written to DB successfully!");
 		});
 	}
 
@@ -402,23 +368,17 @@ export class CommandArray {
 	//@return             Either just the access token outright, or a 2 element array with the access and refresh tokens
 	async getSpotifyInfo(need_both) {
 		let spotify_sql;
-		if (!need_both) {
-			spotify_sql = `SELECT access_token FROM spotify_auth;`;
-		} else {
-			spotify_sql = `SELECT access_token, refresh_token FROM spotify_auth`;
-		}
+		if (!need_both) spotify_sql = `SELECT access_token FROM spotify_auth;`;
+		else spotify_sql = `SELECT access_token, refresh_token FROM spotify_auth`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 
 			this.#db.get(spotify_sql, (err, row) => {
-				if (err) { reject(err); } else {
-					if (!need_both) {//we need only the access token
-
-						resolve(row.access_token);
-
-					} else {//we need both tokens, so send them into an array and go from there
-
+				if (err) reject(err); else {
+					//we need only the access token
+					if (!need_both) resolve(row.access_token); else {
+						//we need both tokens, so send them into an array and go from there
 						let arr = ['', ''];
 						arr[0] = row.access_token;
 						arr[1] = row.refresh_token;
@@ -455,9 +415,7 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(keys_sql, (err, row) => {
-				if(err) { reject(err); } else {
-					resolve(row[key]);
-				}
+				if(err) reject(err); else resolve(row[key]);
 			});
 		});
 	}
@@ -469,7 +427,7 @@ export class CommandArray {
 		let update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
-			if (err) { console.error(err); } else { console.log("* New Spotify Tokens Written Successfully!"); }
+			if (err) console.error(err); else console.log("* New Spotify Tokens Written Successfully!");
 		});
 	}
 }

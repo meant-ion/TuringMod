@@ -477,6 +477,8 @@ async function adsIntervalHandler() {
 
 	} else if (mins > 30) {//we called it after the 30 min mark is passed
 		const time_since_midrolls_started = mins - 30;
+		console.log(`Value of mins: ${mins}`);
+		console.log(`Value of time_since_midrolls_started: ${time_since_midrolls_started}`);
 		const remainder_to_hour = 60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark

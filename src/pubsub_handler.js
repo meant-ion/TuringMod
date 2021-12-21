@@ -1,14 +1,18 @@
 import WebSocket from 'ws';
+import SerialPort from 'serialport/lib';
+import { Readline } from 'serialport/lib/parsers';
 
 //a little class that will manage and handle our PubSubs and notifications coming from them
 //this will be the main operator when dealing with the (eventual) chat-activated turret, as activating it will
 //be done via a channel points redemption
 export class PubSubHandler {
 
-    #pubsub;//our WebSocket that we need to connect to the PubSub API
-    #ping;//object we need to keep the connection for the PubSub open
-    #twitch_chat_client;//handles posting of messages automatically/activating turret
-    #topics_list;//an array holding the topics we are listening to with the bot
+    #pubsub;             //our WebSocket that we need to connect to the PubSub API
+    #ping;               //object we need to keep the connection for the PubSub open
+    #twitch_chat_client; //handles posting of messages automatically/activating turret
+    #topics_list;        //an array holding the topics we are listening to with the bot
+    #port;               //the serial port we will use to communicate with the rpi's turret
+    #parser;             //what we will use for processing communications between the arduino and the rpi
 
     //@param   c   The Twitch Chat IRC client we need to send messages through
     constructor(c) {
@@ -16,6 +20,11 @@ export class PubSubHandler {
         this.#ping = new Ping(this.#pubsub);
         this.#twitch_chat_client = c;
         this.#topics_list = [];
+        this.#port = new SerialPort('/dev/ttyACM0', {baudRate: 9600});
+        this.#parser = this.#port.pipe(new Readline({ delimeter: '\n'}));
+
+        this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
+        this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
 
         //with the pubsub made, we can now get it working handling msgs
         this.start();
@@ -24,11 +33,8 @@ export class PubSubHandler {
     //starts up execution and listening for the WebSocket
     start() {
         //handler for closing and opening of the WebSocket
-        this.#pubsub.on('close', () => {
-            this.start();
-        }).on('open', () => {
-            this.#ping.start();
-        });
+        this.#pubsub.on('close', () => this.start())
+        .on('open', () => this.#ping.start());
 
         //when we get an actual message, we parse it with this lambda
         this.#pubsub.on('message', (data) => {
@@ -74,6 +80,11 @@ export class PubSubHandler {
                 this.#twitch_chat_client.say('#pope_pontus', `/vip ${new_vip}`);
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
+                //when command from chat received, write the command to the arduino via serial connection
+                this.#port.write("f", (err) => {
+                    if (err) return console.error(err);
+                    console.log("* Fire command sent out!");
+                })
                 break;
         }
     }

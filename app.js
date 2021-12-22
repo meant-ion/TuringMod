@@ -354,7 +354,7 @@ function onMessageHandler(target, user, msg, self) {
 				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
 
 			  //detect if this message is either non-english (unicode) or symbol spam
-			} //else if (!helper.detectUnicode(input_msg, target, user, client)) {
+			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
 				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
 				//if both are true, remove the msg via a 1-second timeout
 				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
@@ -365,7 +365,7 @@ function onMessageHandler(target, user, msg, self) {
 					lines_count++;
 					lurkerHasTypedMsg(target, user);
 				}
-			//}
+			}
 		}
 	}
 }
@@ -480,9 +480,11 @@ async function adsIntervalHandler() {
 
 	} else if (mins > 30) {//we called it after the 30 min mark is passed
 		const time_since_midrolls_started = mins - 30;
-		console.log(`Value of mins: ${mins}`);
-		console.log(`Value of time_since_midrolls_started: ${time_since_midrolls_started}`);
-		const remainder_to_hour = 60 - time_since_midrolls_started;
+		let remainder_to_hour;
+		if (time_since_midrolls_started > 60)
+			remainder_to_hour = 60 - (time_since_midrolls_started % 60);
+		else 
+			remainder_to_hour = 60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
 			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 

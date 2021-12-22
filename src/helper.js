@@ -107,6 +107,7 @@ export class Helper {
         //search the whole message for the symbols. If enough are found, remove the message for spam
         let match_list = input_msg.match(sym_list);
         if (match_list != null && match_list.length > 15) {
+            client.say(target, `@${user.username}: Kill it with the symbols please`);
             client.timeout(target, user.username, 1, "No symbol spam in chat please");
             return true;
         }
@@ -120,12 +121,19 @@ export class Helper {
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(input_msg, target, user, client) {
-        let msg =  this.combineInput(input_msg, true);
-        let regex = /[^\x00-\xFF-\u203C-\u3299]/;//range of all non-ascii characters and of all emojis available
-        if (regex.test(msg)) {
-            client.timeout(target, user.username, 1, "Please, english only in this chatroom");
-            return true;
-        }
+        //input_msg.forEach(item => client.say(target, `Echoing word: ${item}`));
+        //let msg =  this.combineInput(input_msg, true);
+        let regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}/u;//range of all ascii chars, punctuation and emojis
+        input_msg.forEach(item => {
+            let char_arr = item.split("");
+            char_arr.forEach(char => {
+                if (!regex.test(char)) {
+                    client.say(target, `@${user.username}: English only characters please`);
+                    client.timeout(target, user.username, 10, "No non-ASCII/Emoji chars please");
+                    return true;
+                }
+            });
+        });
         return false;
     }
 

@@ -7,6 +7,7 @@ import Helper from './helper.js';
 import http from 'http';
 import open from 'open';
 import fs from 'fs';
+import { encode } from 'punycode';
 
 export class AsyncHolder {
 
@@ -970,12 +971,14 @@ export class AsyncHolder {
 		//get the client secret and all that fun stuff so we can make the proper request
 		let client_stuff = await this.#data_base.getIdAndSecret();
 
-		let url = `https://id.twitch.tv/oauth2/token--data-urlencode?grant_type=refresh_token&refresh_token=${refresh_token}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
+		const encodedTok = encodeURIComponent(refresh_token);
+
+		let url = `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodedTok}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
 		
 		//send the request and write the tokens to the DB for safe keeping
-		await fetch(url, data).then(result => result.json()).then(body => {
+		await fetch(url, data).then(result => result.text()).then(body => {
 			if (body.status == null) {
-				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
+			 	this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 			}
 		});

@@ -228,7 +228,8 @@ function onMessageHandler(target, user, msg, self) {
 
 			if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
-			else async_functions.getFollowAge(user, target);
+			else 
+				async_functions.getFollowAge(user, target);
 
 		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
 
@@ -340,6 +341,10 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmd_name == '!randlang') {//user wants to look at a random esolang
 
 			async_functions.getRandEsoLang(user, target);
+
+		} else if (cmd_name == '!freegame') {//user wants a list of currently free games on the Epic Store
+
+			async_functions.getFreeGamesOnEpicStore(target);
 
 		} else {
 			//check to see if the message is a custom command

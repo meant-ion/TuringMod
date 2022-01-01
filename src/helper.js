@@ -1,5 +1,6 @@
 //file to hold our helper functions so that we can use them across files in the project
 
+import { Console } from 'console';
 import {URL as url} from 'url';
 
 export class Helper {
@@ -121,10 +122,10 @@ export class Helper {
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(input_msg, target, user, client) {
-        //input_msg.forEach(item => client.say(target, `Echoing word: ${item}`));
-        //let msg =  this.combineInput(input_msg, true);
-        let regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}/u;//range of all ascii chars, punctuation and emojis
+        let regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}|\p{S}|\p{N}/u;//range of all ascii chars, punctuation and emojis
+        //split string into words via for-each loop
         input_msg.forEach(item => {
+            //split word into character array and loop through it, testing each char w/ regex
             let char_arr = item.split("");
             char_arr.forEach(char => {
                 if (!regex.test(char)) {

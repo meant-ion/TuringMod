@@ -13,7 +13,8 @@ import Helper from './helper.js';
 //for searching to see if its in the problem
 //annoying, but will save time
 const ops = ['^','sin','cos','tan','sec','csc','cot','sinh','cosh',
-            'tanh','sech','csch','coth','P','C','*','/',':','%','!','+','-','|','&','~','<','>'];
+            'tanh','sech','csch','coth','lcm','gcd','log','P','C','*','/',':',
+            '%','!','+','-','xor','|','&','~','<=','>=','<','>'];
 
 export class Calculator {
 
@@ -42,7 +43,7 @@ export class Calculator {
                 precedence: 4,
                 associativity: "Right"
             },
-            //all below and before the '/' are trig functions
+            //all below and before the 'C' are trig functions
             "sin": {
                 precedence: 4,
                 associativity: "Right"
@@ -99,6 +100,18 @@ export class Calculator {
                 precedence: 4,
                 associativity: "Right"
             },
+            "lcm": {//least common multiple
+                precedence: 4,
+                associativity: "Right"
+            },
+            "gcd": {//greatest common denominator
+                precedence: 4,
+                associativity: "Right"
+            },
+            "log": {//logarithms
+                precedence: 4,
+                associativity: "Right"
+            },
             "/": {
                 precedence: 3,
                 associativity: "Left"
@@ -131,6 +144,10 @@ export class Calculator {
                 precedence: 1,
                 associativity: "Left"
             },
+            "xor": {//eXclusive OR
+                precedence: 1,
+                associativity: "Right"
+            },
             "|": {
                 precedence: 1,
                 associativity: "Left"
@@ -138,6 +155,14 @@ export class Calculator {
             "~": {
                 precedence: 1,
                 associativity: "Left"
+            },
+            "<=": {
+                precedence: 1,
+                associativity: "Right"
+            },
+            ">=": {
+                precedence: 1,
+                associativity: "Right"
             },
             "<": {
                 precedence: 1,
@@ -151,11 +176,9 @@ export class Calculator {
 
         //remove all white space present and tokenize the equation
         infix_eq = infix_eq.replace(/\s+/g, "");
-        infix_eq = infix_eq.split(/([\+\-\&\|\~\<\>\!\*\:\/\^\%\(\)\,])/).clean();
+        infix_eq = infix_eq.split(/([\+\-\&\|\~\<\>\!\*\:\/\^\%\(\)\,\=])/).clean();
 
-        console.log(infix_eq);
         infix_eq = this.helper.replaceCommasWithSpaces(infix_eq);
-        console.log(infix_eq);
         //go through the whole eq array and compute from there
         for (let i = 0; i < infix_eq.length; ++i) {
             let token = infix_eq[i];
@@ -167,6 +190,21 @@ export class Calculator {
                 }
 
                 output += token + " ";
+
+            } else if (token == '=') {//the token is an = sign, so we need to see if there was a boolean operator before it
+
+                //get the last operator found in eq to avoid "3 > 4 = 1" and similar
+                let last_oper_found = oper_stack.pop();
+                //if the last char checked was < or > and it was also the most recent operator found
+                if ((last_char_checked == '<' || last_char_checked == '>') && 
+                    last_oper_found == last_char_checked) {
+                        console.log("Adding in modified token");
+                        last_oper_found += token;//combine the two into one operator
+                        eq_oper_found = true;//just a precaution here
+                } else {
+                    return "Error: = operator found not coupled with < or >";
+                }
+                oper_stack.push(last_oper_found);
 
             } else if (ops.indexOf(token) != -1) {//the token is an operator we are looking for
 
@@ -197,28 +235,34 @@ export class Calculator {
                 oper_stack.pop();
               //this condition and the one below it are for recognizing math constants; so far, e and pi
             } else if (token.toLowerCase() == "e") output += Math.E.toString() + " ";
-            else if (token == "π") output += Math.PI.toString() + " ";
+            else if (token == "π" || token == "pi") output += Math.PI.toString() + " ";
             else return 'Error: unexpected character ' + token;
             last_char_checked = token;
         }
         while (oper_stack.length > 0) output += oper_stack.pop() + " ";
 
         //we found an equality operator, so we need to make sure that the last char is an equality operator
+        //just as a precaution, we will also grab the 
         if (eq_oper_found) {
             let last_real_char = output[output.length - 2];
-            if (last_real_char != '<' && last_real_char != '>') return 'Error: illegal combination of equality and arithmetic operators';
+            if (last_real_char != '<' && last_real_char != '>'
+                && last_real_char != '=')
+                    return 'Error: illegal combination of equality and arithmetic operators';
+                
         }
-
         return output;
     }
 
     //calculates a problem using RPN function defined above
     //can handle multiple different sized math problems
-    //operators possible: =, -, *, /, %, :, ^, !, <, >
-    //functions possible (treated as operators in execution): sin(), cos(), tan(), sec(), csc(), cot()
+    //operators possible: =, -, *, /, %, :, ^, !, <, >, <=, >=, |, &, ^
+    //functions possible (treated as operators in execution): 
+    //                    sin(), cos(), tan(), sec(), csc(), cot(), sinh(), cosh(), tanh(), csch(), sech(), coth(),
+    //                    lcm(), gcm(), xor() (technically an operator, but using ^ for exponents)
     //statistical functions possible: combinations, permutations
+    //other functions possible: logarithms
     //@param   math_problem   An equation to be solved in reverse polish notation
-    //@return                The end product of the solved equation
+    //@return                 The end product of the solved equation
     calculate(math_problem) {
 
         //flag for telling if we have an equality operator present. If its there, return type changes from numeric to Boolean
@@ -283,6 +327,15 @@ export class Calculator {
                         is_eq_oper_present = true;
                         result_stack.push(b > a);
                         break;
+                    case '<=':
+                        is_eq_oper_present = true;
+                        result_stack.push(b <= a);
+                        break;
+                    case '>=':
+                        is_eq_oper_present = true;
+                        result_stack.push(b >= a);
+                        break;
+                    //our functional operators
                     case 'sin':
                         if (!no_b_in_stack) result_stack.push(b);
                         result_stack.push(Math.sin(this.#degToRad(a)));
@@ -337,8 +390,21 @@ export class Calculator {
                     case 'P':
                         result_stack.push(this.#permutations(b, a));
                         break;
+                    case 'lcm':
+                        result_stack.push(this.#lcm(b, a));
+                        break;
+                    case 'gcd':
+                        result_stack.push(this.#gcd(b, a));
+                        break;
+                    case 'log':
+                        result_stack.push(this.#log(a, b));
+                        break;
+                    //our bitwise operators
                     case '&':
                         result_stack.push(b & a);
+                        break;
+                    case 'xor':
+                        result_stack.push(b ^ a);
                         break;
                     case '|':
                         result_stack.push(b | a);
@@ -374,40 +440,33 @@ export class Calculator {
     //calculates a k-combination of all k-element sets with n elements. Heavily reliant on the factorial function
     //formula: n!/(k!(n-k)!)
     //@returns   sum of all unique subsets within the set of k elements
-    #kcombos(n, k) {
-        const n_fact = this.#factorial(n);//numerator
-        const k_fact = this.#factorial(k);//first half of denominator
-        const n_minus_k_fact = this.#factorial(n - k);//second half of denominator
-
-        const denom = k_fact * n_minus_k_fact;
-
-        return n_fact / denom;
-    }
+    #kcombos(n, k) { return this.#factorial(n) / (this.#factorial(k) * this.#factorial(n - k)); }
 
     //calculates the permutation of n distinct objects with r taken at a time per group
     //formula: n!/(n - r)!
     //@returns   sum of all permutations with n distinct objects of r size
-    #permutations(n, r) {
-        const denom = this.#factorial(n - r);
-        return this.#factorial(n) / denom;
-    }
+    #permutations(n, r) { return this.#factorial(n) / this.#factorial(n - r); }
 
+    //calculates the greatest common denominator/factor for two numbers
+    //@returns   the gcd of a and b
     #gcd(a, b) {
         if (a == 0) return b;
         return this.#gcd(b % a, a);
     }
 
-    #lcm(a, b) {
-        return (a * b) / this.#gcd(a, b);
-    }
+    //calculates the least common multiple of two numbers
+    //@returns   the lcm of a and b
+    #lcm(a, b) { return (a * b) / this.#gcd(a, b); }
 
     //for use in the various trig functions for the calculator. Converts a degree value to radians
     //@param   degrees   the value to convert, given as degrees
     //@return            The given value now in radians
-    #degToRad(degrees) {
-        return degrees * (Math.PI / 180);
-    }
+    #degToRad(degrees) { return degrees * (Math.PI / 180); }
 
+    //calculates the logarithm of a value n with base b
+    //Math.log() is effectively a natural logarithm, so we use the change of base formula/identity to handle that
+    //@returns   log_b_(n)
+    #log(n, b) { return Math.log(n) / Math.log(b); }
 
 }
 

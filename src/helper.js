@@ -153,10 +153,8 @@ export class Helper {
         const curTime = new Date();
         let is_AM = false;
 
-        //calculate the hours in military configuration
-        const unfloored_hours = (curTime.getTime() / 1000) / 3600;
-        const floored_hours = Math.floor(unfloored_hours);
-        const military_hours = (floored_hours % 24) - 5;
+        //get the hours in military configuration
+        const military_hours = curTime.getHours();
 
         let true_hours = 0;
 
@@ -176,8 +174,7 @@ export class Helper {
         }
 
         //calculate the minutes, craft the message, and then send to chat
-        const mins = Math.round((unfloored_hours - floored_hours) * 60);
-        let msg = `@${user.username}: Currently ${true_hours}:${mins % 60}`;
+        let msg = `@${user.username}: Currently ${true_hours}:${curTime.getMinutes()}`;
         if (is_AM) msg += ` A.M. `; else msg += ` P.M. `;
         msg += `CST for the streamer`;
         client.say(target, msg);

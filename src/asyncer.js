@@ -7,7 +7,6 @@ import Helper from './helper.js';
 import http from 'http';
 import open from 'open';
 import fs from 'fs';
-import { encode } from 'punycode';
 
 export class AsyncHolder {
 
@@ -415,64 +414,6 @@ export class AsyncHolder {
 		} catch (err) { console.error(err); }
 	}
 
-	//gets and returns the list of games on the Epic Store that have been marked down as completely free
-	//@param   target   The chat room we are posting the list into
-	async getFreeGamesOnEpicStore(target) {
-		//finally found the URL to get the list of games from this repo here: 
-		//https://github.com/kjanuska/EpicFreeGames/blob/main/check_games.js
-		const epic_url = 'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions';
-
-		//generic object that will hold the whole list of games returned by the URL
-		let games_arr;
-
-		//total count of games returned 
-		let games_count;
-
-		//list of all games that are available for free through the epic store
-		let complete_discounted_games_list = [];
-
-		//get the list of games and store them for safe keeping
-		try {
-			await fetch(epic_url).then(result => result.json()).then(body => {
-				games_arr = body.data.Catalog.searchStore.elements;
-				games_count = body.data.Catalog.searchStore.paging.total;
-			}).catch( err => {
-				this.#generateAPIErrorResponse(err, target);
-				return;
-			});
-		} catch (err) { console.error(err); }
-
-		//now we begin to go through each game and see if it is one of epic's completely discounted games
-		for (let i = 0; i < games_count; ++i) {
-			const is_discount_zero = games_arr[i].price.totalPrice.discountPrice == 0;
-			const is_not_originally_free = games_arr[i].price.totalPrice.originalPrice != 0;
-			if (is_discount_zero && is_not_originally_free) 
-				complete_discounted_games_list.push(games_arr[i].title);
-		}
-
-		//if there are no free games, send the message in the chat and return
-		if (complete_discounted_games_list.length == 0) {
-			this.client.say(target, 'Sorry, no free games found at this time :(');
-			return;
-		}
-
-		//with all games found and inserted into the list, we can now compose our message
-		let msg = 'The list of free games found are: ';
-
-		//insert the games into the message 
-		for (let i = 0; i < complete_discounted_games_list.length; ++i) {
-			let item = complete_discounted_games_list[i];
-			if (i + 1 == complete_discounted_games_list.length)
-				msg += ' and ' + item;
-			else 
-				msg += item + '; ';	
-		}
-
-		//with the message fully composed, we now send the message out to the chatroom
-		this.client.say(target, msg);
-
-	}
-
 //---------------------------------------------------------------------------------------------------------------
 //-----------------------------SPOTIFY API FUNCTIONS-------------------------------------------------------------
 
@@ -636,7 +577,63 @@ export class AsyncHolder {
 				this.#generateAPIErrorResponse(err, target);
 			});
 		} catch (err) { console.error(err); }
+	}
 
+	//gets and returns the list of games on the Epic Store that have been marked down as completely free
+	//@param   target   The chat room we are posting the list into
+	async getFreeGamesOnEpicStore(target) {
+		//finally found the URL to get the list of games from this repo here: 
+		//https://github.com/kjanuska/EpicFreeGames/blob/main/check_games.js
+		const epic_url = 'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions';
+
+		//generic object that will hold the whole list of games returned by the URL
+		let games_arr;
+
+		//total count of games returned 
+		let games_count;
+
+		//list of all games that are available for free through the epic store
+		let complete_discounted_games_list = [];
+
+		//get the list of games and store them for safe keeping
+		try {
+			await fetch(epic_url).then(result => result.json()).then(body => {
+				games_arr = body.data.Catalog.searchStore.elements;
+				games_count = body.data.Catalog.searchStore.paging.total;
+			}).catch( err => {
+				this.#generateAPIErrorResponse(err, target);
+				return;
+			});
+		} catch (err) { console.error(err); }
+
+		//now we begin to go through each game and see if it is one of epic's completely discounted games
+		for (let i = 0; i < games_count; ++i) {
+			const is_discount_zero = games_arr[i].price.totalPrice.discountPrice == 0;
+			const is_not_originally_free = games_arr[i].price.totalPrice.originalPrice != 0;
+			if (is_discount_zero && is_not_originally_free) 
+				complete_discounted_games_list.push(games_arr[i].title);
+		}
+
+		//if there are no free games, send the message in the chat and return
+		if (complete_discounted_games_list.length == 0) {
+			this.client.say(target, 'Sorry, no free games found at this time :(');
+			return;
+		}
+
+		//with all games found and inserted into the list, we can now compose our message
+		let msg = 'The list of free games found are: ';
+
+		//insert the games into the message 
+		for (let i = 0; i < complete_discounted_games_list.length; ++i) {
+			let item = complete_discounted_games_list[i];
+			if (i + 1 == complete_discounted_games_list.length)
+				msg += ' and ' + item;
+			else 
+				msg += item + '; ';	
+		}
+
+		//with the message fully composed, we now send the message out to the chatroom
+		this.client.say(target, msg);
 
 	}
 
@@ -831,38 +828,89 @@ export class AsyncHolder {
 	
 			//now we get the abbreviation of the grammar function to shorten the chat message
 				 switch (grammar_function) {
-					 case "verb":
-						 gr_abbrev = "v";
-						 break;
-					 case "noun":
+					case "verb":
+						gr_abbrev = "v";
+						break;
+					case "transitive verb":
+						gr_abbrev = "trans. v";
+						break;
+					case "intransitive verb":
+						gr_abbrev = "intr. v";
+						break;
+					case "noun":
 						gr_abbrev = "n";
-						 break;
-					 case "adjective":
+						break;
+					case "noun phrase":
+						gr_abbrev = "n&p";
+						break;
+					case "adjective":
 						gr_abbrev = "adj";
-						 break;
-					 case "adverb":
+						break;
+					case "adverb":
 						gr_abbrev = "adv";
 						break;
-					 case "pronoun":
+					case "pronoun":
 						gr_abbrev = "prn";
-						 break;
-					 case "trademark":
-						gr_abbrev = "�";
-						 break;
-					 case "abbreviation":
-						 grAbbrev = "abbrev";
-						 break;
-					 case "preposition":
+						break;
+					case "trademark":
+						gr_abbrev = "tm";
+						break;
+					case "abbreviation":
+						gr_abbrev = "abbrev";
+						break;
+					case "combining form":
+						gr_abbrev = "comb. form";
+						break;
+					case "noun combining form":
+						gr_abbrev = "n. comb. form";
+						break;
+					case "adjective combining form":
+						gr_abbrev = "adj. comb. form";
+						break;
+					case "prefix":
+						gr_abbrev = "pre";
+						break;
+					case "service mark":
+						gr_abbrev = "serv. m";
+						break;
+					case "symbol":
+						gr_abbrev = "sym";
+						break;
+					case "certification mark":
+						gr_abbrev = "cert. m";
+						break;
+					case "preposition":
 						gr_abbrev = "prep";
-						 break;
-					 case "conjunction":
+						break;
+					case "conjunction":
 						gr_abbrev = "conj";
-						 break;
-					 case "interjection":
+						break;
+					case "interjection":
 						gr_abbrev = "intj";
-						 break;
-					 default://need to see what pops out through here to get the abbreviaiton correct for this
-					 gr_abbrev == grammar_function;
+						break;
+					case "adjective suffix":
+						gr_abbrev = "adj. suf";
+						break;
+					case "adverb suffix":
+						gr_abbrev = "adv. suf";
+						break;
+					case "noun suffix":
+						gr_abbrev = "n. suf";
+						break;
+					case "verb suffix":
+						gr_abbrev = "v. suf";
+						break;
+					case "verbal auxillary":
+						gr_abbrev = "v. aux";
+						break;
+					case "verbal imperative":
+						gr_abbrev = "v. imp";
+						break;
+					case "verb impersonal":
+						gr_abbrev = "v. imper";
+						break;
+					default://need to see what pops out through here to get the abbreviaiton correct for this
+						gr_abbrev == grammar_function;
 						break;
 				 }
 				 this.client.say(target, `@${user.username}: ${word}: ${gr_abbrev}; ${definition}`);

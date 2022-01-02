@@ -1,13 +1,12 @@
 //file to hold our helper functions so that we can use them across files in the project
 
-import { Console } from 'console';
 import {URL as url} from 'url';
 
 export class Helper {
 
     constructor() { }
 
-    //helper function to tell if a character is an operator that we want
+    //helper function to tell if a character is an operator that we want (single char, non function operators only)
     //@param   char_to_check   self explanatory
     //@return                True/False
     isOperator(char_to_check) {

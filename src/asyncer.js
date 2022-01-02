@@ -415,6 +415,8 @@ export class AsyncHolder {
 		} catch (err) { console.error(err); }
 	}
 
+	//gets and returns the list of games on the Epic Store that have been marked down as completely free
+	//@param   target   The chat room we are posting the list into
 	async getFreeGamesOnEpicStore(target) {
 		//finally found the URL to get the list of games from this repo here: 
 		//https://github.com/kjanuska/EpicFreeGames/blob/main/check_games.js

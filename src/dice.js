@@ -20,7 +20,7 @@ export class Dice {
 	async getDiceRoll(cmd_name, user, target) {
 		//first things first, we check the command to see if they wanted to roll more than 1 die
 		//copy out the character
-		let checker_char = cmd_name.substring(5, 6);
+		let checker_char = cmd_name.substring(0, 1);
 
 		//set up a bool to see if the command was correct or not
 		let is_valid_cmd = true;
@@ -48,7 +48,7 @@ export class Dice {
 
 		//now, we see how many multiples they want to roll (numbers >= 10)
 		let i;
-		for (i = cmd_name.substring(0, 5).length; i < cmd_name.length; ++i) {
+		for (i = 0; i < cmd_name.length; ++i) {
 			checker_char = cmd_name.substring(i, i + 1);
 			//the character was a number, so append it to the list
 			if (this.helper.isNumeric(checker_char)) num_dice_to_roll += checker_char;

@@ -26,7 +26,7 @@ COMMANDS:
 				1. The number of dice to roll (not required, defaults to 1)
 				2. The number of sides on each dice to be rolled (required)
 				3. The minimum roll that can be given on the roll (not required, defaults to no minimum roll)
-			 * format: !roll(numDice)d(numSidesOnDice)r(MinimumRoll)
+			 * format: !roll (numDice)d(numSidesOnDice)r(MinimumRoll)
 
 	- !flip: simple command that flips a coin and returns either heads or tails. Not much else really
 

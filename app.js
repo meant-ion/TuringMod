@@ -262,9 +262,9 @@ function onMessageHandler(target, user, msg, self) {
 			async_functions.getRandWikipediaArticle(user, target);
 
 		  //simple dice rolling command. Can do many sided dice, not just a d20 or d6
-		} else if (cmd_name.substring(0, 5) == '!roll') {
+		} else if (cmd_name == '!roll') {
 
-			dice.getDiceRoll(cmd_name, user, target);
+			dice.getDiceRoll(input_msg[1], user, target);
 
 		} else if (cmd_name == "!flip") {//flips a coin and returns the result to chat
 

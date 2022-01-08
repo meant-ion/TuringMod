@@ -90,7 +90,7 @@ COMMANDS:
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one 
 				   and posts them in chat as a message
 
-	- !convert: converts an amount of one currency input by the user into the equivalent amount of a 
+	- !convertcash: converts an amount of one currency input by the user into the equivalent amount of a 
 	            currency specified by the user
 			    * Format: !convert Currency_To_Convert_From Currency_To_Convert_To amount
 

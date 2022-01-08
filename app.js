@@ -318,7 +318,7 @@ function onMessageHandler(target, user, msg, self) {
 			
 			async_functions.getGithubRepoInfo(target);
 		
-		} else if (cmd_name == '!convert') {//user wants to convert an amount of one currency to another
+		} else if (cmd_name == '!convertcash') {//user wants to convert an amount of one currency to another
 
 			async_functions.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
 

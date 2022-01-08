@@ -920,9 +920,7 @@ export class AsyncHolder {
 		} catch (err) { console.error(err); }
     }
 
-	async refresh_me() {
-		await this.#refreshTwitchTokens();
-	}
+	async refresh_me() { await this.#refreshTwitchTokens(); }
 
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
 	//@param   target    The name of the chatroom we are posting the photo into

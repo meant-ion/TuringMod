@@ -102,8 +102,10 @@ export class MiscAPI {
 		//insert the games into the message 
 		for (let i = 0; i < complete_discounted_games_list.length; ++i) {
 			let item = complete_discounted_games_list[i];
-			if (i + 1 == complete_discounted_games_list.length)
+			if (i + 1 == complete_discounted_games_list.length && complete_discounted_games_list.length > 1)
 				msg += ' and ' + item;
+			else if (complete_discounted_games_list.length == 1)
+				msg += item;
 			else 
 				msg += item + '; ';	
 		}

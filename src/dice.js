@@ -20,95 +20,102 @@ export class Dice {
 	async getDiceRoll(cmd_name, user, target) {
 		//first things first, we check the command to see if they wanted to roll more than 1 die
 		//copy out the character
-		let checker_char = cmd_name.substring(0, 1);
+		try {
 
-		//set up a bool to see if the command was correct or not
-		let is_valid_cmd = true;
+			let checker_char = cmd_name.substring(0, 1);
 
-		//stash the first one into a var for safe keeping
-		let num_dice_to_roll = '';
-
-		//set up a bool to tell if we have found the 'd' character, meaning we can find the sides now
-		let has_d = false;
-
-		//get the index of the 'd' character if present
-		let d_index = 0;
-
-		//to be used farther down, holding the number of sides on the die/dice
-		let num_sides = '';
-
-		//to be used to tell the minimum number that can be rolled for a dice roll at a time
-		let min_roll = '';
-
-		//set up bool to tell if we have a minimum roll requirement char 'r' to account for
-		let has_r = false;
-
-		//get the index of the 'r' character if present
-		let r_index = 0;
-
-		//now, we see how many multiples they want to roll (numbers >= 10)
-		let i;
-		for (i = 0; i < cmd_name.length; ++i) {
-			checker_char = cmd_name.substring(i, i + 1);
-			//the character was a number, so append it to the list
-			if (this.helper.isNumeric(checker_char)) num_dice_to_roll += checker_char;
-			else if (this.helper.isLetter(checker_char)) {//the character was a letter
-				//check to make sure that the alphabetical character is a d for the roll to go through
-				if (checker_char.toLowerCase() == 'd') {
-					has_d = true;
-					d_index = i;
-					//just in case the user only wanted to roll 1 die
-					if (num_dice_to_roll == '') num_dice_to_roll = '1';
-					break;
-				} else {
-					this.client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
-					is_valid_cmd = false;
-					break;
-				}
-			}
-		}
-
-		//now that we have rolled through the rest of the string, we see if any conditions tripped or not
-		if (has_d && is_valid_cmd) {//this will mean is a valid command up to now
-			//now we see if the remaining characters are numbers or not, and add them to a new variable to act as the sides of the die
+			//set up a bool to see if the command was correct or not
+			let is_valid_cmd = true;
+	
+			//stash the first one into a var for safe keeping
+			let num_dice_to_roll = '';
+	
+			//set up a bool to tell if we have found the 'd' character, meaning we can find the sides now
+			let has_d = false;
+	
+			//get the index of the 'd' character if present
+			let d_index = 0;
+	
+			//to be used farther down, holding the number of sides on the die/dice
+			let num_sides = '';
+	
+			//to be used to tell the minimum number that can be rolled for a dice roll at a time
+			let min_roll = '';
+	
+			//set up bool to tell if we have a minimum roll requirement char 'r' to account for
+			let has_r = false;
+	
+			//get the index of the 'r' character if present
+			let r_index = 0;
+	
+			//now, we see how many multiples they want to roll (numbers >= 10)
 			let i;
-			for (i = d_index + 1; i < cmd_name.length; ++i) {
-				if (i == cmd_name.length) checker_char = cmd_name.substring(i);
-				else checker_char = cmd_name.substring(i, i + 1);
-				//if it is a number, add it to the numSides var
-				if (this.helper.isNumeric(checker_char)) num_sides += checker_char;
-				else if (checker_char.toLowerCase() == 'r') {
-					has_r = true;
-					r_index = i;
-					break;
-				} else {//we found a letter in with the command, so invalid
-					this.client.say(target, `Invalid command use. Do not have any non numeric characters in with the number of sides`);
-					is_valid_cmd = false;
-					break;
-				}
-			}
-
-			//we have a minimum roll for this roll, so we are gonna see how low we can go
-			if (is_valid_cmd && has_r) {
-				for (let j = r_index + 1; j < cmd_name.length; ++j) {
-					if (j == cmd_name.length) checker_char = cmd_name.substring(j);
-					else checker_char = cmd_name.substring(j, j + 1);
-					if (this.helper.isNumeric(checker_char)) min_roll += checker_char;
-					else {
-						this.client.say(target, `Invalid minimum roll requirment, please try again`);
+			for (i = 0; i < cmd_name.length; ++i) {
+				checker_char = cmd_name.substring(i, i + 1);
+				//the character was a number, so append it to the list
+				if (this.helper.isNumeric(checker_char)) num_dice_to_roll += checker_char;
+				else if (this.helper.isLetter(checker_char)) {//the character was a letter
+					//check to make sure that the alphabetical character is a d for the roll to go through
+					if (checker_char.toLowerCase() == 'd') {
+						has_d = true;
+						d_index = i;
+						//just in case the user only wanted to roll 1 die
+						if (num_dice_to_roll == '') num_dice_to_roll = '1';
+						break;
+					} else {
+						this.client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
 						is_valid_cmd = false;
 						break;
 					}
 				}
 			}
-
-			//now, we can begin calculations. First, we make sure the command is correct
-			if (is_valid_cmd) {
-				const total = this.#rollDice(num_dice_to_roll, num_sides, min_roll);
-				if (total != null) this.client.say(target, `@${user.username} You rolled ${num_dice_to_roll} d${num_sides} and got ${total}`);
-				else this.client.say(target, `@${user.username} Minimum roll was higher than possible highest roll`);
+	
+			//now that we have rolled through the rest of the string, we see if any conditions tripped or not
+			if (has_d && is_valid_cmd) {//this will mean is a valid command up to now
+				//now we see if the remaining characters are numbers or not, and add them to a new variable to act as the sides of the die
+				let i;
+				for (i = d_index + 1; i < cmd_name.length; ++i) {
+					if (i == cmd_name.length) checker_char = cmd_name.substring(i);
+					else checker_char = cmd_name.substring(i, i + 1);
+					//if it is a number, add it to the numSides var
+					if (this.helper.isNumeric(checker_char)) num_sides += checker_char;
+					else if (checker_char.toLowerCase() == 'r') {
+						has_r = true;
+						r_index = i;
+						break;
+					} else {//we found a letter in with the command, so invalid
+						this.client.say(target, `Invalid command use. Do not have any non numeric characters in with the number of sides`);
+						is_valid_cmd = false;
+						break;
+					}
+				}
+	
+				//we have a minimum roll for this roll, so we are gonna see how low we can go
+				if (is_valid_cmd && has_r) {
+					for (let j = r_index + 1; j < cmd_name.length; ++j) {
+						if (j == cmd_name.length) checker_char = cmd_name.substring(j);
+						else checker_char = cmd_name.substring(j, j + 1);
+						if (this.helper.isNumeric(checker_char)) min_roll += checker_char;
+						else {
+							this.client.say(target, `Invalid minimum roll requirment, please try again`);
+							is_valid_cmd = false;
+							break;
+						}
+					}
+				}
+	
+				//now, we can begin calculations. First, we make sure the command is correct
+				if (is_valid_cmd) {
+					const total = this.#rollDice(num_dice_to_roll, num_sides, min_roll);
+					if (total != null) this.client.say(target, `@${user.username} You rolled ${num_dice_to_roll} d${num_sides} and got ${total}`);
+					else this.client.say(target, `@${user.username} Minimum roll was higher than possible highest roll`);
+				}
+	
 			}
 
+		} catch (err) {
+			this.client.say(target, "Error in rolling dice");
+			console.error(err);
 		}
 	}
 

@@ -198,7 +198,6 @@ export class Calculator {
                 //if the last char checked was < or > and it was also the most recent operator found
                 if ((last_char_checked == '<' || last_char_checked == '>') && 
                     last_oper_found == last_char_checked) {
-                        console.log("Adding in modified token");
                         last_oper_found += token;//combine the two into one operator
                         eq_oper_found = true;//just a precaution here
                 } else {

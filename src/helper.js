@@ -48,11 +48,17 @@ export class Helper {
         const difference = (cur_time.getTime() - start_time.getTime()) / 1000;
         const unfloored_hours = difference / 3600;
         const floored_hours = Math.floor(unfloored_hours);
-        const days = Math.round(floored_hours / 24);
+        const days = Math.floor(floored_hours / 24);
         const mins = Math.round((unfloored_hours - floored_hours) * 60);
         const secs = Math.round((unfloored_hours - floored_hours) * 3600);
-        if (!need_day) return `${floored_hours} hours ${mins % 60} minutes ${secs % 60} seconds`;
-        return `${days} days ${floored_hours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
+        const months = Math.floor(days / 30);
+        const years = Math.floor(months / 12);
+        let date_str = `${floored_hours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
+        if (!need_day) return date_str;
+        if (days > 0) date_str = `${days % 30} days ` + date_str;
+        if (months > 0) date_str = `${months} months ` + date_str;
+        if (years > 0) date_str = `${years} years ` + date_str ;
+        return date_str;
     }
 
     //helper function to see if a character is a letter (english only I think)
@@ -150,11 +156,11 @@ export class Helper {
     //@param   target   The chatroom that the message will be sent into
     //@param   user     The name of the chat member that typed in the command
     getCurrentTime(client, target, user) {
-        const curTime = new Date();
+        const cur_time = new Date();
         let is_AM = false;
 
         //get the hours in military configuration
-        const military_hours = curTime.getHours();
+        const military_hours = cur_time.getHours();
 
         let true_hours = 0;
 
@@ -173,8 +179,11 @@ export class Helper {
             is_AM = true;
         }
 
+        let cur_mins = cur_time.getMinutes();
+        if (cur_mins < 10) cur_mins = String("0" + cur_mins);
+
         //calculate the minutes, craft the message, and then send to chat
-        let msg = `@${user.username}: Currently ${true_hours}:${curTime.getMinutes()}`;
+        let msg = `@${user.username}: Currently ${true_hours}:${cur_mins}`;
         if (is_AM) msg += ` A.M. `; else msg += ` P.M. `;
         msg += `CST for the streamer`;
         client.say(target, msg);

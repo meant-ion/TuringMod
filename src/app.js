@@ -8,7 +8,9 @@ import Calculator from './calculator.js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
 import LurkList from './lurker_list.js';
-import AsyncHolder from './asyncer.js';
+import TwitchAPI from './twitch_api.js';
+import SpotifyAPI from './spotify_api.js';
+import MiscAPI from './misc_api.js';
 import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
@@ -35,10 +37,12 @@ let client = new _client(opts);
 let commands_holder = new CommandArray();
 let helper = new Helper();
 let lurk_list = new LurkList();
-let async_functions = new AsyncHolder(client, commands_holder);
+let twitch_api = new TwitchAPI(client, commands_holder);
+let spotify_api = new SpotifyAPI(client, commands_holder);
+let misc_api = new MiscAPI(client, commands_holder);
 let dice = new Dice(client);
 let calculator = new Calculator();
-let clip_collector = new ClipCollector(async_functions);
+let clip_collector = new ClipCollector(twitch_api);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler();
 
@@ -94,7 +98,7 @@ function execTheBot() {
 		} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
 	});
 
-	//set the timer for the ad warning function so we can get the async_functions object fully initialized
+	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
 	setTimeout(adsIntervalHandler, 30000);
 
 	//set timer to make the pubsub subscription so I dont have to type a command for it
@@ -125,7 +129,7 @@ function onMessageHandler(target, user, msg, self) {
 		  //mod/streamer wants to have the bot listen in on a PubSub topic
 		} else if (cmd_name == '!makesub' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			async_functions.makePubSubscription(input_msg[1], commands_holder, pubsubs);
+			twitch_api.makePubSubscription(input_msg[1], pubsubs);
 
 		  //a moderator or the streamer wishes to flush the bot's posting prompt
 		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -172,24 +176,24 @@ function onMessageHandler(target, user, msg, self) {
 		  //moderator/streamer wishes to change the category of the stream
 		} else if (cmd_name == '!changegame' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			async_functions.editChannelCategory(user, helper.combineInput(input_msg, true), target);
+			twitch_api.editChannelCategory(user, helper.combineInput(input_msg, true), target);
 
 		  //moderator/streamer wishes to change the title of the stream
 		} else if (cmd_name == '!changetitle' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			async_functions.editStreamTitle(helper.combineInput(input_msg, true), target);
+			twitch_api.editStreamTitle(helper.combineInput(input_msg, true), target);
 
 		  //moderator/streamer wants to have the "banhammer" hit randomly
 		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {
 
 			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
 			//as if that will ever happen of course
-			//async_functions.shotgunTheChat(client_id);
+			//twitch_api.shotgunTheChat(client_id);
 
 		  //mod/streamer wants to see chances channel is being viewbotted
 		} else if (cmd_name == '!testviewers' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
-			async_functions.getChancesStreamIsViewbotted(target);
+			twitch_api.getChancesStreamIsViewbotted(target);
 
 		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer toggles quiet mode
 
@@ -235,7 +239,7 @@ function onMessageHandler(target, user, msg, self) {
 			if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 			else 
-				async_functions.getFollowAge(user, target);
+				twitch_api.getFollowAge(user, target);
 
 		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
 
@@ -246,11 +250,11 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
 
-			async_functions.getStreamTitle(user, target);
+			twitch_api.getStreamTitle(user, target);
 
 		} else if (cmd_name == '!game') {//tells user what category stream is under
 
-			async_functions.getCategory(user, target);
+			twitch_api.getCategory(user, target);
 
 		} else if (cmd_name == '!roulette') {//allows chat member to take a chance at being timed out
 
@@ -265,7 +269,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!wikirand') {//chat member wants to know about something random off wikipedia
 
-			async_functions.getRandWikipediaArticle(user, target);
+			misc_api.getRandWikipediaArticle(user, target);
 
 		  //simple dice rolling command. Can do many sided dice, not just a d20 or d6
 		} else if (cmd_name == '!roll') {
@@ -278,7 +282,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!uptime') {//user wants to know how long the stream has been going for
 
-			async_functions.getStreamUptime(user, target);
+			twitch_api.getStreamUptime(user, target);
 
 		} else if (cmd_name == '!calc') {//chat member wants to do basic math with the bot
 
@@ -290,19 +294,19 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!schedule') {//returns a link to the stream schedule
 
-			async_functions.getChannelSchedule(user, target);
+			twitch_api.getChannelSchedule(user, target);
 
 		} else if (cmd_name == '!who') {//returns the bio of the streamer
 
-			async_functions.getChannelSummary(user, target);
+			twitch_api.getChannelSummary(user, target);
 
 		} else if (cmd_name == '!accountage') {//returns the age of the account asking
 
-			async_functions.getUserAcctAge(user, target);
+			twitch_api.getUserAcctAge(user, target);
 
 		} else if (cmd_name == '!song') {//returns the song and artist playing through Spotify
 
-		 	async_functions.getCurrentSongTitleFromSpotify(target, user);
+		 	spotify_api.getCurrentSongTitleFromSpotify(target, user);
 
 		} else if (cmd_name == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
 
@@ -310,31 +314,31 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!addsong') {//user wants to add a song to the playlist queue
 
-			async_functions.addSongToQueue(target, user, input_msg);
+			spotify_api.addSongToQueue(target, user, input_msg);
 
 		} else if (cmd_name == '!suggestionlist') {//user wants to see what has been suggested but not yet implemented currently
 
-			async_functions.getAllCurrentSuggestions(target);
+			misc_api.getAllCurrentSuggestions(target);
 
 		} else if (cmd_name == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
 
-			async_functions.getRandomWordFromDictionary(user, target);
+			misc_api.getRandomWordFromDictionary(user, target);
 
 		} else if (cmd_name == '!gitchanges') {//user wants to see how much changed from the last two commits
 			
-			async_functions.getGithubRepoInfo(target);
+			misc_api.getGithubRepoInfo(target);
 		
 		} else if (cmd_name == '!convertcash') {//user wants to convert an amount of one currency to another
 
-			async_functions.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
+			misc_api.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
 
 		} else if (cmd_name == '!pokerand') {//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
 
-			async_functions.getRandomPokemon(target);
+			misc_api.getRandomPokemon(target);
 
 		} else if (cmd_name == '!numrand') {//user wants a fact about a random number
 
-			async_functions.getRandomNumberFact(target);
+			misc_api.getRandomNumberFact(target);
 
 		} else if (cmd_name == '!8ball') {//user wants a magic 8 ball fortune
 
@@ -342,15 +346,15 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!spacepic') {//user wants to see the NASA Space Pic of the Day
 
-			async_functions.getNASAPicOfTheDay(target);
+			misc_api.getNASAPicOfTheDay(target);
 
 		} else if (cmd_name == '!randlang') {//user wants to look at a random esolang
 
-			async_functions.getRandEsoLang(user, target);
+			misc_api.getRandEsoLang(user, target);
 
 		} else if (cmd_name == '!freegame') {//user wants a list of currently free games on the Epic Store
 
-			async_functions.getFreeGamesOnEpicStore(target);
+			misc_api.getFreeGamesOnEpicStore(target);
 
 		} else {
 			//check to see if the message is a custom command
@@ -362,7 +366,7 @@ function onMessageHandler(target, user, msg, self) {
 				const possibleClipURL = helper.checkIfURL(input_msg);
 
 				//if it does, pass it into the collector for processing
-				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(async_functions, possibleClipURL);
+				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(twitch_api, possibleClipURL);
 
 			  //detect if this message is either non-english (unicode) or symbol spam
 			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
@@ -398,7 +402,7 @@ function thresholdCalc(target, user) {
 			client.say(target, `@${user.username}: Skip request recorded. ${skip_threshold}/5 requests put through`);
         }
 	} else {
-		async_functions.skipToNextSong(target, user);
+		spotify_api.skipToNextSong(target, user);
 		skip_threshold = 0;
 		skip_list = [];
 	}
@@ -464,14 +468,14 @@ async function shutDownBot(target) {
 
 }
 
-//for setting up the pubsub for the channel points redemptions; async_functions function returns a promise, so 
+//for setting up the pubsub for the channel points redemptions; twitch_api function returns a promise, so 
 //setTimeout freaks out over it. Have to do it this way for it to function properly
-function makeSub() {async_functions.makePubSubscription('channel-points-channel-v1.71631229', commands_holder, pubsubs)}
+function makeSub() {twitch_api.makePubSubscription('channel-points-channel-v1.71631229', pubsubs)}
 
 //writes all collected Twitch clips onto an HTML file and stops collecting them
 //@param   target   The chat room we are getting clips from 
 function getClipsInOrder(target) {
-	async_functions.getClipList();
+	twitch_api.getClipList();
 	clip_collector.writeClipsToHTMLFile();
 	collect_clips = false;
 	client.say(target, "All collected clips are written to file!");
@@ -479,7 +483,7 @@ function getClipsInOrder(target) {
 
 //handles automatically posting that ads will be coming soon
 async function adsIntervalHandler() {
-	const curr_time = await async_functions.getUneditedStreamUptime();
+	const curr_time = await twitch_api.getUneditedStreamUptime();
 	const mins = Math.round(curr_time / 60);
 	let intervalTime = 0;
 	//the mid-roll ads start 30 mins after stream start (at least for me)

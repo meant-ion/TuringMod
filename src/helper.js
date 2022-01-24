@@ -75,7 +75,7 @@ export class Helper {
     //@param   user           The name of the chat member that typed in the command
     //@param   the_streamer   The name of the channel owner
     //@return                 True or false, depending on if the user is a mod or the streamer
-    checkIfModOrStreamer(user, the_streamer) { return user.mod || user.username == the_streamer; }
+    checkIfModOrStreamer(user, the_streamer) { return user.mod || ('#' + user.username == the_streamer); }
 
     //helper function that tells us only if the user is the streamer or not
     //@param   user           The name of the chat member that typed in the command

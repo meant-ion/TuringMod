@@ -9,16 +9,16 @@ import fs from 'fs';
 export class ClipCollector {
 
     #regexp_checker;//what we will use to verify that the link is a correct one
-    #async_functions;//for verifying that the link is an actual clip
+    #twitch_api;//for verifying that the link is an actual clip
 
-    constructor(async_functions) {
+    constructor(twitch_api) {
         this.#regexp_checker = /^(?:(?:https?|http):\/\/)((clips.twitch.tv\/){1})/;
-        this.#async_functions = async_functions;
+        this.#twitch_api = twitch_api;
     }
 
     //whenever a clip is posted when !startcollect is enabled, it grabs the clip, verifies it's a valid format, 
     //verifies that the clip actually exists, and then stores it in a list of clips for safe keeping
-    //@param   async_obj   The async_functions object we will use to get info on the clips
+    //@param   async_obj   The twitch_api object we will use to get info on the clips
     //@param   url         The URL of the clip we need to get info on/validate as a clip
     async validateAndStoreClipLink(async_obj, url) {
         //test the clip is in the correct format using the constructed regex
@@ -34,7 +34,7 @@ export class ClipCollector {
     writeClipsToHTMLFile() {
         //start building the basic body for the HTML page and get the clips
         let rtf_body = `<body>\n<div>\n<p>\n`
-        let list = this.#async_functions.getClipList();
+        let list = this.#twitch_api.getClipList();
 
         //add in the clips to the HTML page
         for (let i = 0; i < list.length; ++i) rtf_body += list[i] + '\n';
@@ -53,7 +53,7 @@ export class ClipCollector {
     //simple function that dumps the list of clips to console
     //really just a debug function, but maybe useful somewhere else?
     dumpClipListToCLI() {
-        let list = this.#async_functions.getClipList();
+        let list = this.#twitch_api.getClipList();
         for (let i = 0; i < list.length; ++i) console.log(list[i]);
     }
 }

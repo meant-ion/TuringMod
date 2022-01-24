@@ -28,7 +28,7 @@ export class CommandArray {
 		//determine if this command is freely callable or called on an interval (different tables for them)
 
 		//just a check for a valid input from the mod/streamer
-		if (inputMsg?.length) client.say(target, `@${user.username}: Invalid input for a command`);
+		if (inputMsg.length == 0) client.say(target, `@${user.username}: Invalid input for a command`);
 
 		else {
 
@@ -43,8 +43,7 @@ export class CommandArray {
 			let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
 	
 			//add in the remaining elements of the message to the command message variable
-			for (let i = 2; i < inputMsg.length; ++i) {
-				console.log(inputMsg[i]);
+			for (let i = 3; i < inputMsg.length; ++i) {
 				msg += inputMsg[i] + " ";
 			}
 	

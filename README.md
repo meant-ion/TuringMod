@@ -114,12 +114,15 @@ MOD/STREAMER ONLY COMMANDS:
 	- !addcommand: allows for the creation of custom message commands on the fly, with the command's name being first and 
 				   then the message. 
 				   * Can specifiy if the command is a callable one or one that runs at an interval
+				   * Format: !addcommand isInterval(t/f) cmdName rest of message
 
 	- !removecommand: allows a moderator or the streamer to remove a custom command from the list of commands
 					  * Can specify whether the command is a callable or interval command
+					  * Format: !removecommand isInterval(t/f) cmdName
 
 	- !editcommand: allows a moderator or the streamer to edit a custom command on the list of commands
 					* Can specify whether the command is a callable or interval command
+					* Format: !editcommand isInterval(t/f) cmdName rest of the message
 
 	- !so: gives a shoutout to a specified user into the chatroom; attached to an EventSub listener for automatic posting of msg
 

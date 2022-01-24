@@ -4,18 +4,17 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
-import Calculator from './src/calculator.js';
-import Helper from './src/helper.js';
-import CommandArray from './src/sqlite_db.js';
-import LurkList from './src/lurker_list.js';
-import AsyncHolder from './src/asyncer.js';
-import Dice from './src/dice.js';
-import ClipCollector from './src/clipcollector.js';
-import Post from './src/post.js';
-import PubSubHandler from './src/pubsub_handler.js';
+import Calculator from './calculator.js';
+import Helper from './helper.js';
+import CommandArray from './sqlite_db.js';
+import LurkList from './lurker_list.js';
+import AsyncHolder from './asyncer.js';
+import Dice from './dice.js';
+import ClipCollector from './clipcollector.js';
+import Post from './post.js';
+import PubSubHandler from './pubsub_handler.js';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
-const token = process.env.DISCORD_CLIENT_TOKEN;
 
 const opts = {
 	identity: {
@@ -29,6 +28,19 @@ const opts = {
 		"pope_pontus",
 	]
 };
+
+let client = new _client(opts);
+
+//generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
+let commands_holder = new CommandArray();
+let helper = new Helper();
+let lurk_list = new LurkList();
+let async_functions = new AsyncHolder(client, commands_holder);
+let dice = new Dice(client);
+let calculator = new Calculator();
+let clip_collector = new ClipCollector(async_functions);
+let post = new Post(discord_client, client);
+let pubsubs = new PubSubHandler();
 
 const the_streamer = opts.channels[0];
 
@@ -47,56 +59,50 @@ let quiet_mode_enabled = false;
 //relevant command: !skipsong
 let skip_threshold = 0;
 
-//lets us know that bot is connected to the discord server we need it on
-discord_client.once('ready', () => console.log(`* Logged in as ${discord_client.user.tag} through Discord!`));
-
-let client = new _client(opts);
-client.connect();
-client.on('message', onMessageHandler);
-client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
-
-//setting up the interval for giving people info about the streams every 15-20 mins
-setInterval(intervalMessages, 600000);
-
 //separate variable to tell the program which function gets called
 let call_this_function_number = 0;
 
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
-//when a message is sent out, we will take it and push it out to the Twitch chat
-discord_client.on('messageCreate', message => {
-	//take the message and split it up into separate words
-	const input_msg = message.content.split(" ");
-	let response = "";
-	if (input_msg[0] == '!send') {//the message generated was accepted by admin
-		response = post.getResponse();
+function execTheBot() {
+	const token = process.env.DISCORD_CLIENT_TOKEN;
 
-		//search through the list of responses and channels to find the correct one and then post that out
-		if (response != "") 
-			client.say(opts.channels[0], `MrDestructoid ${response}`);
-		else 
-			client.say(opts.channels[0], `No response found for this channel`);
+	//lets us know that bot is connected to the discord server we need it on
+	discord_client.once('ready', () => console.log(`* Logged in as ${discord_client.user.tag} through Discord!`));
+	client.connect();
+	client.on('message', onMessageHandler);
+	client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
 
-	} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
-});
+	//setting up the interval for giving people info about the streams every 15-20 mins
+	setInterval(intervalMessages, 600000);
 
-//generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
-let commands_holder = new CommandArray();
-let helper = new Helper();
-let lurk_list = new LurkList();
-let async_functions = new AsyncHolder(client, commands_holder);
-let dice = new Dice(client);
-let calculator = new Calculator();
-let clip_collector = new ClipCollector(async_functions);
-let post = new Post(discord_client, client);
-let pubsubs = new PubSubHandler();
+	//when a message is sent out, we will take it and push it out to the Twitch chat
+	discord_client.on('messageCreate', message => {
+		//take the message and split it up into separate words
+		const input_msg = message.content.split(" ");
+		let response = "";
+		if (input_msg[0] == '!send') {//the message generated was accepted by admin
+			response = post.getResponse();
 
-//set the timer for the ad warning function so we can get the async_functions object fully initialized
-setTimeout(adsIntervalHandler, 30000);
+			//search through the list of responses and channels to find the correct one and then post that out
+			if (response != "") 
+				client.say(opts.channels[0], `MrDestructoid ${response}`);
+			else 
+				client.say(opts.channels[0], `No response found for this channel`);
 
-//set timer to make the pubsub subscription so I dont have to type a command for it
-setTimeout(makeSub, 30000);
+		} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
+	});
+
+	//set the timer for the ad warning function so we can get the async_functions object fully initialized
+	setTimeout(adsIntervalHandler, 30000);
+
+	//set timer to make the pubsub subscription so I dont have to type a command for it
+	setTimeout(makeSub, 30000);
+
+	//this goes last to prevent any issues on discord's end
+	discord_client.login(token);
+}
 
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
@@ -516,5 +522,4 @@ async function adsIntervalHandler() {
 	
 }
 
-//this goes last to prevent any issues on discord's end
-discord_client.login(token);
+export {execTheBot};

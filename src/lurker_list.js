@@ -11,7 +11,8 @@ export class LurkList {
     helper = new Helper();
 
     constructor() {
-        this.#lurker_list = [];
+        //this.#lurker_list = [];
+        this.#lurker_list = {};
     }
 
     //Adds a lurker to the list of lurkers and records their last message
@@ -19,8 +20,12 @@ export class LurkList {
     //@param   msg    What the last message they said was
     //@return         Either a "see ya" message or a message telling them they're already lurking
     addLurker(user, msg) {
-        if (this.isLurking(user) == -1) {
-            this.#lurker_list.push(new Lurker_Item(user.username, this.helper.combineInput(msg, true)));
+        if (this.#lurker_list[user] == undefined) {
+            const new_user = [];
+            new_user.push(new Date());
+            new_user.push(msg);
+            this.#lurker_list[user] = new_user;
+            //this.#lurker_list.push(new Lurker_Item(user.username, this.helper.combineInput(msg, true)));
             return `See you whenever you get back @${user.username}`;
         }
         return `You're already lurking @${user.username}`
@@ -32,57 +37,20 @@ export class LurkList {
     //@param   is_leaving   Boolean to tell us if the command was !leave or not
     //@return               Either the last message they said, or a message telling them they never !lurk'd in the first place
     removeLurker(user, is_leaving) {
-        let index = this.isLurking(user);//ensures that we know if there's an issue
-        if (index != -1) {
+        //let index = this.isLurking(user);//ensures that we know if there's an issue
+        if (this.#lurker_list[user] != undefined) {
 
-            let time_msg = this.helper.getTimePassed(this.#lurker_list[index].getValue(), false);
-            let lurk_msg = this.#lurker_list[index].getMsg();
-            let msg;
-            if (is_leaving) msg = `Goodbye for now @${user.username}! See you later!`;
-            else msg = `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg}"`;
+            let time_msg = this.helper.getTimePassed(this.#lurker_list[user][0], false);
+            let lurk_msg = this.#lurker_list[user][1];
+            let msg = is_leaving ? `Goodbye for now @${user.username}! See you later!` : 
+                    `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? "No Message Provided" : msg}"`;
             
-            this.#lurker_list.splice(index, 1);
+            delete this.#lurker_list[user];
             return msg;
         }
         //user wasn't already lurking
         return `You needed to be lurking already in order to stop lurking @${user.username}`;
     }
-
-    //find the index of the lurker in the list if present
-    //@param   user   Who we're looking for in the lurker list
-    //return          Either the index of the person in the list, or -1 if they aren't there
-    isLurking(user) {
-        for (let i = 0; i < this.#lurker_list.length; ++i) 
-            if (this.#lurker_list[i].getKey() == user.username) return i;
-        return -1;
-    }
-
-}
-
-class Lurker_Item {
-
-    //Lurker_Item structure is pretty much gonna be a key/value pair
-    //Key: the username of the person lurking
-    //Value: the time the lurker was inserted into the LurkList; generated at creation
-    //Msg: what message that the lurker decided to lurk with
-
-    #key;
-    #value;
-    #msg;
-
-    //@param   username   The person that's going AFK for a bit
-    //@param   msg        What the person last said
-    constructor(username, msg) {
-        this.#key = username;
-        this.#value = new Date();
-        this.#msg = msg;
-    }
-
-    getKey() { return this.#key; }
-
-    getValue() { return this.#value; }
-
-    getMsg() { return this.#msg; }
 
 }
 

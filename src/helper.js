@@ -173,9 +173,7 @@ export class Helper {
         if (cur_mins < 10) cur_mins = String("0" + cur_mins);
 
         //calculate the minutes, craft the message, and then send to chat
-        let msg = `@${user.username}: Currently ${true_hours}:${cur_mins}`;
-        if (is_AM) msg += ` A.M. `; else msg += ` P.M. `;
-        msg += `CST for the streamer`;
+        let msg = `@${user.username}: Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
         client.say(target, msg);
     }
 

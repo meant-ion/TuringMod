@@ -6,16 +6,6 @@ export class Helper {
 
     constructor() { }
 
-    //helper function to tell if a character is an operator that we want (single char, non function operators only)
-    //@param   char_to_check   self explanatory
-    //@return                True/False
-    isOperator(char_to_check) {
-        const operators = ['+', '-', '*', '/', '%', 'x', ':', '^', '!', '<', '>'];
-        for (let i = 0; i < operators.length; ++i) 
-            if (char_to_check == operators[i]) return true;
-        return false;
-    }
-
     //combines the input into a single string
     //@param   input_msg          The message that needs to be combined into one string
     //@param   need_white_space   Whether the string needs to have spaces between words

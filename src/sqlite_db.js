@@ -11,7 +11,7 @@ export class CommandArray {
 	constructor() {
 
 		//connect the db to the program so we can access the little bugger
-		this.#db = new sqlite3.Database('C:/sqlite3/test.db', (err) => {
+		this.#db = new sqlite3.Database('G:/sqlite3/test.db', (err) => {
 			if (err) console.error(err);
 			console.log("* Connected to on-disk SQLite DB");
 		});

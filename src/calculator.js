@@ -10,11 +10,143 @@ Array.prototype.clean = function () {
 
 import Helper from './helper.js';
 
-//for searching to see if its in the problem
-//annoying, but will save time
-const ops = ['^','sin','cos','tan','sec','csc','cot','sinh','cosh',
-            'tanh','sech','csch','coth','lcm','gcd','log','P','C','*','/',':',
-            '%','!','+','-','xor','|','&','~','<=','>=','<','>'];
+//our list/dictionary of operators/functions that we will be dealing with
+//includes arithmetic operators, equality operators, trig functions, and hyperbolic trig
+let operators = {
+    "^": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    //all below and before the 'C' are trig functions
+    "sin": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "cos": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "tan": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "sec": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "csc": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "cot": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "sinh": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "cosh": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "tanh": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "sech": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "csch": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "coth": {
+        precedence: 4,
+        associativity: "Right"
+    },
+    "C": {//statistical combinations
+        precedence: 4, 
+        associativity: "Right"
+    },
+    "P": {//statistical permutations
+        precedence: 4,
+        associativity: "Right"
+    },
+    "lcm": {//least common multiple
+        precedence: 4,
+        associativity: "Right"
+    },
+    "gcd": {//greatest common denominator
+        precedence: 4,
+        associativity: "Right"
+    },
+    "log": {//logarithms
+        precedence: 4,
+        associativity: "Right"
+    },
+    "/": {
+        precedence: 3,
+        associativity: "Left"
+    },
+    ":": { //different way to write division apparently
+        precedence: 3,
+        associativity: "Left"
+    },
+    "*": {
+        precedence: 3,
+        associativity: "Left"
+    },
+    "%": {
+        precedence: 3,
+        associativity: "Left"
+    },
+    "!": {
+        precedence: 3,
+        associativity: "Left"
+    },
+    "+": {
+        precedence: 2,
+        associativity: "Left"
+    },
+    "-": {
+        precedence: 2,
+        associativity: "Left"
+    },
+    "&": {
+        precedence: 1,
+        associativity: "Left"
+    },
+    "xor": {//eXclusive OR
+        precedence: 1,
+        associativity: "Right"
+    },
+    "|": {
+        precedence: 1,
+        associativity: "Left"
+    },
+    "~": {
+        precedence: 1,
+        associativity: "Left"
+    },
+    "<=": {
+        precedence: 1,
+        associativity: "Right"
+    },
+    ">=": {
+        precedence: 1,
+        associativity: "Right"
+    },
+    "<": {
+        precedence: 1,
+        associativity: "Right"
+    },
+    ">": {
+        precedence: 1,
+        associativity: "Right"
+    }
+};
 
 export class Calculator {
 
@@ -35,145 +167,7 @@ export class Calculator {
         let last_char_checked = '';
         let is_negative = false;
         let eq_oper_found = false;
-
-        //our list/dictionary of operators/functions that we will be dealing with
-        //includes arithmetic operators, equality operators, trig functions, and hyperbolic trig
-        let operators = {
-            "^": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            //all below and before the 'C' are trig functions
-            "sin": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "cos": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "tan": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "sec": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "csc": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "cot": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "sinh": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "cosh": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "tanh": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "sech": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "csch": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "coth": {
-                precedence: 4,
-                associativity: "Right"
-            },
-            "C": {//statistical combinations
-                precedence: 4, 
-                associativity: "Right"
-            },
-            "P": {//statistical permutations
-                precedence: 4,
-                associativity: "Right"
-            },
-            "lcm": {//least common multiple
-                precedence: 4,
-                associativity: "Right"
-            },
-            "gcd": {//greatest common denominator
-                precedence: 4,
-                associativity: "Right"
-            },
-            "log": {//logarithms
-                precedence: 4,
-                associativity: "Right"
-            },
-            "/": {
-                precedence: 3,
-                associativity: "Left"
-            },
-            ":": { //different way to write division apparently
-                precedence: 3,
-                associativity: "Left"
-            },
-            "*": {
-                precedence: 3,
-                associativity: "Left"
-            },
-            "%": {
-                precedence: 3,
-                associativity: "Left"
-            },
-            "!": {
-                precedence: 3,
-                associativity: "Left"
-            },
-            "+": {
-                precedence: 2,
-                associativity: "Left"
-            },
-            "-": {
-                precedence: 2,
-                associativity: "Left"
-            },
-            "&": {
-                precedence: 1,
-                associativity: "Left"
-            },
-            "xor": {//eXclusive OR
-                precedence: 1,
-                associativity: "Right"
-            },
-            "|": {
-                precedence: 1,
-                associativity: "Left"
-            },
-            "~": {
-                precedence: 1,
-                associativity: "Left"
-            },
-            "<=": {
-                precedence: 1,
-                associativity: "Right"
-            },
-            ">=": {
-                precedence: 1,
-                associativity: "Right"
-            },
-            "<": {
-                precedence: 1,
-                associativity: "Right"
-            },
-            ">": {
-                precedence: 1,
-                associativity: "Right"
-            }
-        };
-
+        
         //remove all white space present and tokenize the equation
         infix_eq = infix_eq.replace(/\s+/g, "");
         infix_eq = infix_eq.split(/([\+\-\&\|\~\<\>\!\*\:\/\^\%\(\)\,\=])/).clean();
@@ -205,10 +199,10 @@ export class Calculator {
                 }
                 oper_stack.push(last_oper_found);
 
-            } else if (ops.indexOf(token) != -1) {//the token is an operator we are looking for
+            } else if (operators[token] != undefined) {//the token is an operator we are looking for
 
                 //first, we see if the operator is a '-' and check for negations for it
-                if (token == '-' && (last_char_checked == '' || ops.indexOf(last_char_checked) != -1 || last_char_checked == '(')) {
+                if (token == '-' && (last_char_checked == '' || operators[last_char_checked] != undefined || last_char_checked == '(')) {
                     //check now to see if the last character checked was an operator or if this character is the first in the eq
                     is_negative = true;
                 } else {//no negations, so just go to the next part
@@ -217,7 +211,7 @@ export class Calculator {
 
                     if ("<>".indexOf(o1) != -1) eq_oper_found = true;
 
-                    while (ops.indexOf(o2) != -1 && ((operators[o1].associativity == "Left" &&
+                    while (operators[o2] != undefined && ((operators[o1].associativity == "Left" &&
                         operators[o1].precedence <= operators[o2].precedence) || (operators[o1].associativity == "Right" &&
                             operators[o1].precedence < operators[o2].precedence))) {
                         output += oper_stack.pop() + " ";
@@ -279,7 +273,7 @@ export class Calculator {
         for (let i = 0; i < math_problem.length; ++i) {
             //just a number, so push to result stack until we have an operator
             if (this.helper.isNumeric(math_problem[i])) result_stack.push(parseFloat(math_problem[i]));
-            else if (ops.indexOf(math_problem[i]) != -1) {//this is an operator, so now we can start to simplify what we have in the stack
+            else if (operators[math_problem[i]] != undefined) {//this is an operator, so now we can start to simplify what we have in the stack
                 let a = result_stack.pop();
                 let b;
                 let no_b_in_stack = false;

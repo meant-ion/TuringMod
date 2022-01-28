@@ -103,7 +103,7 @@ export class TwitchAPI {
 				//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
 				if (body.data[0].started_at == undefined) {
 					this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
-						` the next stream is. Thank you! :)`);
+						" the next stream is. Thank you! :)");
 				} else {
 					let start_time = new Date(body.data[0].started_at);
 					let time_msg = this.helper.getTimePassed(start_time, false);
@@ -282,8 +282,7 @@ export class TwitchAPI {
 		
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
-					if (res.status == 204) this.client.say(target, `Title successfully updated!`);
-					else this.client.say(target, `Error, could not change title`);
+					this.client.say(target, `${res.status == 204 ? `Title successfully updated!` : `Error, could not change title`}`)
 				}).catch(err => {
 					this.#generateAPIErrorResponse(err, target);
 				});
@@ -363,12 +362,11 @@ export class TwitchAPI {
 
 			//get the ratio and then tell the chatroom what the verdict is
 			const viewers_to_chat_ratio = (chatroom_member_count / viewer_count) * 100.0;
-			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}`;
 
 			//arbitrarily chose 35% as the cutoff ratio to tell if there's viewbotting
 			//no real reason behind this being the cutoff, just seemed like a good place to leave it at
-			if (viewers_to_chat_ratio < 35.0) msg += `; This looks like a viewbotting issue to me :(`;
-			else msg += `; This doesn't look like viewbotting to me at all :)`;
+			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}` + 
+				`${viewers_to_chat_ratio < 35.0 ? `; This looks like a viewbotting issue to me :(` : `; This doesn't look like viewbotting to me at all :)`}`;
 
 			this.client.say(target, msg);
 

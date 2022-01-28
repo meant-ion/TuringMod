@@ -85,15 +85,11 @@ function execTheBot() {
 	discord_client.on('messageCreate', message => {
 		//take the message and split it up into separate words
 		const input_msg = message.content.split(" ");
-		let response = "";
 		if (input_msg[0] == '!send') {//the message generated was accepted by admin
-			response = post.getResponse();
+			let response = post.getResponse();
 
 			//search through the list of responses and channels to find the correct one and then post that out
-			if (response != "") 
-				client.say(opts.channels[0], `MrDestructoid ${response}`);
-			else 
-				client.say(opts.channels[0], `No response found for this channel`);
+			client.say(opts.channels[0], `${response != "" ? `MrDestructoid ${response}` : `No response found for this channel`}`);
 
 		} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
 	});
@@ -198,11 +194,8 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer toggles quiet mode
 
 			quiet_mode_enabled = !quiet_mode_enabled;
-			let msg;
-			if (quiet_mode_enabled)
-				msg = `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off`;
-			else 
-				msg = `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer`;
+			let msg = quiet_mode_enabled ? `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off` 
+						: `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer` ;
 			client.say(target, msg);
 
 		  //mod/streamer wants to shut bot down safely
@@ -243,10 +236,8 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
 
-			if (writeSuggestionToFile(input_msg)) 
-				client.say(target, `@${user.username}, your suggestion has been written down. Thank you!`);
-			else 
-				client.say(target, `@${user.username}, empty suggestion not written to file`);
+			client.say(target, 
+				`${writeSuggestionToFile(input_msg) ? `@${user.username}, your suggestion has been written down. Thank you!` :`@${user.username}, empty suggestion not written to file`}`);
 
 		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
 
@@ -495,11 +486,8 @@ async function adsIntervalHandler() {
 
 	} else if (mins > 30) {//we called it after the 30 min mark is passed
 		const time_since_midrolls_started = mins - 30;
-		let remainder_to_hour;
-		if (time_since_midrolls_started > 60)
-			remainder_to_hour = 60 - (time_since_midrolls_started % 60);
-		else 
-			remainder_to_hour = 60 - time_since_midrolls_started;
+		let remainder_to_hour = remainder_to_hour > 60 ?
+			0 - (time_since_midrolls_started % 60) : 60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
 			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 

@@ -32,10 +32,8 @@ export class CommandArray {
 
 		else {
 
-			let isInterval = (inputMsg[1] == 'true');
-			let ins_sql;
-			if (!isInterval) ins_sql = `INSERT INTO stdcommands VALUES(?,?,?);`;
-			else ins_sql = `INSERT INTO intervalcommands VALUES(?,?,?);`;
+			let is_interval = (inputMsg[1] == 'true');
+			let ins_sql = !is_interval ? `INSERT INTO stdcommands VALUES(?,?,?);` : `INSERT INTO intervalcommands VALUES(?,?,?);`;
 	
 			//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
 			let creating_mod = user.username;
@@ -43,9 +41,7 @@ export class CommandArray {
 			let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
 	
 			//add in the remaining elements of the message to the command message variable
-			for (let i = 3; i < inputMsg.length; ++i) {
-				msg += inputMsg[i] + " ";
-			}
+			for (let i = 3; i < inputMsg.length; ++i) msg += inputMsg[i] + " ";
 	
 			//run the sql command and spit out the result
 			this.#db.run(ins_sql, [name, creating_mod, msg], (err) => {
@@ -67,9 +63,7 @@ export class CommandArray {
 	removeCommand(client, target, user, command, is_interval) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
-		let del_sql;
-		if (!is_interval) del_sql = `DELETE FROM stdcommands WHERE name = ?;`;
-		else del_sql = `DELETE FROM intervalcommands WHERE name = ?;`;
+		let del_sql = !is_interval ? `DELETE FROM stdcommands WHERE name = ?;` : `DELETE FROM intervalcommands WHERE name = ?;`;
 
 		//run the sql command and spit out the result
 		this.#db.run(del_sql, command, (err) => {
@@ -93,9 +87,7 @@ export class CommandArray {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
 		let is_interval = (input_msg[1] == 'true');
-		let update_sql;
-		if (!is_interval) update_sql = `UPDATE stdcommands SET msg = ? WHERE name = ?;`;
-		else update_sql = `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
+		let update_sql = !is_interval ? `UPDATE stdcommands SET msg = ? WHERE name = ?;` : `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
 
 		//assemble the message to post back into place
 		let commandToEdit = input_msg[2];
@@ -366,9 +358,7 @@ export class CommandArray {
 	//@param   needBoth   Boolean to tell us if we need just the access token or both it and the refresh token
 	//@return             Either just the access token outright, or a 2 element array with the access and refresh tokens
 	async getSpotifyInfo(need_both) {
-		let spotify_sql;
-		if (!need_both) spotify_sql = `SELECT access_token FROM spotify_auth;`;
-		else spotify_sql = `SELECT access_token, refresh_token FROM spotify_auth`;
+		let spotify_sql = !need_both ? `SELECT access_token FROM spotify_auth;` : `SELECT access_token, refresh_token FROM spotify_auth`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {

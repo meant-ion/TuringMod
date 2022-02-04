@@ -44,7 +44,7 @@ let dice = new Dice(client);
 let calculator = new Calculator();
 let clip_collector = new ClipCollector(twitch_api);
 let post = new Post(discord_client, client);
-let pubsubs = new PubSubHandler();
+let pubsubs = new PubSubHandler(client, twitch_api);
 
 const the_streamer = opts.channels[0];
 
@@ -95,10 +95,10 @@ function execTheBot() {
 	});
 
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
-	setTimeout(adsIntervalHandler, 30000);
+	setTimeout(adsIntervalHandler, 15000);
 
 	//set timer to make the pubsub subscription so I dont have to type a command for it
-	setTimeout(makeSub, 30000);
+	setTimeout(makeSub, 15000);
 
 	//this goes last to prevent any issues on discord's end
 	discord_client.login(token);
@@ -486,8 +486,8 @@ async function adsIntervalHandler() {
 
 	} else if (mins > 30) {//we called it after the 30 min mark is passed
 		const time_since_midrolls_started = mins - 30;
-		let remainder_to_hour = remainder_to_hour > 60 ?
-			0 - (time_since_midrolls_started % 60) : 60 - time_since_midrolls_started;
+		let remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
+				60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
 			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 

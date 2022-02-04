@@ -1,7 +1,7 @@
 'use strict';
 
 const Base = require('./Base');
-const Emoji = require('./Emoji');
+const { Emoji } = require('./Emoji');
 
 /**
  * Represents a channel link in a guild's welcome screen.
@@ -42,7 +42,7 @@ class WelcomeChannel extends Base {
 
   /**
    * The channel of this welcome channel
-   * @type {?(TextChannel|NewsChannel)}
+   * @type {?(TextChannel|NewsChannel|StoreChannel)}
    */
   get channel() {
     return this.client.channels.resolve(this.channelId);

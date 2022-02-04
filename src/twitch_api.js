@@ -176,6 +176,22 @@ export class TwitchAPI {
 
 	}
 
+	async getChannelSummary(user, target) {
+		try {
+			this.#hasTokenExpired(true);
+			const data = await this.#createTwitchDataHeader();
+
+			const url = "https://api.twitch.tv/helix/users?user_id=71631229";
+
+			await fetch(url, data).then(result => result.json()).then(body => {
+				this.client.say(target, `@${user.username}: ${body.data[0].description}`);
+			}).catch(err => {
+				this.#generateAPIErrorResponse(err, target);
+			});
+
+		} catch (err) { console.error(err); }
+	}
+
 	//Gets info on a specific clip via its ID and sends that to a list of them
 	//@param   clip_id        The ID of the potential clip we want to get info on
 	async getClipInformation(clip_id) {
@@ -282,7 +298,7 @@ export class TwitchAPI {
 		
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
-					this.client.say(target, `${res.status == 204 ? `Title successfully updated!` : `Error, could not change title`}`)
+					this.client.say(target, `${(res.status == 204) ? `Title successfully updated!` : `Error, could not change title`}`)
 				}).catch(err => {
 					this.#generateAPIErrorResponse(err, target);
 				});
@@ -366,7 +382,7 @@ export class TwitchAPI {
 			//arbitrarily chose 35% as the cutoff ratio to tell if there's viewbotting
 			//no real reason behind this being the cutoff, just seemed like a good place to leave it at
 			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}` + 
-				`${viewers_to_chat_ratio < 35.0 ? `; This looks like a viewbotting issue to me :(` : `; This doesn't look like viewbotting to me at all :)`}`;
+				`${(viewers_to_chat_ratio < 35.0) ? `; This looks like a viewbotting issue to me :(` : `; This doesn't look like viewbotting to me at all :)`}`;
 
 			this.client.say(target, msg);
 
@@ -400,6 +416,93 @@ export class TwitchAPI {
 	async makePubSubscription(topic, pubsubs) {
 		const tkn = await this.#data_base.getTwitchInfo(0);
 		pubsubs.requestToListen(topic, tkn);
+	}
+
+	//edits the channel's chatroom settings as requested by a user. This is used within pubsub_handler.js
+	//@param   settings   array of settings the user wants to change
+	//@param   username   the user requesting the change
+	async editChatroomSettings(settings, username) {
+		//need to get the bot's user id so we can make the request go through
+
+		let bot_id = "";
+		let req_failed = false;
+		this.#hasTokenExpired(true);
+		const data = await this.#createTwitchDataHeader();
+
+		const id_url = "https://api.twitch.tv/helix/users?login=saint_isidore_bot";
+
+		await fetch(id_url, data).then(result => result.json()).then(body => {
+			console.log(body.data[0]);
+			bot_id = body.data[0].id;
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, "#pope_pontus");
+			req_failed = true;
+		});
+
+		if (req_failed) return;
+
+		//with the id in hand, we get the current settings for the chatroom and see what needs to change
+		const get_settings_url = `https://api.twitch.tv/helix/chat/settings?broadcaster_id=71631229`;
+
+		let cur_chat_settings;
+
+		await fetch(get_settings_url, data).then(result => result.json()).then(body => {
+			cur_chat_settings = body.data[0];
+		}).catch(err => {
+			this.#generateAPIErrorResponse(err, "#pope_pontus");
+			req_failed = true;
+		});
+
+		if (req_failed) return;
+
+		//now we get to check each of the 5 categories we want chat to be able to change,
+
+		let body_obj = {};
+
+		for(let i = 0; i < settings.length; ++i) {
+			switch (settings[i].toLowerCase()) {
+				case "slow-mode":
+					body_obj["slow_mode"] = !cur_chat_settings["slow_mode"];
+					body_obj["slow_mode_wait_time"] = cur_chat_settings["slow_mode"] ? null : 10;
+					break;
+				case "follower-only":
+					body_obj["follower_mode"] = !cur_chat_settings["follower_mode"];
+					body_obj["follow_mode_duration"] = cur_chat_settings["follower_mode"] ? null : 1;
+					break; 
+				case "subscriber-only":
+					body_obj["subscriber_mode"] = !cur_chat_settings["subscriber_mode"];
+					break;
+				case "emote-only":
+					body_obj["emote_mode"] = !cur_chat_settings["emote_mode"];
+					break;
+				case "unique":
+					body_obj["unique_chat_mode"] = !cur_chat_settings["unique_chat_mode"];
+					break;
+			}
+		}
+
+		console.log(body_obj);
+
+		//with body made, we will now put through the request
+		let cc_id = await this.#data_base.getTwitchSessionInfo();
+
+		const set_settings_url = get_settings_url + `&moderator_id=${bot_id}`;
+
+		const edit_data = {
+			'method': 'PATCH',
+			'headers': {
+				'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+				'Client-Id': `${cc_id[0]}`,
+				'Content-Type': 'application/json'
+			},
+			'body': JSON.stringify(body_obj),
+		};
+
+		await fetch(set_settings_url, edit_data).then(result => result.json()).then(body => {
+			console.log(body);
+			this.client.say("#pope_pontus", `@${username}: ${body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings"}`);
+		}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+		
 	}
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------

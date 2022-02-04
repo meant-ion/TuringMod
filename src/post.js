@@ -139,7 +139,7 @@ export class Post {
 			this.#generated_response = tested_output;
 
 			let responseMsg = `Generated response for the channel is `;
-			let askMsg = "Pass this message through? (Y/N): ";
+			let askMsg = "Pass this message through? (!send to send, anything else to reject): ";
 
 			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(responseMsg);
 			if (tested_output == "" || tested_output == "\n" || this.#seeIfNothingButNewlines(tested_output)) 

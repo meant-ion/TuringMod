@@ -14,9 +14,11 @@ export class PubSubHandler {
     #topics_list;        //an array holding the topics we are listening to with the bot
     #port;               //the serial port we will use to communicate with the rpi's turret
     #parser;             //what we will use for processing communications between the arduino and the rpi
+    #twitch_api;         //object for handling all API requests to Twitch
 
-    //@param   c   The Twitch Chat IRC client we need to send messages through
-    constructor(c) {
+    //@param   c     The Twitch Chat IRC client we need to send messages through
+    //@param   t_a   The twitch_api object
+    constructor(c, t_a) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
         this.#twitch_chat_client = c;
@@ -28,7 +30,7 @@ export class PubSubHandler {
         this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
         this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
         */
-
+        this.#twitch_api = t_a;
         //with the pubsub made, we can now get it working handling msgs
         this.start();
     }
@@ -54,11 +56,10 @@ export class PubSubHandler {
                     console.log(`* RESPONSE: ${(parsed_data.error != '' ? parsed_data.error : 'OK')}`);
                     break;
                 case 'MESSAGE':
-                    console.log(parsed_data.data.message);
-                    break;
-                case 'reward-redeemed'://for the turret, we want the title of the reward (parsed_data.data.reward.title)
-                    this.#rewardHandler(parsed_data);
-                    console.log(parsed_data.data);
+                    let truly_parsed_data = JSON.parse(parsed_data.data.message);
+                    if (truly_parsed_data.type  == 'reward-redeemed') {
+                        this.#rewardHandler(truly_parsed_data);
+                    }
                     break;
                 default:
                     console.log(parsed_data);
@@ -70,15 +71,16 @@ export class PubSubHandler {
     //handler for all specially made, redeemed channel points rewards
     //@param   parsed_data   The bulk of the data received from the WebSocket
     #rewardHandler(parsed_data) {
-        switch (parsed_data.data.reward.title) {
+        console.log(parsed_data);
+        switch (parsed_data.data.redemption.reward.title) {
             case '!timeout'://auto-timeout a viewer chosen by the redeemer
-                const timeout_victim = parsed_data.data.user_input;
-                const reward_redeemer = parsed_data.data.user.display_name;
+                const timeout_victim = parsed_data.data.redemption.user_input;
+                const reward_redeemer = parsed_data.data.redemption.user.display_name;
                 this.#twitch_chat_client.say('#pope_pontus', `@${timeout_victim} has been timed out by @${reward_redeemer}`);
                 this.#twitch_chat_client.timeout('#pope_pontus', timeout_victim, 60, "You were chosen for a timeout");
                 break;
             case 'VIP Me'://user redeemed reward to become a VIP
-                const new_vip = parsed_data.data.user.display_name;
+                const new_vip = parsed_data.data.redemption.user.display_name;
                 this.#twitch_chat_client.say('#pope_pontus', `@${new_vip} has become a new VIP!`);
                 this.#twitch_chat_client.say('#pope_pontus', `/vip ${new_vip}`);
                 break;
@@ -88,6 +90,11 @@ export class PubSubHandler {
                     if (err) return console.error(err);
                     console.log("* Fire command sent out!");
                 })*/
+                break;
+            case 'Change Chat Settings'://user redeemed to change some chatroom settings
+                const user_inputs = (parsed_data.data.redemption.user_input).split(" ");
+                console.log(user_inputs);
+                this.#twitch_api.editChatroomSettings(user_inputs, parsed_data.data.redemption.user.display_name);
                 break;
         }
     }

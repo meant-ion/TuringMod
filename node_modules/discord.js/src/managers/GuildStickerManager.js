@@ -4,7 +4,7 @@ const { Collection } = require('@discordjs/collection');
 const CachedManager = require('./CachedManager');
 const { TypeError } = require('../errors');
 const MessagePayload = require('../structures/MessagePayload');
-const Sticker = require('../structures/Sticker');
+const { Sticker } = require('../structures/Sticker');
 
 /**
  * Manages API methods for Guild Stickers and stores their cache.
@@ -34,8 +34,8 @@ class GuildStickerManager extends CachedManager {
   /**
    * Options for creating a guild sticker.
    * @typedef {Object} GuildStickerCreateOptions
-   * @param {?string} [description] The description for the sticker
-   * @param {string} [reason] Reason for creating the sticker
+   * @property {?string} [description] The description for the sticker
+   * @property {string} [reason] Reason for creating the sticker
    */
 
   /**
@@ -46,19 +46,20 @@ class GuildStickerManager extends CachedManager {
    * @param {GuildStickerCreateOptions} [options] Options
    * @returns {Promise<Sticker>} The created sticker
    * @example
-   * // Create a new sticker from a url
-   * guild.stickers.create('https://i.imgur.com/w3duR07.png', 'rip')
+   * // Create a new sticker from a URL
+   * guild.stickers.create('https://i.imgur.com/w3duR07.png', 'rip', 'headstone')
    *   .then(sticker => console.log(`Created new sticker with name ${sticker.name}!`))
    *   .catch(console.error);
    * @example
    * // Create a new sticker from a file on your computer
-   * guild.stickers.create('./memes/banana.png', 'banana')
+   * guild.stickers.create('./memes/banana.png', 'banana', 'banana')
    *   .then(sticker => console.log(`Created new sticker with name ${sticker.name}!`))
    *   .catch(console.error);
    */
   async create(file, name, tags, { description, reason } = {}) {
-    file = { ...(await MessagePayload.resolveFile(file)), key: 'file' };
-    if (!file) throw new TypeError('REQ_RESOURCE_TYPE');
+    const resolvedFile = await MessagePayload.resolveFile(file);
+    if (!resolvedFile) throw new TypeError('REQ_RESOURCE_TYPE');
+    file = { ...resolvedFile, key: 'file' };
 
     const data = { name, tags, description: description ?? '' };
 

@@ -360,7 +360,7 @@ function onMessageHandler(target, user, msg, self) {
 				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(twitch_api, possibleClipURL);
 
 			  //detect if this message is either non-english (unicode) or symbol spam
-			} else if (!helper.detectUnicode(input_msg, target, user, client)) {
+			} //else if (!helper.detectUnicode(input_msg, target, user, client)) {
 				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
 				//if both are true, remove the msg via a 1-second timeout
 				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
@@ -371,7 +371,7 @@ function onMessageHandler(target, user, msg, self) {
 					lines_count++;
 					lurkerHasTypedMsg(target, user);
 				}
-			}
+			//}
 		}
 	}
 }

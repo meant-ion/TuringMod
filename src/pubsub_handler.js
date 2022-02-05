@@ -57,9 +57,7 @@ export class PubSubHandler {
                     break;
                 case 'MESSAGE':
                     let truly_parsed_data = JSON.parse(parsed_data.data.message);
-                    if (truly_parsed_data.type  == 'reward-redeemed') {
-                        this.#rewardHandler(truly_parsed_data);
-                    }
+                    if (truly_parsed_data.type  == 'reward-redeemed') this.#rewardHandler(truly_parsed_data);
                     break;
                 default:
                     console.log(parsed_data);
@@ -71,7 +69,6 @@ export class PubSubHandler {
     //handler for all specially made, redeemed channel points rewards
     //@param   parsed_data   The bulk of the data received from the WebSocket
     #rewardHandler(parsed_data) {
-        console.log(parsed_data);
         switch (parsed_data.data.redemption.reward.title) {
             case '!timeout'://auto-timeout a viewer chosen by the redeemer
                 const timeout_victim = parsed_data.data.redemption.user_input;
@@ -93,7 +90,6 @@ export class PubSubHandler {
                 break;
             case 'Change Chat Settings'://user redeemed to change some chatroom settings
                 const user_inputs = (parsed_data.data.redemption.user_input).split(" ");
-                console.log(user_inputs);
                 this.#twitch_api.editChatroomSettings(user_inputs, parsed_data.data.redemption.user.display_name);
                 break;
         }

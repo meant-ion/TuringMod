@@ -424,29 +424,16 @@ export class TwitchAPI {
 	async editChatroomSettings(settings, username) {
 		//need to get the bot's user id so we can make the request go through
 
-		let bot_id = "";
 		let req_failed = false;
 		this.#hasTokenExpired(true);
 		const data = await this.#createTwitchDataHeader();
 
-		const id_url = "https://api.twitch.tv/helix/users?login=saint_isidore_bot";
-
-		await fetch(id_url, data).then(result => result.json()).then(body => {
-			console.log(body.data[0]);
-			bot_id = body.data[0].id;
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, "#pope_pontus");
-			req_failed = true;
-		});
-
-		if (req_failed) return;
-
 		//with the id in hand, we get the current settings for the chatroom and see what needs to change
-		const get_settings_url = `https://api.twitch.tv/helix/chat/settings?broadcaster_id=71631229`;
+		const settings_url = `https://api.twitch.tv/helix/chat/settings?broadcaster_id=71631229&moderator_id=71631229`;
 
 		let cur_chat_settings;
 
-		await fetch(get_settings_url, data).then(result => result.json()).then(body => {
+		await fetch(settings_url, data).then(result => result.json()).then(body => {
 			cur_chat_settings = body.data[0];
 		}).catch(err => {
 			this.#generateAPIErrorResponse(err, "#pope_pontus");
@@ -481,12 +468,8 @@ export class TwitchAPI {
 			}
 		}
 
-		console.log(body_obj);
-
 		//with body made, we will now put through the request
 		let cc_id = await this.#data_base.getTwitchSessionInfo();
-
-		const set_settings_url = get_settings_url + `&moderator_id=${bot_id}`;
 
 		const edit_data = {
 			'method': 'PATCH',
@@ -498,8 +481,7 @@ export class TwitchAPI {
 			'body': JSON.stringify(body_obj),
 		};
 
-		await fetch(set_settings_url, edit_data).then(result => result.json()).then(body => {
-			console.log(body);
+		await fetch(settings_url, edit_data).then(result => result.json()).then(body => {
 			this.client.say("#pope_pontus", `@${username}: ${body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings"}`);
 		}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
 		

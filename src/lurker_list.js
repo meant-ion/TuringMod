@@ -43,7 +43,7 @@ export class LurkList {
             let time_msg = this.helper.getTimePassed(this.#lurker_list[user][0], false);
             let lurk_msg = this.#lurker_list[user][1];
             let msg = is_leaving ? `Goodbye for now @${user.username}! See you later!` : 
-                    `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? "No Message Provided" : msg}"`;
+                    `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? "No Message Provided" : lurk_msg}"`;
             
             delete this.#lurker_list[user];
             return msg;

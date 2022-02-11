@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import Helper from './helper.js';
 import open from 'open';
 import http from 'http';
+import fs from 'fs';
 
 export class TwitchAPI {
 
@@ -17,6 +18,7 @@ export class TwitchAPI {
         this.#data_base = d_b;
         this.#clip_list = [];
         this.#getTwitchToken();
+		this.#getAndUpdateTagsList('#pope_pontus');
     }
 
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
@@ -487,7 +489,148 @@ export class TwitchAPI {
 		
 	}
 
+	//gets and returns the list of tags currently applied to the stream
+	//@param   user     The user requesting the tags
+	//@param   target   The chatroom the list of tags will be posted into
+	async getStreamTags(user, target) {
+		let tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
+		let msg = `@${user.username}: Tags for this stream are `;
+
+		try {
+
+			this.#hasTokenExpired(true);
+
+			const data = await this.#createTwitchDataHeader();
+
+			//get the list of tags from the stream
+			await fetch(tags_url, data).then(result => result.json()).then(body => {
+				for (let i = 0; i < body.data.length; ++i) {
+					let tag = body.data[i];
+					//add each tag in grammatically correct to the response msg
+					if (i + 1 >= body.data.length) 
+						msg += " and " + tag.localization_names['en-us'];
+					else 
+						msg += tag.localization_names['en-us'] + ", ";
+				}
+				this.client.say(target, msg);
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
+		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+	}
+
+	//changes the tags of the stream to new ones. Cannot change automatic tags at all
+	//@param   user           The user requesting the tags
+	//@param   target         The chatroom the list of tags will be posted into
+	//@param   list_of_tags   The list of tags we want to have be present in the stream 
+	async replaceStreamTags(user, target, list_of_tags) {
+		console.log(list_of_tags);
+		let tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
+
+		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
+		//first, read in the contents of the tags list file to memory so we can search it easier
+
+		//list of tags to add to the channel must be an array
+		let tags_array = [];
+
+		//using the list of available tags, we search for them 
+		for (let i = 0; i < list_of_tags.length; ++i) {
+			let tag = list_of_tags[i];
+			//multi-word tags exist, so if we cannot find the tag first, we go through the list and see if combos
+			//of tags in the list fit together
+			if (tags_list[tag] == undefined) {
+				let orig_tag = tag
+				let tag_found = false;
+				for (let j = i + 1; j < list_of_tags.length; ++j) {
+					tag += ` ${list_of_tags[j]}`;
+					console.log(tag);
+					if (tags_list[tag] != undefined) {
+						tags_array.push(tags_list[tag]);
+						i = j;
+						tag_found = true;
+						j = list_of_tags.length;
+					}
+				}
+				if (!tag_found) {
+					this.client.say(target, `@${user.username}: Error with unsupported tag ${orig_tag}`);
+					return;
+				}
+			} else {
+				tags_array.push(tags_list[tag]);
+			}
+		}
+		if (tags_array.length > 5) {
+			this.client.say(target, `@${user.username}: Too many tags provided. Max 5`);
+			return;
+		}
+
+		try {
+			const s = await this.#data_base.getIdAndSecret();
+			const data = {
+				'method': 'PUT',
+				'headers': {
+					'client-id': `${s[0]}`,
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'Content-Type': 'application/json'
+				},
+				'body': {
+					'tag_ids': tags_array
+				}
+			};
+			//console.log(data);
+			await fetch(tags_url, data).then(result => console.log(result))
+			.then(this.client.say(target, `@${user.username}: Tags edited successfully!`))
+			.catch(err => this.#generateAPIErrorResponse(err, target));
+		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+
+	}
+
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
+
+	//gathers the list of tags that Twitch provides
+	//definitly gonna be worked on better later in time tho
+	//@param   target   the chatroom we post the error message to if getting the tag list fails
+	async #getAndUpdateTagsList(target) {
+		//get the first 100 tags of the total list of tags
+		let tags_url =  "https://api.twitch.tv/helix/tags/streams?first=100";
+		let pagination_target = '';
+		let tags_list = {};//object that we will write to file with all the wanted tags in
+
+		try {
+
+			const data = await this.#createTwitchDataHeader();
+			
+			//we repeatedly call the API to get all relevant tags
+			while(pagination_target != undefined) {
+				await fetch(tags_url, data).then(result => result.json()).then(body => {
+
+					//get the pagination object first, as we need that to get the rest of the tags
+					pagination_target = body.pagination.cursor;
+	
+					//with the cursor got, we iterate through the list of tags
+					//getting the name and the id where the tags are not automatically applied
+					for (let i = 0; i < body.data.length; ++i) {
+						let tag = body.data[i];
+						if (tag.is_auto == false) {
+							tags_list[tag.localization_names['en-us']] = tag.tag_id;
+						}
+					}
+
+					//update the url with the pagination cursor for repeated calls to the API
+					tags_url = `https://api.twitch.tv/helix/tags/streams?first=100&after=${pagination_target}`;
+	
+					//this.#iterateAndGetTags(tags_url, data, tags_list, pagination_target, target);
+	
+				}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}
+
+			//with all relevant tags got, write the list of them to file
+			fs.writeFile('./data/tags_list.json', JSON.stringify(tags_list), 'utf8', err => {
+				if (err) console.error(err);
+				console.log('* Tags list updated and written to file!');
+			});
+
+		} catch (err) { console.error(err); }
+
+	}
 
     //gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
 	async #getTwitchToken() {

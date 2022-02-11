@@ -211,6 +211,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			commands_holder.setDeathsToZero(client, target);
 
+		} else if (cmd_name == '!edittags' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			input_msg.splice(0, 1);
+			twitch_api.replaceStreamTags(user, target, input_msg, true);
+
 		} else if (cmd_name == '!lurk') {//the user wishes to enter lurk mode
 
 			client.say(target, lurk_list.addLurker(user, input_msg));
@@ -294,6 +299,10 @@ function onMessageHandler(target, user, msg, self) {
 		} else if (cmd_name == '!accountage') {//returns the age of the account asking
 
 			twitch_api.getUserAcctAge(user, target);
+
+		} else if (cmd_name == '!tags') {
+
+			twitch_api.getStreamTags(user, target);
 
 		} else if (cmd_name == '!song') {//returns the song and artist playing through Spotify
 

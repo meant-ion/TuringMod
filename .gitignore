@@ -7,3 +7,5 @@ Microsoft.NodejsTools.WebRole.dll
 /data/clip_links.html
 key.pem
 cert.pem
+/data/tags_list.json
+

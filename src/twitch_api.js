@@ -596,7 +596,15 @@ export class TwitchAPI {
 		await fetch(goals_url, data).then(result => result.json()).then(body => {
 			const response = body.data[0];
 
-			const msg = `Current goal is for ${response.type}; Currently have ${response.current_amount} / ${response.target_amount}`;
+			let msg;
+
+			//if we dont have anything in the type of goal, we have no goal. So we dont check the others
+			if (response.type == undefined) 
+				msg = "There are currently no creator goals for this channel";
+			else 
+				msg = `Current goal is for ${response.type}; Currently have ${response.current_amount} / ${response.target_amount}`;
+			
+
 			this.client.say(target, msg);
 		}).catch(err => this.#generateAPIErrorResponse(err, target));
 	}

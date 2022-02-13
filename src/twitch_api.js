@@ -508,9 +508,9 @@ export class TwitchAPI {
 					let tag = body.data[i];
 					//add each tag in grammatically correct to the response msg
 					if (i + 1 >= body.data.length) 
-						msg += " and " + tag.localization_names['en-us'];
+						msg += ` and ${tag.localization_names['en-us']}`;
 					else 
-						msg += tag.localization_names['en-us'] + ", ";
+						msg += `${tag.localization_names['en-us']}, `;
 				}
 				this.client.say(target, msg);
 			}).catch(err => this.#generateAPIErrorResponse(err, target));
@@ -522,7 +522,6 @@ export class TwitchAPI {
 	//@param   target         The chatroom the list of tags will be posted into
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(user, target, list_of_tags) {
-		console.log(list_of_tags);
 		let tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
 
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
@@ -537,11 +536,11 @@ export class TwitchAPI {
 			//multi-word tags exist, so if we cannot find the tag first, we go through the list and see if combos
 			//of tags in the list fit together
 			if (tags_list[tag] == undefined) {
-				let orig_tag = tag
+				let orig_tag = tag;
 				let tag_found = false;
+				//go through the rest of the tag list and see if the words combined with each other make a valid tag
 				for (let j = i + 1; j < list_of_tags.length; ++j) {
 					tag += ` ${list_of_tags[j]}`;
-					console.log(tag);
 					if (tags_list[tag] != undefined) {
 						tags_array.push(tags_list[tag]);
 						i = j;
@@ -557,11 +556,14 @@ export class TwitchAPI {
 				tags_array.push(tags_list[tag]);
 			}
 		}
+		//Twitch only allows for 5 tags to be input by the streamer at a time. Any more and it wont go through
+		//if more than 5 tags, reject them and put out message saying so
 		if (tags_array.length > 5) {
 			this.client.say(target, `@${user.username}: Too many tags provided. Max 5`);
 			return;
 		}
 
+		//with tags assembled, we send out the request 
 		try {
 			const s = await this.#data_base.getIdAndSecret();
 			const data = {
@@ -571,16 +573,32 @@ export class TwitchAPI {
 					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
 					'Content-Type': 'application/json'
 				},
-				'body': {
+				'body': JSON.stringify({
 					'tag_ids': tags_array
-				}
+				})
 			};
-			//console.log(data);
-			await fetch(tags_url, data).then(result => console.log(result))
+			await fetch(tags_url, data)
 			.then(this.client.say(target, `@${user.username}: Tags edited successfully!`))
 			.catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { this.#generateAPIErrorResponse(err, target); }
 
+	}
+
+	//gets the current, most recent creator goal and sends it out to the stream
+	//TODO when bigger: make this work for multiple goals 
+	//(I doubt I will have > 1 active at a time, but it'd be interesting to handle  anyway)
+	//@param   target   The chatroom the goal(s) will be sent into
+	async getCreatorGoals(target) {
+		const goals_url = 'https://api.twitch.tv/helix/goals?broadcaster_id=71631229';
+
+		const data = this.#createTwitchDataHeader();
+
+		await fetch(goals_url, data).then(result => result.json()).then(body => {
+			const response = body.data[0];
+
+			const msg = `Current goal is for ${response.type}; Currently have ${response.current_amount} / ${response.target_amount}`;
+			this.client.say(target, msg);
+		}).catch(err => this.#generateAPIErrorResponse(err, target));
 	}
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------

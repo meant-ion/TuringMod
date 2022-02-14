@@ -40,9 +40,9 @@ export class LurkList {
         //let index = this.isLurking(user);//ensures that we know if there's an issue
         if (this.#lurker_list[user] != undefined) {
 
-            let time_msg = this.helper.getTimePassed(this.#lurker_list[user][0], false);
-            let lurk_msg = this.#lurker_list[user][1];
-            let msg = is_leaving ? `Goodbye for now @${user.username}! See you later!` : 
+            const time_msg = this.helper.getTimePassed(this.#lurker_list[user][0], false);
+            const lurk_msg = this.#lurker_list[user][1];
+            const msg = is_leaving ? `Goodbye for now @${user.username}! See you later!` : 
                     `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? "No Message Provided" : lurk_msg}"`;
             
             delete this.#lurker_list[user];

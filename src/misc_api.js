@@ -41,13 +41,13 @@ export class MiscAPI {
 		const target_abbrev = target_currency.toUpperCase();
 
 		try {
-			let key = await this.#data_base.getAPIKeys(2);
+			const key = await this.#data_base.getAPIKeys(2);
 			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
 
 			//get the rates from the api and then do the conversion by multiplication
 			await fetch(currency_url).then(result => result.json()).then(body => {
 				const rate = Number(body.conversion_rates[target_abbrev]);
-				let msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate), false} ${target_abbrev}`;
+				const msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate), false} ${target_abbrev}`;
 				this.client.say(target, msg);
 			}).catch(err => {
 				this.#generateAPIErrorResponse(err, target);
@@ -142,7 +142,7 @@ export class MiscAPI {
 		await fetch(eso_url).then(result => result.text()).then(body => {
 			//split up the body (literally an HTML page), grab the title (4th line), slice off the <title> start tag,
 			//and then split the rest of the string into an array based on spaces
-			let l = body.split('\n')[4].slice(7).split(' ');
+			const l = body.split('\n')[4].slice(7).split(' ');
 			let str = "";
 			//we want only the name of the language, everything else is unwanted
 			for (let word of l) {
@@ -230,7 +230,7 @@ export class MiscAPI {
 	async getRandomPokemon(target) {
 		//get our requesting URL and its headers in a row and go from there
 		//As of 8/22/2021, according to Bulbapedia, there are 898 separate entries for pokemon for the "National Pokedex"
-		let pokemon_id = Math.floor(Math.random() * 898) + 1;
+		const pokemon_id = Math.floor(Math.random() * 898) + 1;
 		const pokemon_url = `https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`;
 		let en_array = ["", "", ""];
 
@@ -403,11 +403,11 @@ export class MiscAPI {
 	async getNASAPicOfTheDay(target) {
 
 		try {
-			let url = `https://api.nasa.gov/planetary/apod?api_key=${await this.#data_base.getAPIKeys(3)}`;
+			const url = `https://api.nasa.gov/planetary/apod?api_key=${await this.#data_base.getAPIKeys(3)}`;
 	
 			//we have gotten the space image URL at least once today
 			if (this.#nasa_get != undefined) {
-				let cur_date = new Date();
+				const cur_date = new Date();
 				if (cur_date.getTime() - this.#nasa_get.getTime() > 86400000) {//more than 24 hours have passed since the last call here
 					await fetch(url).then(result => result.json()).then(body => {
 						this.#space_url = body.hdurl;

@@ -97,7 +97,7 @@ export class Helper {
     detectSymbolSpam(input_msg, target, user, client) {
 
         //the regex that we will use to detect the symbol spam in a message
-        let sym_list = /[|]|{|}|\(|\)|\\|`|~|!|@|#|\$|%|\^|&|\*|;|:|'|"|,|<|.|>|\/|\?|-|_|=|\+|\|/;
+        const sym_list = /[|]|{|}|\(|\)|\\|`|~|!|@|#|\$|%|\^|&|\*|;|:|'|"|,|<|.|>|\/|\?|-|_|=|\+|\|/;
 
         input_msg = this.combineInput(input_msg, true);
         //search the whole message for the symbols. If enough are found, remove the message for spam
@@ -117,7 +117,7 @@ export class Helper {
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
     detectUnicode(input_msg, target, user, client) {
-        let regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}|\p{S}|\p{N}/u;//range of all ascii chars, punctuation and emojis
+        const regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}|\p{S}|\p{N}/u;//range of all ascii chars, punctuation and emojis
         //split string into words via for-each loop
         input_msg.forEach(item => {
             //split word into character array and loop through it, testing each char w/ regex
@@ -169,11 +169,11 @@ export class Helper {
             is_AM = true;
         }
 
-        let cur_mins = cur_time.getMinutes();
+        const cur_mins = cur_time.getMinutes();
         if (cur_mins < 10) cur_mins = String("0" + cur_mins);
 
         //calculate the minutes, craft the message, and then send to chat
-        let msg = `@${user.username}: Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
+        const msg = `@${user.username}: Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
         client.say(target, msg);
     }
 
@@ -187,7 +187,7 @@ export class Helper {
             neg = true;
             num *= -1;
         }
-        let multiplier = Math.pow(10,2);
+        const multiplier = Math.pow(10,2);
         num = parseFloat((num * multiplier).toFixed(11));
         num = (Math.round(num) / multiplier).toFixed(2);
         if (neg) num = (num * -1).toFixed(2);

@@ -23,7 +23,7 @@ export class ClipCollector {
     async validateAndStoreClipLink(async_obj, url) {
         //test the clip is in the correct format using the constructed regex
         if (this.#regexp_checker.test(url)) {
-            let clip_id = url.substring(24);
+            const clip_id = url.substring(24);
             await async_obj.getClipInformation(clip_id);
         }
     }
@@ -34,7 +34,7 @@ export class ClipCollector {
     writeClipsToHTMLFile() {
         //start building the basic body for the HTML page and get the clips
         let rtf_body = `<body>\n<div>\n<p>\n`
-        let list = this.#twitch_api.getClipList();
+        const list = this.#twitch_api.getClipList();
 
         //add in the clips to the HTML page
         for (let i = 0; i < list.length; ++i) rtf_body += list[i] + '\n';
@@ -53,7 +53,7 @@ export class ClipCollector {
     //simple function that dumps the list of clips to console
     //really just a debug function, but maybe useful somewhere else?
     dumpClipListToCLI() {
-        let list = this.#twitch_api.getClipList();
+        const list = this.#twitch_api.getClipList();
         for (let i = 0; i < list.length; ++i) console.log(list[i]);
     }
 }

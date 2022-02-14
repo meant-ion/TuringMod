@@ -131,9 +131,9 @@ export class SpotifyAPI {
 	#hasTokenExpired(which_token) {
 
 		//get the difference between the time the token was accquired and right now at this call
-		let cur_time = new Date();
+		const cur_time = new Date();
 		//make sure to get the correct token here
-		let token_time = this.#spotify_token_get_time; 
+		const token_time = this.#spotify_token_get_time; 
 		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
 
 		//if we have a large enough difference between the two times, refresh the specified token
@@ -168,7 +168,7 @@ export class SpotifyAPI {
 
 		try {
 			//get our data from the DB
-			let session_data = await this.#data_base.getSpotifySessionInfo();
+			const session_data = await this.#data_base.getSpotifySessionInfo();
 
 			//build the URLS that we need to access for the requests
 			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}&response_type=code&redirect_uri=${session_data[2]}&scope=${session_data[3]}&state=${session_data[4]}`;
@@ -223,7 +223,7 @@ export class SpotifyAPI {
 			'Authorization': `Basic ${b.toString('base64')}`,
 			'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
 		};
-		let refresh_token = await this.#data_base.getSpotifyInfo(true)[1];
+		const refresh_token = await this.#data_base.getSpotifyInfo(true)[1];
 		const params = {
 			'code': refresh_token,
 			'grant_type': "refresh_token",

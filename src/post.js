@@ -138,8 +138,8 @@ export class Post {
 
 			this.#generated_response = tested_output;
 
-			let responseMsg = `Generated response for the channel is `;
-			let askMsg = "Pass this message through? (!send to send, anything else to reject): ";
+			const responseMsg = `Generated response for the channel is `;
+			const askMsg = "Pass this message through? (!send to send, anything else to reject): ";
 
 			this.discord_client.channels.cache.get(process.env.SERVER_ID).send(responseMsg);
 			if (tested_output == "" || tested_output == "\n" || this.#seeIfNothingButNewlines(tested_output)) 
@@ -161,7 +161,7 @@ export class Post {
 	//checks to see if there are nothing but newline characters in the text.
 	//@returns   true or false depending on whether or not the message is made up entirely of '\n'
 	#seeIfNothingButNewlines(response) {
-		let msg = response.split('');
+		const msg = response.split('');
 		let is_empty = true;
 		msg.forEach(item => {
 			if (item != '\n') is_empty = false;

@@ -12,7 +12,7 @@ import Helper from './helper.js';
 
 //our list/dictionary of operators/functions that we will be dealing with
 //includes arithmetic operators, equality operators, trig functions, and hyperbolic trig
-let operators = {
+const operators = {
     "^": {
         precedence: 4,
         associativity: "Right"

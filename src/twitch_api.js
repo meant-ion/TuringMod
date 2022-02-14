@@ -66,8 +66,8 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
-	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
+	//@param   user     The name of the chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getChannelSchedule(user, target) {
 
 		try {
@@ -93,8 +93,8 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
-	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
+	//@param   user     The name of the chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getStreamUptime(user, target) {
 
 		try {
@@ -119,8 +119,8 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the title of the stream
-	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
+	//@param   user     The name of the chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getStreamTitle(user, target) {
 
 		try {
@@ -137,8 +137,8 @@ export class TwitchAPI {
 	}
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
-	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
+	//@param   user     The name of the chat member that typed in the command
+	//@param   target   The chatroom that the message will be sent into
 	async getUserAcctAge(user, target) {
 
 		try {

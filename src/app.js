@@ -396,6 +396,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			misc_api.getFreeGamesOnEpicStore(target);
 
+		  //user wants their message flipped upside down
+		} else if (cmd_name == '!reverse') {
+
+			client.say(target, helper.flipText(helper.combineInput(input_msg, true)));
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");

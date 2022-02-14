@@ -110,6 +110,8 @@ COMMANDS:
 	- !freegame: gets a list of all games discounted to free on the Epic Store
 				* Does not return games that were always free or on sale for more than free
 
+	- !reverse: flips the message sent by the chatter upside down
+
 
 MOD/STREAMER ONLY COMMANDS:
 

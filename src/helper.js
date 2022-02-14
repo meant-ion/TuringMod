@@ -203,6 +203,101 @@ export class Helper {
         keys.forEach(item => r.push(obj[item]));
         return r;
     }
+
+    //turns a message upside down (as best as I could get it)
+    //@param   input   the original string
+    //@return          the input but flipped upside down
+    flipText(input) {
+        const flipped_text_map = {
+            'a': '\u0250',
+            'b': 'q',
+            'c': '\u0254',
+            'd': 'p',
+            'e': '\u01dd',
+            'f': '\u025f',
+            'g': '\u0183',
+            'h': '\u0265',
+            'i': '\u1d09',
+            'j': '\u027e',
+            'k': '\u029e',
+            'l': 'l',
+            'm': '\u026f',
+            'n': 'u',
+            'o': 'o',
+            'p': 'd',
+            'q': 'b',
+            'r': '\u0279',
+            's': 's',
+            't': '\u0287',
+            'u': 'n',
+            'v': '\u028c',
+            'w': '\u028d',
+            'x': 'x',
+            'y': '\u028e',
+            'z': 'z',
+            'A': '\u2200',
+            'B': 'B',
+            'C': '\u0186',
+            'D': 'D',
+            'E': '\u018E',
+            'F': '\u2132',
+            'G': '\u05e4',
+            'H': 'H',
+            'I': 'I',
+            'J': '\u017F',
+            'K': 'K',
+            'L': '\u02e5',
+            'M': 'W',
+            'N': '\u0418',
+            'O': 'O',
+            'P': '\u0500',
+            'Q': '\u038c',
+            'R': '\u1d1a',
+            'S': 'S',
+            'T': '\u22a5',
+            'U': '\u2229',
+            'V': '\u1d27',
+            'W': 'M',
+            'X': 'X',
+            'Y': '\u2144',
+            'Z': 'Z',
+            '1': '\u0196',
+            '2': '\u1105',
+            '3': '\u0190',
+            '4': '\u3123',
+            '5': '\u03db',
+            '6': '9',
+            '7': '\u3125',
+            '8': '8',
+            '9': '6',
+            '0': '0',
+            ',': '\'',
+            '.': '\u02d9',
+            '?': '\u00bf',
+            '!': '\u00a1',
+            '"': ',,',
+            '\'': ',',
+            '`': ',',
+            '{': '}',
+            '}': '{',
+            '[': ']',
+            ']': '[',
+            '(': ')',
+            ')': '(',
+            '>': '<',
+            '<': '>',
+            '=': '=',
+            '&': '\u214b',
+            '_': '\u203e'
+        };
+
+        let upsidedown_msg = '';
+
+        for (let i = 0; i < input.length; ++i) 
+            upsidedown_msg += `${flipped_text_map[input[i]] != undefined ? flipped_text_map[input[i]] : input[i]}`;
+
+        return upsidedown_msg;
+    }
 }
 
 export default Helper;

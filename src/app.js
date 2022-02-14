@@ -117,7 +117,7 @@ function onMessageHandler(target, user, msg, self) {
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {
 
-			//mods/streamer wish to give a shoutout to a chat member/streamer
+		  //mods/streamer wish to give a shoutout to a chat member/streamer
 		if (cmd_name == '!so' && input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
@@ -191,7 +191,8 @@ function onMessageHandler(target, user, msg, self) {
 
 			twitch_api.getChancesStreamIsViewbotted(target);
 
-		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {//mod/streamer toggles quiet mode
+		  //mod/streamer toggles quiet mode
+		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			quiet_mode_enabled = !quiet_mode_enabled;
 			let msg = quiet_mode_enabled ? `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off` 
@@ -203,67 +204,86 @@ function onMessageHandler(target, user, msg, self) {
 			
 			shutDownBot(target);
 
+		  //streamer died in video game and either they or mod wants to update the count
 		} else if (cmd_name == '!died' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			commands_holder.getAndUpdateDeathCount(client, target);
 
+		  //mod/streamer wants to reset the death counter
 		} else if (cmd_name == '!rdeaths' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			commands_holder.setDeathsToZero(client, target);
 
+		  //mod/streamer wants to edit the tags applied to the stream
 		} else if (cmd_name == '!edittags' && helper.checkIfModOrStreamer(user, the_streamer)) {
 
 			input_msg.splice(0, 1);
 			twitch_api.replaceStreamTags(user, target, input_msg, true);
 
-		} else if (cmd_name == '!lurk') {//the user wishes to enter lurk mode
+		  //mod/streamer needs to delete the current vod for whatever reason
+		} else if (cmd_name == '!delvod' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			twitch_api.deleteLastVOD(target);
+
+		  //the user wishes to enter lurk mode
+		} else if (cmd_name == '!lurk') {
 
 			client.say(target, lurk_list.addLurker(user, input_msg));
 
-		} else if (cmd_name == '!unlurk') {//the user wishes to exit lurk mode
+		  //the user wishes to exit lurk mode
+		} else if (cmd_name == '!unlurk') {
 
 			client.say(target, lurk_list.removeLurker(user, false));
 
-		} else if (cmd_name == '!leave') {//user is letting the stream know they're heading out for the stream
+		  //user is letting the stream know they're heading out for the stream
+		} else if (cmd_name == '!leave') {
 
 			client.say(target, lurk_list.removeLurker(user, true));
 
-		} else if (cmd_name == '!customlist') {//gets a list of all custom commands on the channel
+		  //gets a list of all custom commands on the channel
+		} else if (cmd_name == '!customlist') {
 
 			commands_holder.postListOfCreatedCommands(client, target, user);
 
-		} else if (cmd_name == '!followage') {//user wants to know how long they've followed the stream
+		  //user wants to know how long they've followed the stream
+		} else if (cmd_name == '!followage') {
 
 			if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 			else 
 				twitch_api.getFollowAge(user, target);
 
-		} else if (cmd_name == '!sg') {//a chatmember has a suggestion on what to add to the bot
+		  //a chatmember has a suggestion on what to add to the bot
+		} else if (cmd_name == '!sg') {
 
 			client.say(target, 
 				`${writeSuggestionToFile(input_msg) ? `@${user.username}, your suggestion has been written down. Thank you!` :`@${user.username}, empty suggestion not written to file`}`);
 
-		} else if (cmd_name == '!title') {//tells asking user what the current title of the stream is
+		  //tells asking user what the current title of the stream is
+		} else if (cmd_name == '!title') {
 
 			twitch_api.getStreamTitle(user, target);
 
-		} else if (cmd_name == '!game') {//tells user what category stream is under
+		  //tells user what category stream is under
+		} else if (cmd_name == '!game') {
 
 			twitch_api.getCategory(user, target);
 
-		} else if (cmd_name == '!roulette') {//allows chat member to take a chance at being timed out
+		  //allows chat member to take a chance at being timed out
+		} else if (cmd_name == '!roulette') {
 
 			if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
 				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
 			else 
 				dice.takeAChanceAtBeingBanned(user, target);
 
-		} else if (cmd_name == '!voice') {//dumb little command for whenever my voice cracks, which is apparently often
+		  //dumb little command for whenever my voice cracks, which is apparently often
+		} else if (cmd_name == '!voice') {
 
 			commands_holder.getAndUpdateVoiceCracks(client, target);
 
-		} else if (cmd_name == '!wikirand') {//chat member wants to know about something random off wikipedia
+		  //chat member wants to know about something random off wikipedia
+		} else if (cmd_name == '!wikirand') {
 
 			misc_api.getRandWikipediaArticle(user, target);
 
@@ -272,43 +292,53 @@ function onMessageHandler(target, user, msg, self) {
 
 			dice.getDiceRoll(input_msg[1], user, target);
 
-		} else if (cmd_name == "!flip") {//flips a coin and returns the result to chat
+		  //flips a coin and returns the result to chat
+		} else if (cmd_name == "!flip") {
 
 			dice.flipCoin(user, target);
 
-		} else if (cmd_name == '!uptime') {//user wants to know how long the stream has been going for
+		  //user wants to know how long the stream has been going for
+		} else if (cmd_name == '!uptime') {
 
 			twitch_api.getStreamUptime(user, target);
 
-		} else if (cmd_name == '!calc') {//chat member wants to do basic math with the bot
+		  //chat member wants to do basic math with the bot
+		} else if (cmd_name == '!calc') {
 
 			client.say(target, `@${user.username}: ` + ` ` + calculator.calculate(helper.combineInput(input_msg, false)));
 
-		} else if (cmd_name == "!time") {//gets the current time in Central Standard Time (CST)
+		  //gets the current time in Central Standard Time (CST)
+		} else if (cmd_name == "!time") {
 
 			helper.getCurrentTime(client, target, user);
 
-		} else if (cmd_name == '!schedule') {//returns a link to the stream schedule
+		  //returns a link to the stream schedule
+		} else if (cmd_name == '!schedule') {
 
 			twitch_api.getChannelSchedule(user, target);
 
-		} else if (cmd_name == '!who') {//returns the bio of the streamer
+		  //returns the bio of the streamer
+		} else if (cmd_name == '!who') {
 
 			twitch_api.getChannelSummary(user, target);
 
-		} else if (cmd_name == '!accountage') {//returns the age of the account asking
+		  //returns the age of the account asking
+		} else if (cmd_name == '!accountage') {
 
 			twitch_api.getUserAcctAge(user, target);
 
+		  //returns the current tags applied to the stream
 		} else if (cmd_name == '!tags') {
 
 			twitch_api.getStreamTags(user, target);
 
-		} else if (cmd_name == '!song') {//returns the song and artist playing through Spotify
+		  //returns the song and artist playing through Spotify
+		} else if (cmd_name == '!song') {
 
 		 	spotify_api.getCurrentSongTitleFromSpotify(target, user);
 
-		} else if (cmd_name == '!skipsong') {//tallies requests to change song and changes it at a threshold of those
+		  //tallies requests to change song and changes it at a threshold of those
+		} else if (cmd_name == '!skipsong') {
 
 		    thresholdCalc(target, user);
 
@@ -316,43 +346,53 @@ function onMessageHandler(target, user, msg, self) {
 
 			spotify_api.addSongToQueue(target, user, input_msg);
 
-		} else if (cmd_name == '!suggestionlist') {//user wants to see what has been suggested but not yet implemented currently
+		  //user wants to see what has been suggested but not yet implemented currently
+		} else if (cmd_name == '!suggestionlist') {
 
 			misc_api.getAllCurrentSuggestions(target);
 
-		} else if (cmd_name == '!dictrand') {//user wants to get a random word from the Merriam-Webster Dictionary
+		  //user wants to get a random word from the Merriam-Webster Dictionary
+		} else if (cmd_name == '!dictrand') {
 
 			misc_api.getRandomWordFromDictionary(user, target);
 
-		} else if (cmd_name == '!gitchanges') {//user wants to see how much changed from the last two commits
+		  //user wants to see how much changed from the last two commits
+		} else if (cmd_name == '!gitchanges') {
 			
 			misc_api.getGithubRepoInfo(target);
 		
-		} else if (cmd_name == '!convertcash') {//user wants to convert an amount of one currency to another
+		  //user wants to convert an amount of one currency to another
+		} else if (cmd_name == '!convertcash') {
 
 			misc_api.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
 
-		} else if (cmd_name == '!pokerand') {//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
+		  //user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
+		} else if (cmd_name == '!pokerand') {
 
 			misc_api.getRandomPokemon(target);
 
-		} else if (cmd_name == '!numrand') {//user wants a fact about a random number
+		  //user wants a fact about a random number
+		} else if (cmd_name == '!numrand') {
 
 			misc_api.getRandomNumberFact(target);
 
-		} else if (cmd_name == '!8ball') {//user wants a magic 8 ball fortune
+		  //user wants a magic 8 ball fortune
+		} else if (cmd_name == '!8ball') {
 
 			commands_holder.magic8Ball(client, user, target);
 
-		} else if (cmd_name == '!spacepic') {//user wants to see the NASA Space Pic of the Day
+		  //user wants to see the NASA Space Pic of the Day
+		} else if (cmd_name == '!spacepic') {
 
 			misc_api.getNASAPicOfTheDay(target);
 
-		} else if (cmd_name == '!randlang') {//user wants to look at a random esolang
+		  //user wants to look at a random esolang
+		} else if (cmd_name == '!randlang') {
 
 			misc_api.getRandEsoLang(user, target);
 
-		} else if (cmd_name == '!freegame') {//user wants a list of currently free games on the Epic Store
+		  //user wants a list of currently free games on the Epic Store
+		} else if (cmd_name == '!freegame') {
 
 			misc_api.getFreeGamesOnEpicStore(target);
 
@@ -420,7 +460,7 @@ async function generatePost(target) {
 	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
 	//take the last 2000 characters for the prompt and discard all other characters.
 	//An overly-large prompt will cause the API to return a 400 error
-	if (prompt.length > 2000) prompt = prompt.substr(prompt.length - 2000);
+	if (prompt.length > 2000) prompt = prompt.substring(prompt.length - 2000);
 
 	try {
 		const key = await commands_holder.getAPIKeys(0);
@@ -437,7 +477,8 @@ async function generatePost(target) {
 //@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
 	let lurk_msg = lurk_list.removeLurker(user, false);
-	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) client.say(target, lurk_msg);
+	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) 
+		client.say(target, lurk_msg);
 }
 
 //appends a suggestion from a viewer to a suggestions file for later consideration

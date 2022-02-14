@@ -18,7 +18,7 @@ export class TwitchAPI {
         this.#data_base = d_b;
         this.#clip_list = [];
         this.#getTwitchToken();
-		this.#getAndUpdateTagsList('#pope_pontus');
+		//this.#getAndUpdateTagsList('#pope_pontus');
     }
 
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
@@ -522,6 +522,8 @@ export class TwitchAPI {
 	//@param   target         The chatroom the list of tags will be posted into
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(user, target, list_of_tags) {
+
+		this.#getAndUpdateTagsList("#pope_pontus");
 		let tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
 
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
@@ -586,7 +588,7 @@ export class TwitchAPI {
 
 	//gets the current, most recent creator goal and sends it out to the stream
 	//TODO when bigger: make this work for multiple goals 
-	//(I doubt I will have > 1 active at a time, but it'd be interesting to handle  anyway)
+	//(I doubt I will have > 1 active at a time, but it'd be interesting to handle anyway)
 	//@param   target   The chatroom the goal(s) will be sent into
 	async getCreatorGoals(target) {
 		const goals_url = 'https://api.twitch.tv/helix/goals?broadcaster_id=71631229';
@@ -607,6 +609,50 @@ export class TwitchAPI {
 
 			this.client.say(target, msg);
 		}).catch(err => this.#generateAPIErrorResponse(err, target));
+	}
+
+	//deletes the last vod on the channel. Useful if something against Twitch's TOS happens accidentally and I 
+	//need to try to prevent my own ban from it
+	//@param   target   the chat room the messgae will be posted into
+	async deleteLastVOD(target) {
+		//Part 1: We get the id of the last vod
+
+		//we only want the last vod for the channel, so we set the type of vod to uploads and set 
+		//the number returned to 1
+		const vod_url = 'https://api.twitch.tv/helix/videos?user_id=71631229&first=1&type=upload';
+
+		const data = this.#createTwitchDataHeader();
+
+		let vod_id = "-1";
+
+		//get the id of the vod now. If we get back a bad result, then we send an error message and return
+		await fetch(vod_url, data).then(result => result.json()).then(body => {
+			if (body.data[0].id != undefined) 
+				vod_id = body.data[0].id;
+		});
+
+		if (vod_id == "-1")
+			this.client.say(target, "Error in fetching VOD ID of last published vod");
+
+		//Part 2: We delete the vod
+
+		const delete_vod_url = `https://api.twitch.tv/helix/videos?id=${vod_id}`;
+
+		try {
+			const s = await this.#data_base.getIdAndSecret();
+			const data = {
+				'method': 'DELETE',
+				'headers': {
+					'client-id': `${s[0]}`,
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`
+				},
+			}
+
+			await fetch(delete_vod_url, data).then(result => this.client.say(target, "VOD successfully deleted"));
+
+		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+
+
 	}
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------

@@ -76,6 +76,8 @@ COMMANDS:
 
 	- !who: reiterates the streamer's bio/summary
 
+	- !tags: gets and returns all tags currently applied to the stream
+
 	- !song: returns the name and artist of the song currently playing on stream through Spotify
 
 	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
@@ -154,6 +156,10 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution
 
+	- !edittags: changes the tags on stream to the ones specified by the streamer/mod
+
+	- !delvod: deletes the last vod on the channel. Good for handling issues with dox/TOS
+
 FUNCTIONS HANDLED BY THE BOT AUTOMATICALLY:
 
 	- Posting a warning about an incoming midroll ad break to the chatroom
@@ -185,13 +191,14 @@ PLANNED FUNCTIONALITIES/FEATURES:
 		- yodaposting: same idea as !post, but response is said like yoda would
 				* API not free, need to actually be making money to use (lol)
 
+		- !tr command: automatically translates a command from the detected language to english
+				* Same as yodaposting, API not free (Google Cloud Translate API), need to be making money on it first
+
 	------------------------------------------------------------
 
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
-
-	- freegame cmd, tells about free games from epic games store (!epicfree ?)
 
 	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
 			* Half baked; need to think this out more and get it more concrete

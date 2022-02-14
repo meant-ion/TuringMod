@@ -112,6 +112,8 @@ COMMANDS:
 
 	- !reverse: flips the message sent by the chatter upside down
 
+	- !bonk: bonks the user specified by the chat member
+
 
 MOD/STREAMER ONLY COMMANDS:
 

@@ -401,6 +401,11 @@ function onMessageHandler(target, user, msg, self) {
 
 			client.say(target, helper.flipText(helper.combineInput(input_msg, true)));
 
+		  //user wants to bonk someone
+		} else if (cmd_name == '!bonk') {
+
+			client.say(target, `@${input_msg[1]} has been bonked! BOP`);
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");

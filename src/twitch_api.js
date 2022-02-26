@@ -262,6 +262,7 @@ export class TwitchAPI {
 			await fetch(edit_channel_URL, edit_data).then(() => {
 				this.client.say(target, `@${user.username}: Category Successfully Updated`);
 			}).catch(err => {
+				this.client.say(target, "Error in changing category. Most likely a bad category name");
 				this.#generateAPIErrorResponse(err, target);
 			});	
 

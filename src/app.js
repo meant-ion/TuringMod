@@ -539,13 +539,13 @@ async function adsIntervalHandler() {
 	let intervalTime = 0;
 	//the mid-roll ads start 30 mins after stream start (at least for me)
 	//so we start the interval command after 30 mins
-	if (mins == 30) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
+	if (mins == 1) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
 
 		client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
 		intervalTime = 360000;//call this function again in 1 hour
 
-	} else if (mins > 30) {//we called it after the 30 min mark is passed
-		const time_since_midrolls_started = mins - 30;
+	} else if (mins > 1) {//we called it after the 30 min mark is passed
+		const time_since_midrolls_started = mins - 1;
 		let remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
 				60 - time_since_midrolls_started;
 
@@ -561,7 +561,7 @@ async function adsIntervalHandler() {
 
 	} else {
 
-		const _mins = 30 - mins;
+		const _mins = 1 - mins;
 		client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
 		//we set a timer callback to this function so we can check again 
 		intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both

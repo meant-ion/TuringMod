@@ -22,7 +22,7 @@ export class LurkList {
         if (this.#lurker_list[user.username] == undefined) {
             const new_user = [];
             new_user.push(new Date());
-            new_user.push(msg);
+            new_user.push(this.helper.combineInput(msg, true));
             this.#lurker_list[user.username] = new_user;
             //this.#lurker_list.push(new Lurker_Item(user.username, this.helper.combineInput(msg, true)));
             return `See you whenever you get back @${user.username}`;

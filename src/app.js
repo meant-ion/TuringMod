@@ -15,6 +15,7 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
+import Trainer from './trainer.js';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -45,6 +46,7 @@ let calculator = new Calculator();
 let clip_collector = new ClipCollector(twitch_api);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler(client, twitch_api);
+let trainer = new Trainer();
 
 const the_streamer = opts.channels[0];
 

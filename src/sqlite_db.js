@@ -419,6 +419,57 @@ export class CommandArray {
 			if (err) console.error(err); else console.log("* New Spotify Tokens Written Successfully!");
 		});
 	}
+
+	//looks for the finetune_id provided to the function inside of the db
+	//@param   id        The finetune_id for OpenAI's Fine Tuning API
+	//@param   channel   The name of the channel we may or may not have a fine tuning made for
+	//@returns           True/False depending on if the finetune_id is present in the db
+	searchForFineTuneID(id) {
+
+		const search_sql = `SELECT file_id FROM finetunes WHERE file_id = ${id};`;
+
+		return new Promise((resolve, reject) => {
+			this.#db.get(search_sql, (err, row) => {
+				if (err) reject(err);
+				else {
+					if (row.file_id != undefined) resolve(false);
+					else resolve(true);
+				}
+			});
+		});
+	}
+
+	//gets the file id for the fine tuning job for a specific channel
+	//@param   channel   The name of the channel we are making a model for
+	//@returns           Promise with the file id inside
+	getFineTuneFileID(channel) {
+
+		const search_sql = `SELECT file_id FROM finetunes WHERE channel = ${channel}`;
+
+		return new Promise((resolve, reject) => {
+			this.#db.get(search_sql, (err, row) => {
+				if (err) reject(err);
+				else resolve(row);
+			});
+		});
+	}
+
+	addFineTuneModel(model_name, channel) {
+
+		const update_sql = `UPDATE finetunes SET model_name = ? WHERE channel = ${channel}`;
+
+		this.#db.run(update_sql, [model_name], (err) => {
+			if (err) console.error(err); else console.log(`* Model successfully made for ${channel}`);
+		})
+	}
+
+	addFineTuningFileID(id, channel) {
+		const update_sql = `UPDATE finetunes SET file_id = ? WHERE channel = ${channel};`;
+
+		this.#db.run(update_sql, [id], (err) => {
+			if (err) console.error(err); else console.log(`* New file for ${channel} uploaded to OpenAI`);
+		});
+	}
 }
 
 export default CommandArray;

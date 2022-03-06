@@ -46,7 +46,7 @@ let calculator = new Calculator();
 let clip_collector = new ClipCollector(twitch_api);
 let post = new Post(discord_client, client);
 let pubsubs = new PubSubHandler(client, twitch_api);
-let trainer = new Trainer();
+let trainer = new Trainer(commands_holder);
 
 const the_streamer = opts.channels[0];
 
@@ -71,6 +71,9 @@ let call_this_function_number = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
+//holds when the last time a post from GPT-3 was generated
+let last_post_gen_time = undefined;
+
 function execTheBot() {
 	const token = process.env.DISCORD_CLIENT_TOKEN;
 
@@ -89,6 +92,7 @@ function execTheBot() {
 		const input_msg = message.content.split(" ");
 		if (input_msg[0] == '!send') {//the message generated was accepted by admin
 			let response = post.getResponse();
+			trainer.recordResponse("#pope_pontus", response, last_post_gen_time);
 
 			//search through the list of responses and channels to find the correct one and then post that out
 			client.say(opts.channels[0], `${response != "" ? `MrDestructoid ${response}` : `No response found for this channel`}`);
@@ -408,6 +412,14 @@ function onMessageHandler(target, user, msg, self) {
 
 			client.say(target, `@${input_msg[1]} has been bonked! BOP`);
 
+		} else if (cmd_name == "!write" && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			trainer.writeTrainingDataToFile(target);
+
+		} else if (cmd_name == '!upl' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			uploadAndMakeModel();
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");
@@ -477,11 +489,20 @@ async function generatePost(target) {
 	try {
 		const key = await commands_holder.getAPIKeys(0);
 		post.generatePost(prompt, lines_count, target, key);
+		//const d = new Date()
+		last_post_gen_time = Date.now();
+		//add the prompt to the training data set for the channel
+		trainer.addPromptToTrainingData(target, prompt, last_post_gen_time);
 		resetPrompt();
 	
 		if (prompt == "") console.log("prompt flushed after response generation successfully!");
 	} catch (err) { console.error(err); }
 
+}
+
+async function uploadAndMakeModel() {
+	const key = await commands_holder.getAPIKeys(0);
+	trainer.uploadFileToFineTune(key);
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

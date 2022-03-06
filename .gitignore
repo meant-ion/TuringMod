@@ -8,4 +8,4 @@ Microsoft.NodejsTools.WebRole.dll
 key.pem
 cert.pem
 /data/tags_list.json
-
+/data/training.jsonl

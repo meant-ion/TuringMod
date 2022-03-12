@@ -148,6 +148,7 @@ MOD/STREAMER ONLY COMMANDS:
 			 * Called either the stream's moderators or the streamer proper. When called, response from API
 			   is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
 			   and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
+			 * Currently implementing OpenAI's Model Fine-Tuning API for this bot. If all goes well, the bot will get better with its mimickry
 
 	- !shotgun: takes 1 - 5 chat members and "bans" (times them out for ~10 seconds) them, like they got hit with a shotgun
 			    * Not currently enabled, no point with how small my stream is

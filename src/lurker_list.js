@@ -24,7 +24,6 @@ export class LurkList {
             new_user.push(new Date());
             new_user.push(this.helper.combineInput(msg, true));
             this.#lurker_list[user.username] = new_user;
-            //this.#lurker_list.push(new Lurker_Item(user.username, this.helper.combineInput(msg, true)));
             return `See you whenever you get back @${user.username}`;
         }
         return `You're already lurking @${user.username}`
@@ -36,14 +35,13 @@ export class LurkList {
     //@param   is_leaving   Boolean to tell us if the command was !leave or not
     //@return               Either the last message they said, or a message telling them they never !lurk'd in the first place
     removeLurker(user, is_leaving) {
-        //let index = this.isLurking(user);//ensures that we know if there's an issue
         if (this.#lurker_list[user.username] != undefined) {
 
             const time_msg = this.helper.getTimePassed(this.#lurker_list[user.username][0], false);
             const lurk_msg = this.#lurker_list[user.username][1];
             const msg = is_leaving ? `Goodbye for now @${user.username}! See you later!` : 
-                    `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? "No Message Provided" : lurk_msg}"`;
-            
+                    `Welcome back @${user.username}! You were gone for ${time_msg} because of "${lurk_msg == '!lurk' ? 
+                    "No Message Provided" : lurk_msg}"`;
             delete this.#lurker_list[user.username];
             return msg;
         }

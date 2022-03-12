@@ -44,14 +44,12 @@ export class MiscAPI {
 			const key = await this.#data_base.getAPIKeys(2);
 			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
 
-			//get the rates from the api and then do the conversion by multiplication
 			await fetch(currency_url).then(result => result.json()).then(body => {
 				const rate = Number(body.conversion_rates[target_abbrev]);
-				const msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate), false} ${target_abbrev}`;
+				const msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate, false)} ${target_abbrev}`;
 				this.client.say(target, msg);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => console.error(err));
+
 		} catch (err) { console.error(err); }
 	}
 
@@ -71,13 +69,14 @@ export class MiscAPI {
 		//list of all games that are available for free through the epic store
 		let complete_discounted_games_list = [];
 
-		//get the list of games and store them for safe keeping
 		try {
+
 			await fetch(epic_url).then(result => result.json()).then(body => {
-				games_arr = body.data.Catalog.searchStore.elements;
-				games_count = body.data.Catalog.searchStore.paging.total;
+				//get the list of games and store them for safe keeping
+			 	games_arr = body.data.Catalog.searchStore.elements;
+			 	games_count = body.data.Catalog.searchStore.paging.total;
 			}).catch( err => {
-				this.#generateAPIErrorResponse(err, target);
+			 	this.#generateAPIErrorResponse(err, target);
 				return;
 			});
 		} catch (err) { console.error(err); }
@@ -252,9 +251,7 @@ export class MiscAPI {
 			});
 			let msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
 			this.client.say(target, msg);
-		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-		});
+		}).catch(err => this.#generateAPIErrorResponse(err, target));
 
 	}
 

@@ -7,6 +7,7 @@
 //  3. The bot, through the Discord channel it's connected to, will listen for a !record command
 //     If it is found, the bot will write down the prompt and its response inside of a JSONL file
 import fs from 'fs';
+import FormData from 'form-data';
 import fetch from 'node-fetch';
 
 export class Trainer {
@@ -80,8 +81,6 @@ export class Trainer {
             'Authorization': `Bearer ${key}`
         };
 
-        console.log(files_header);
-
         let file_exists = false;
         let file_id = undefined;
 
@@ -90,7 +89,7 @@ export class Trainer {
         await fetch(files_url, {method: 'GET', headers: files_header}).then(result => result.json()).then(body => {
             let files_arr = body.data;
             files_arr.forEach(item => {
-                let is_id_present = this.#data_base.searchForFineTuneId(item.id);
+                let is_id_present = this.#data_base.searchForFineTuneID(item.id);
                 if (is_id_present == true) { 
                     file_exists = true;
                     file_id = item.id;
@@ -119,20 +118,30 @@ export class Trainer {
         //now, either because we deleted the old file or we never had a file for the channel, we now
         //upload a new file for the fine tuning to take place
 
-        let files_body = {
-            "purpose": "fine-tune",
-            "file": fs.createReadStream('./data/training.jsonl')
+        //since we are sending a file and not just a string like we would JSON, we make a FormData object to send
+        //it with
+        const data = new FormData();
+        data.append('purpose', 'fine-tune');
+        data.append('file', fs.createReadStream('./data/training.jsonl'));
+
+        //rename when I dont want to throw my computer out working on this stuff
+        const i_lost_the_will_to_live = {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${key}`,
+                ...data.getHeaders()
+            },
+            body: data
         };
 
-        await fetch(files_url, {method: 'POST', headers: files_header, body: files_body}).then(result => result.json())
-        .then(body => {
-            this.#data_base.addFineTuningFileID(body.id, "pope_pontus");
-        });
+        await fetch(files_url, i_lost_the_will_to_live).then(result => result.json())
+        .then(body => this.#data_base.addFineTuningFileID(body.id, "pope_pontus"));
 
     }
 
     //check to see if the fine tune job has completed
-    async checkForFineTuneCompletion(key) {
+    async checkForFineTuneCompletion(key, channel) {
+        console.log(this.#finetune_id);
         const check_url = `https://api.openai.com/v1/fine-tunes/${this.#finetune_id}`;
         const check_header = {
             'method': 'GET',
@@ -140,15 +149,18 @@ export class Trainer {
         };
         let is_done = false;
         let model_id = '';
-        await fetch(check_url, check_header).then(result => result.json()).then(body => {
+        await fetch(check_url, {method: 'GET', headers: check_header}).then(result => result.json()).then(body => {
             if (body.fine_tuned_model != null) {
                 model_id = body.fine_tuned_model;
+                console.log(model_id);
                 is_done = !is_done;
             }
         }).catch(err => console.error(err));
 
         //if the job isnt done, we set a timer to check again in 10 mins or so
-        if (!is_done) setTimeout(this.checkForFineTuneCompletion.bind(null, key), 36000);
+        if (!is_done) setTimeout(this.checkForFineTuneCompletion.bind(null, key, channel), 36000);
+        //otherwise, we write the name of the model to the db
+        else this.#data_base.addFineTuneModel(model_id, channel);
         
     }
 
@@ -164,15 +176,23 @@ export class Trainer {
         const finetune_body = {
             'training_file': await this.#data_base.getFineTuneFileID(channel),
             'model': 'davinci',
+            'learning_rate_multiplier': 0.1,
             'suffix': channel
         };
-
-        await fetch(finetune_url, {headers: finetune_header, body: JSON.stringify(finetune_body)})
+        let err_found = false;
+        let temp = '';
+        await fetch(finetune_url, {method: 'POST', headers: finetune_header, body: JSON.stringify(finetune_body)})
             .then(result => result.json())
-            .then(body => this.#finetune_id = body.id)
-            .catch(err => console.error(err));
-
-        setTimeout(this.checkForFineTuneCompletion.bind(null, key), 36000);
+            .then(body => {
+                temp = body.id;
+            })
+            .catch(err => {
+                console.error(err);
+                err_found = !err_found;
+            });
+        this.#finetune_id = temp;
+        //if we flunk out from getting the model made, we don't set up a timer for it
+        if (!err_found) setTimeout(this.checkForFineTuneCompletion.bind(null, key, channel), 36000);
     }
 
 }

@@ -27,14 +27,14 @@ export class SpotifyAPI {
 		const url = `https://api.spotify.com/v1/me/player/currently-playing`;
 
 		try {
-			this.#hasTokenExpired(false);
+			this.#hasTokenExpired();
 			//header for everything that we need; gets a promise from DB for access key
 			const data = await this.#generateSpotifyHeaders('GET');
 
 			//get the data from the API and send out the relevant bits to chat
-			await fetch(url, data).then(result => result.json()).then(body => {
-				this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`);
-			}).catch(err => { this.#generateAPIErrorResponse(err, target); });
+			await fetch(url, data).then(result => result.json()).then(body => 
+				this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`)
+			).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { this.#generateAPIErrorResponse(err, target); }
 
 	}
@@ -46,13 +46,11 @@ export class SpotifyAPI {
 		const url = `https://api.spotify.com/v1/me/player/next`;
 
 		try {
-			this.#hasTokenExpired(false);
+			this.#hasTokenExpired();
 			//header for everything that we need; gets a promise from DB for access key
 			const data = await this.#generateSpotifyHeaders('POST');
 
-			await fetch(url, data).then(() => {
-				this.getCurrentSongTitleFromSpotify(target, user);
-			});
+			await fetch(url, data).then(() => this.getCurrentSongTitleFromSpotify(target, user));
 
 		} catch (err) { this.#generateAPIErrorResponse(err, target); }
     }
@@ -74,7 +72,7 @@ export class SpotifyAPI {
 		let uri;
 
 		try {
-			this.#hasTokenExpired(false);
+			this.#hasTokenExpired();
 			//build the headers needed for both searching for a track and adding it to the queue
 			const queue_data = await this.#generateSpotifyHeaders('POST');
 			const search_data = await this.#generateSpotifyHeaders('GET');
@@ -128,7 +126,7 @@ export class SpotifyAPI {
 
 	//simple helper to tell us if the token is expired for one of our two main APIs
 	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
-	#hasTokenExpired(which_token) {
+	#hasTokenExpired() {
 
 		//get the difference between the time the token was accquired and right now at this call
 		const cur_time = new Date();

@@ -426,13 +426,15 @@ export class CommandArray {
 	//@returns           True/False depending on if the finetune_id is present in the db
 	searchForFineTuneID(id) {
 
-		const search_sql = `SELECT file_id FROM finetunes WHERE file_id = ${id};`;
+		const search_sql = `SELECT filename FROM fine_tune WHERE filename = ?;`;
 
 		return new Promise((resolve, reject) => {
-			this.#db.get(search_sql, (err, row) => {
+			this.#db.get(search_sql, [id],  (err, row) => {
 				if (err) reject(err);
 				else {
-					if (row.file_id != undefined) resolve(false);
+					if (row != undefined)
+						if (row.filename != undefined) resolve(false);
+						else resolve(true);
 					else resolve(true);
 				}
 			});
@@ -444,29 +446,29 @@ export class CommandArray {
 	//@returns           Promise with the file id inside
 	getFineTuneFileID(channel) {
 
-		const search_sql = `SELECT file_id FROM finetunes WHERE channel = ${channel}`;
+		const search_sql = `SELECT filename FROM fine_tune WHERE channel = ?;`;
 
 		return new Promise((resolve, reject) => {
-			this.#db.get(search_sql, (err, row) => {
+			this.#db.get(search_sql, [channel], (err, row) => {
 				if (err) reject(err);
-				else resolve(row);
+				else resolve(row.filename);
 			});
 		});
 	}
 
 	addFineTuneModel(model_name, channel) {
 
-		const update_sql = `UPDATE finetunes SET model_name = ? WHERE channel = ${channel}`;
+		const update_sql = `UPDATE fine_tune SET finetune_id = ? WHERE channel = ?`;
 
-		this.#db.run(update_sql, [model_name], (err) => {
+		this.#db.run(update_sql, [model_name, channel], (err) => {
 			if (err) console.error(err); else console.log(`* Model successfully made for ${channel}`);
 		})
 	}
 
 	addFineTuningFileID(id, channel) {
-		const update_sql = `UPDATE finetunes SET file_id = ? WHERE channel = ${channel};`;
+		const update_sql = `UPDATE fine_tune SET filename = ? WHERE channel = ?;`;
 
-		this.#db.run(update_sql, [id], (err) => {
+		this.#db.run(update_sql, [id, channel], (err) => {
 			if (err) console.error(err); else console.log(`* New file for ${channel} uploaded to OpenAI`);
 		});
 	}

@@ -18,7 +18,6 @@ export class TwitchAPI {
         this.#data_base = d_b;
         this.#clip_list = [];
         this.#getTwitchToken();
-		//this.#getAndUpdateTagsList('#pope_pontus');
     }
 
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
@@ -27,7 +26,7 @@ export class TwitchAPI {
 	//@param   target         The chatroom that the message will be sent into
 	async getFollowAge(user, target) {
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			let acct_found = false;
@@ -50,15 +49,14 @@ export class TwitchAPI {
 							}
 	
 						//not found yet, so set the cursor forward and remake request
-						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + `&after=${body.pagination.cursor}`;
+						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + 
+							`&after=${body.pagination.cursor}`;
 					} else {
 						this.client.say(target, `@${user.username}: You are currently not following this channel`);
 						acct_found = true;//setting this to be true to avoid infinite loop
 					}
 
-				}).catch(err => {
-					this.#generateAPIErrorResponse(err, target);
-				});
+				}).catch(err => this.#generateAPIErrorResponse(err, target));
 			}
 
 		} catch (err) { console.error(err); }
@@ -71,7 +69,7 @@ export class TwitchAPI {
 	async getChannelSchedule(user, target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
@@ -81,13 +79,10 @@ export class TwitchAPI {
 					for (let i = 1; i < body.data.segments.length; ++i) {
 						let curDate = new Date(body.data.segments[i].start_time);
 						if (i + 1 == body.data.segments.length) stream_dates += curDate.toDateString();
-						else stream_dates += curDate.toDateString() + ", ";
-						
+						else stream_dates += curDate.toDateString() + ", ";	
 					}
 					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 
 	}
@@ -98,7 +93,7 @@ export class TwitchAPI {
 	async getStreamUptime(user, target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
@@ -112,9 +107,7 @@ export class TwitchAPI {
 					this.client.say(target, `@${user.username}: ${time_msg}`);
 				}
 				
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 	}
 
@@ -124,14 +117,12 @@ export class TwitchAPI {
 	async getStreamTitle(user, target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
 				this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 
 	}
@@ -142,7 +133,7 @@ export class TwitchAPI {
 	async getUserAcctAge(user, target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
@@ -151,9 +142,7 @@ export class TwitchAPI {
 				let acct_create_date = new Date(body.data[0].created_at);
 				let time_passed = this.helper.getTimePassed(acct_create_date, true);
 				this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 
 	}
@@ -164,32 +153,28 @@ export class TwitchAPI {
 	//@param   target         The chatroom that the message will be sent into
 	async getCategory(user, target) {
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
 				this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 
 	}
 
 	async getChannelSummary(user, target) {
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = "https://api.twitch.tv/helix/users?user_id=71631229";
 
 			await fetch(url, data).then(result => result.json()).then(body => {
 				this.client.say(target, `@${user.username}: ${body.data[0].description}`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 
 		} catch (err) { console.error(err); }
 	}
@@ -199,16 +184,14 @@ export class TwitchAPI {
 	async getClipInformation(clip_id) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
 				if (body.data[0].url != undefined) this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
 
 	}
@@ -221,7 +204,7 @@ export class TwitchAPI {
 	async editChannelCategory(user, game_name, target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			game_name = game_name.slice(1);
@@ -279,7 +262,7 @@ export class TwitchAPI {
 			this.client.say(target, "Cant change stream title to empty title");
 		} else {
 			try {
-				this.#hasTokenExpired(true);
+				this.#hasTokenExpired();
 				const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 
 				//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
@@ -302,9 +285,7 @@ export class TwitchAPI {
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
 					this.client.say(target, `${(res.status == 204) ? `Title successfully updated!` : `Error, could not change title`}`)
-				}).catch(err => {
-					this.#generateAPIErrorResponse(err, target);
-				});
+				}).catch(err => this.#generateAPIErrorResponse(err, target));
 			} catch (err) { console.error(err); }
 		}
 
@@ -317,7 +298,7 @@ export class TwitchAPI {
 	async shotgunTheChat(target) {
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
 
 			const data = await this.#createTwitchDataHeader();
@@ -340,7 +321,7 @@ export class TwitchAPI {
 	
 					this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
 				}
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));;
 		} catch (err) { console.error(err); }
 	}
 
@@ -353,7 +334,7 @@ export class TwitchAPI {
 		let chatroom_member_count, viewer_count;
 
 		try {
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 
 			//get the necessary headers, and send out the fetch requests
 			const chatroom_data = await this.#createTwitchDataHeader();
@@ -362,16 +343,12 @@ export class TwitchAPI {
 			//get # of viewers watching the stream
 			await fetch(helix_url, helix_data).then(result => result.data()).then(body => {
 				viewer_count = body[0].viewer_count;
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 
 			//get # of poeple in the chatroom currently
 			await fetch(chatroom_url, chatroom_data).then(result => result.json()).then(body => {
 				chatroom_member_count = body.chatters.viewers.length;
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 
 			//if any one of the gathered values is zero, we send a msg and exit this function
 			if (chatroom_member_count <= 0 || viewer_count <= 0) {
@@ -397,7 +374,7 @@ export class TwitchAPI {
 	async getUneditedStreamUptime() {
 		try {
 			
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 			let time = 0;
 
@@ -428,7 +405,7 @@ export class TwitchAPI {
 		//need to get the bot's user id so we can make the request go through
 
 		let req_failed = false;
-		this.#hasTokenExpired(true);
+		this.#hasTokenExpired();
 		const data = await this.#createTwitchDataHeader();
 
 		//with the id in hand, we get the current settings for the chatroom and see what needs to change
@@ -499,7 +476,7 @@ export class TwitchAPI {
 
 		try {
 
-			this.#hasTokenExpired(true);
+			this.#hasTokenExpired();
 
 			const data = await this.#createTwitchDataHeader();
 
@@ -723,9 +700,7 @@ export class TwitchAPI {
 			//first, we get the auth code to get the request token via getting a server up and running
 			let s = http.createServer((req, res) => {
 				let u = new URL(req.url, "http://localhost:3000");
-				if (u.searchParams.get('code') != null) {
-					code = u.searchParams.get('code');
-				}
+				if (u.searchParams.get('code') != null) code = u.searchParams.get('code');
 				post_url = `https://id.twitch.tv/oauth2/token?client_id=${session_info[0]}&client_secret=${session_info[1]}&code=${code}&grant_type=authorization_code&redirect_uri=${session_info[3]}`;
 				res.end();
 			}).listen(3000);
@@ -738,9 +713,7 @@ export class TwitchAPI {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 				console.log("* Full OAuth Access Token to Helix API Accquired");
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, "pope_pontus");
-			});
+			}).catch(err => this.#generateAPIErrorResponse(err, target));
 
 			s.close();
 		} catch (err) { console.error(err); }
@@ -770,7 +743,7 @@ export class TwitchAPI {
 			 	this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 			}
-		});
+		}).catch(err => this.#generateAPIErrorResponse(err, target));;
 	}
 
     //simple helper function for setting up a basic Helix API header using provided values
@@ -797,7 +770,7 @@ export class TwitchAPI {
 
     //simple helper to tell us if the token is expired for one of our two main APIs
 	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
-	#hasTokenExpired(which_token) {
+	#hasTokenExpired() {
 
 		//get the difference between the time the token was accquired and right now at this call
 		let cur_time = new Date();

@@ -43,10 +43,8 @@ export class ClipCollector {
         rtf_body += "</p>\n</div>\n</body>";
 
         //write the new HTML page to file
-        fs.truncate('./data/clip_links.html', 0, function () {
-            fs.writeFile('./data/clip_links.html', rtf_body,
-                { flag: 'a+' }, err => { });
-        });
+        fs.truncate('./data/clip_links.html', 0, () => 
+            fs.writeFile('./data/clip_links.html', rtf_body, { flag: 'a+' }, err => { }));
 
     }
 

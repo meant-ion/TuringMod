@@ -410,7 +410,7 @@ function onMessageHandler(target, user, msg, self) {
 		  //user wants to bonk someone
 		} else if (cmd_name == '!bonk') {
 
-			client.say(target, `@${input_msg[1]} has been bonked! BOP`);
+			client.say(target, `${input_msg[1]} has been bonked! BOP`);
 
 		} else if (cmd_name == "!write" && helper.checkIfModOrStreamer(user, the_streamer)) {
 
@@ -502,7 +502,8 @@ async function generatePost(target) {
 
 async function uploadAndMakeModel() {
 	const key = await commands_holder.getAPIKeys(0);
-	trainer.uploadFileToFineTune(key);
+	await trainer.uploadFileToFineTune(key);
+	await trainer.createFineTuning(key, the_streamer.slice(1, the_streamer.length));
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

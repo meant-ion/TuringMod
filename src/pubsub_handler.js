@@ -161,9 +161,7 @@ class Ping {
         this.sendPing();
 
         this.#pinger = setInterval(() => {
-            setTimeout(() => {
-                this.sendPing();
-            }, Math.floor((Math.random() * 1000) + 1));
+            setTimeout(() => this.sendPing(), Math.floor((Math.random() * 1000) + 1));
         }, (4*60*1000));
     }
 

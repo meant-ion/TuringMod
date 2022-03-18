@@ -86,6 +86,10 @@ const operators = {
         precedence: 4,
         associativity: "Right"
     },
+    "sqrt": {
+        precedence: 4,
+        associativity: "Right"
+    },
     "/": {
         precedence: 3,
         associativity: "Left"
@@ -229,6 +233,7 @@ export class Calculator {
               //this condition and the one below it are for recognizing math constants; so far, e and pi
             } else if (token.toLowerCase() == "e") output += Math.E.toString() + " ";
             else if (token == "π" || token == "pi") output += Math.PI.toString() + " ";
+            else if (token.toLowerCase() == 'life') output += "42" + " ";
             else return 'Error: unexpected character ' + token;
             last_char_checked = token;
         }
@@ -251,9 +256,9 @@ export class Calculator {
     //operators possible: =, -, *, /, %, :, ^, !, <, >, <=, >=, |, &, ^
     //functions possible (treated as operators in execution): 
     //                    sin(), cos(), tan(), sec(), csc(), cot(), sinh(), cosh(), tanh(), csch(), sech(), coth(),
-    //                    lcm(), gcm(), xor() (technically an operator, but using ^ for exponents)
+    //                    lcm(), gcm(), sqrt(), xor() (technically an operator, but using ^ for exponents)
     //statistical functions possible: combinations, permutations
-    //other functions possible: logarithms
+    //other functions: logarithms
     //@param   math_problem   An equation to be solved in reverse polish notation
     //@return                 The end product of the solved equation
     calculate(math_problem) {
@@ -262,6 +267,8 @@ export class Calculator {
         let is_eq_oper_present = false;
 
         math_problem = this.#convertToRPN(math_problem);
+
+        //console.log(math_problem);
 
         // if we have an issue converting the problem to RPN, return the error and go from there
         if (math_problem.substring(0,6) == 'Error:') return math_problem;
@@ -272,8 +279,12 @@ export class Calculator {
 
         for (let i = 0; i < math_problem.length; ++i) {
             //just a number, so push to result stack until we have an operator
-            if (this.helper.isNumeric(math_problem[i])) result_stack.push(parseFloat(math_problem[i]));
-            else if (operators[math_problem[i]] != undefined) {//this is an operator, so now we can start to simplify what we have in the stack
+            if (this.helper.isNumeric(math_problem[i])) {
+                //console.log(math_problem[i].indexOf('.'));
+                if (math_problem[i].indexOf('.') != -1) {
+                    result_stack.push(parseFloat(math_problem[i]));
+                } else result_stack.push(parseInt(math_problem[i]));
+            } else if (operators[math_problem[i]] != undefined) {//this is an operator, so now we can start to simplify what we have in the stack
                 let a = result_stack.pop();
                 let b;
                 let no_b_in_stack = false;
@@ -391,6 +402,10 @@ export class Calculator {
                         break;
                     case 'log':
                         result_stack.push(this.#log(a, b));
+                        break;
+                    case 'sqrt': 
+                        if (!no_b_in_stack) result_stack.push(b);
+                        result_stack.push(Math.sqrt(a));
                         break;
                     //our bitwise operators
                     case '&':

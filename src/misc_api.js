@@ -213,6 +213,8 @@ export class MiscAPI {
 
 		}
 
+		if (percentages_array[2] == 'Infinity' || percentages_array[2] == '-Infinity') percentages_array[2] = '0';
+
 		//now we make the abomination of a message and send it out to the chatroom
 		let message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
 				+ `(${percentages_array[0]}% difference). ` +
@@ -413,12 +415,8 @@ export class MiscAPI {
 					});
 				}
 			} else {//we havent gotten the image yet as of launch, so get it immediately
-				await fetch(url).then(result => result.json()).then(body => {
-                    console.log(body);
-					this.#space_url = body.hdurl;
-				}).catch(err => {
-					this.#generateAPIErrorResponse(err, target);
-				});
+				await fetch(url).then(result => result.json()).then(body => this.#space_url = body.hdurl)
+				.catch(err => this.#generateAPIErrorResponse(err, target));
 			}
 	
 			//assuming that there was something to get, we send out the link

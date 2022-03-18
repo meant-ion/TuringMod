@@ -46,7 +46,7 @@ export class Helper {
         let date_str = `${floored_hours % 24} hours ${mins % 60} minutes ${secs % 60} seconds`;
         if (!need_day) return date_str;
         if (days > 0) date_str = `${days % 30} days ` + date_str;
-        if (months > 0) date_str = `${months} months ` + date_str;
+        if (months > 0) date_str = `${months % 12} months ` + date_str;
         if (years > 0) date_str = `${years} years ` + date_str ;
         return date_str;
     }

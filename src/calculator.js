@@ -436,6 +436,34 @@ export class Calculator {
         }
     }
 
+    //converts a number to a different number system
+    //available systems: Decimal, Hexadecimal, Octal, Binary, Base64
+    //@param   num   the number to be converted to a different base
+    //@param   to    the number system we're converting to 
+    //@return        The same number, but converted to a different base
+    convert(to, num) {
+        let result = undefined;
+        switch(to.toLowerCase()) {
+            case 'hex':
+            case 'hexadecimal':
+                result = num.toString(16);
+                break;
+            case 'dec':
+            case 'decimal':
+                result = num.toString(10);
+                break;
+            case 'bin':
+            case 'binary':
+                result = num.toString(2);
+                break;
+            case 'oct':
+            case 'octal':
+                result = num.toString(8);
+                break;
+        }
+        return result;
+    }
+
     //Calculates a factorial to the number given
     //@param   cycle_num   The number that we need to calculate the factorial of
     //@result             The product of the factorial

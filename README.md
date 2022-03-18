@@ -46,6 +46,10 @@ COMMANDS:
 				* Logarithms
 			 Further features may be added in the future
 
+	- !convert: Converts a number from one number system to a different one
+				* Systems available: Binary, Octal, Decimal, Hexadecimal
+				* Format: !convert ${number system goes here} ${value to convert goes here}
+
 	- !time: gets the time currently where I am located (Chicagoland Metro Area) in Central Standard Time (CST)
 			 * format: HH:MM A.M. or P.M.
 

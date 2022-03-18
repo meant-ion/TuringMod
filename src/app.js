@@ -311,7 +311,11 @@ function onMessageHandler(target, user, msg, self) {
 		  //chat member wants to do basic math with the bot
 		} else if (cmd_name == '!calc') {
 
-			client.say(target, `@${user.username}: ` + ` ` + calculator.calculate(helper.combineInput(input_msg, false)));
+			client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`);
+
+		} else if (cmd_name == '!convert') {
+
+			client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], parseInt(input_msg[2]))}`);
 
 		  //gets the current time in Central Standard Time (CST)
 		} else if (cmd_name == "!time") {

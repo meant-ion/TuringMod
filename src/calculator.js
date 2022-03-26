@@ -268,8 +268,6 @@ export class Calculator {
 
         math_problem = this.#convertToRPN(math_problem);
 
-        //console.log(math_problem);
-
         // if we have an issue converting the problem to RPN, return the error and go from there
         if (math_problem.substring(0,6) == 'Error:') return math_problem;
 

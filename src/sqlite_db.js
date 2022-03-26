@@ -32,12 +32,11 @@ export class CommandArray {
 
 		else {
 
-			let is_interval = (inputMsg[1] == 'true');
-			let ins_sql = !is_interval ? `INSERT INTO stdcommands VALUES(?,?,?);` : `INSERT INTO intervalcommands VALUES(?,?,?);`;
+			const ins_sql = !(inputMsg[1] == 'true')? `INSERT INTO stdcommands VALUES(?,?,?);` : `INSERT INTO intervalcommands VALUES(?,?,?);`;
 	
 			//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
-			let creating_mod = user.username;
-			let name = inputMsg[2];
+			const creating_mod = user.username;
+			const name = inputMsg[2];
 			let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
 	
 			//add in the remaining elements of the message to the command message variable
@@ -63,7 +62,7 @@ export class CommandArray {
 	removeCommand(client, target, user, command, is_interval) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
-		let del_sql = !is_interval ? `DELETE FROM stdcommands WHERE name = ?;` : `DELETE FROM intervalcommands WHERE name = ?;`;
+		const del_sql = !is_interval ? `DELETE FROM stdcommands WHERE name = ?;` : `DELETE FROM intervalcommands WHERE name = ?;`;
 
 		//run the sql command and spit out the result
 		this.#db.run(del_sql, command, (err) => {
@@ -86,11 +85,10 @@ export class CommandArray {
 	editCommand(client, target, user, input_msg) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
-		let is_interval = (input_msg[1] == 'true');
-		let update_sql = !is_interval ? `UPDATE stdcommands SET msg = ? WHERE name = ?;` : `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
+		const update_sql = !((input_msg[1] == 'true')) ? `UPDATE stdcommands SET msg = ? WHERE name = ?;` : `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
 
 		//assemble the message to post back into place
-		let commandToEdit = input_msg[2];
+		const commandToEdit = input_msg[2];
 		let message = "";
 		for (let i = 3; i < input_msg.length; ++i) message += input_msg[i] + " ";
 
@@ -124,7 +122,7 @@ export class CommandArray {
 	//gets a command for the interval message loop with provided index
 	//@param   index   The provided index for getting the message
 	getIntervalCommand(index, client) {
-		let search_sql = `SELECT msg FROM intervalcommands;`;
+		const search_sql = `SELECT msg FROM intervalcommands;`;
 		 this.#db.all(search_sql, (err, rows) => {
 		 	if (err)console.error(err);
 			//just using the hard-coded target channel here since this version of the bot will only be used on this channel
@@ -137,7 +135,7 @@ export class CommandArray {
 	//@return          A promise containing the new index
 	async getLengthOfIntervals(index) {
 
-		let length_sql = `SELECT COUNT(*) FROM intervalcommands;`;
+		const length_sql = `SELECT COUNT(*) FROM intervalcommands;`;
 
 		//build the promise and send it out with what we have produced
 		return new Promise((resolve, reject) => {
@@ -156,7 +154,7 @@ export class CommandArray {
 	//@param   client       The Twitch chat client we will send the message through
 	getAndUpdateVoiceCracks(client, target) {
 
-		let vcrack_sql = `SELECT num FROM voicecracks;`;
+		const vcrack_sql = `SELECT num FROM voicecracks;`;
 
 		//get the current count and push it out to the chat room
 		this.#db.get(vcrack_sql, (err, row) => {
@@ -180,7 +178,7 @@ export class CommandArray {
 	//@param   client       The Twitch chat client we will send the message through
 	getAndUpdateDeathCount(client, target) {
 		
-		let death_sql = 'SELECT deaths FROM death_count;';
+		const death_sql = 'SELECT deaths FROM death_count;';
 
 		this.#db.get(death_sql, (err, row) => {
 
@@ -191,7 +189,7 @@ export class CommandArray {
 				let update_sql = 'UPDATE death_count SET num = ?;';
 				this.#db.run(update_sql, [count], (err) => {
 					if (err) console.error(err); else console.log("* Death count updated");
-				})
+				});
 			}
 		});
 	}
@@ -200,7 +198,7 @@ export class CommandArray {
 	//@param   target       The chatroom that the message will be sent into
 	//@param   client       The Twitch chat client we will send the message through
 	setDeathsToZero(client, target) {
-		let zero_sql = 'UPDATE death_count SET num = 0;';
+		const zero_sql = 'UPDATE death_count SET num = 0;';
 
 		this.#db.get(zero_sql, (err) => {
 			if (err) console.error(err); else client.say(target, 'Death count reset back to zero');
@@ -213,7 +211,7 @@ export class CommandArray {
 	//@param   command      The command we are searching the db for
 	//@return               True/False depending on if the command was found
 	getCustomCommand(client, target, command) {
-		let search_sql = `SELECT name, msg FROM stdcommands WHERE name = ?;`;
+		const search_sql = `SELECT name, msg FROM stdcommands WHERE name = ?;`;
 
 		//Go into the db and find what we are looking for here
 		//i.e. search each found row and post out the message it has
@@ -237,9 +235,9 @@ export class CommandArray {
 	//@param   user      The user who sent the command in the first place
 	//@param   target    The specific chat room that the command came from
 	magic8Ball(client, user, target) {
-		let phrase_index = Math.floor(Math.random() * 20) + 1
+		const phrase_index = Math.floor(Math.random() * 20) + 1
 
-		let search_sql = `SELECT saying FROM sayings WHERE id = ?;`;
+		const search_sql = `SELECT saying FROM sayings WHERE id = ?;`;
 
 		this.#db.serialize(() => {
 			this.#db.each(search_sql, phrase_index, (err, row) => {
@@ -270,7 +268,7 @@ export class CommandArray {
 				break;
 		}
 
-		let twitch_sql = `SELECT ${item} FROM twitch_auth;`;
+		const twitch_sql = `SELECT ${item} FROM twitch_auth;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -284,7 +282,7 @@ export class CommandArray {
 	//gets all the info needed to get a key from Twitch's OAuth via the DB
 	//returns     An array with all the necessary items stuffed inside it
 	getTwitchSessionInfo() {
-		let twitch_sql = `SELECT client_id, client_secret, scope, redirect_url, session_secret FROM twitch_session_stuff;`;
+		const twitch_sql = `SELECT client_id, client_secret, scope, redirect_url, session_secret FROM twitch_session_stuff;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -305,7 +303,7 @@ export class CommandArray {
 	//gets all the info needed to get a key from Spotify's OAuth via the DB
 	//returns     An array with all the necessary items stuffed inside it
 	getSpotifySessionInfo() {
-		let spotify_sql = `SELECT client_id, client_secret, redirect_url, scope, state FROM spotify_session_stuff;`;
+		const spotify_sql = `SELECT client_id, client_secret, redirect_url, scope, state FROM spotify_session_stuff;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -327,7 +325,7 @@ export class CommandArray {
 	//refreshing function, gets the client id and secret of the bot so we can use the Helix API
 	//@return           An array of two items, the client secret and the client id
 	getIdAndSecret() {
-		let twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
+		const twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -347,7 +345,7 @@ export class CommandArray {
 	//@param   access_token    The new access token we need to access anything on the Helix API
 	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
 	writeTwitchTokensToDB(access_token, refresh_token) {
-		let update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
+		const update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) console.error(err); else console.log("* New Twitch Tokens written to DB successfully!");
@@ -358,7 +356,7 @@ export class CommandArray {
 	//@param   needBoth   Boolean to tell us if we need just the access token or both it and the refresh token
 	//@return             Either just the access token outright, or a 2 element array with the access and refresh tokens
 	async getSpotifyInfo(need_both) {
-		let spotify_sql = !need_both ? `SELECT access_token FROM spotify_auth;` : `SELECT access_token, refresh_token FROM spotify_auth`;
+		const spotify_sql = !need_both ? `SELECT access_token FROM spotify_auth;` : `SELECT access_token, refresh_token FROM spotify_auth`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -399,7 +397,7 @@ export class CommandArray {
 				break;
 		}
 
-		let keys_sql = `SELECT ${key} FROM api_keys;`;
+		const keys_sql = `SELECT ${key} FROM api_keys;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -413,7 +411,7 @@ export class CommandArray {
 	//@param   access_token    The new access token we need to access anything on Spotify's Web API
 	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
 	writeSpotifyTokensToDB(access_token, refresh_token) {
-		let update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
+		const update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) console.error(err); else console.log("* New Spotify Tokens Written Successfully!");

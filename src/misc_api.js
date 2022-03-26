@@ -216,7 +216,7 @@ export class MiscAPI {
 		if (percentages_array[2] == 'Infinity' || percentages_array[2] == '-Infinity') percentages_array[2] = '0';
 
 		//now we make the abomination of a message and send it out to the chatroom
-		let message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
+		const message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
 				+ `(${percentages_array[0]}% difference). ` +
 				`Of the current total, ${current_array[1]} were additions (${indicators[1]} from last repo's ${last_array[1]} ` 
 				+ `(${percentages_array[1]}% difference))` + 
@@ -251,7 +251,7 @@ export class MiscAPI {
 			pokemon_name_array.forEach(item => {
 				if (this.#isLangEn(item)) en_array[0] = item.name;
 			});
-			let msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
+			const msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
 			this.client.say(target, msg);
 		}).catch(err => this.#generateAPIErrorResponse(err, target));
 

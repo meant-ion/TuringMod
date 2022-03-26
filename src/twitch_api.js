@@ -102,8 +102,8 @@ export class TwitchAPI {
 					this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
 						" the next stream is. Thank you! :)");
 				} else {
-					let start_time = new Date(body.data[0].started_at);
-					let time_msg = this.helper.getTimePassed(start_time, false);
+					const start_time = new Date(body.data[0].started_at);
+					const time_msg = this.helper.getTimePassed(start_time, false);
 					this.client.say(target, `@${user.username}: ${time_msg}`);
 				}
 				
@@ -139,8 +139,8 @@ export class TwitchAPI {
 			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
-				let acct_create_date = new Date(body.data[0].created_at);
-				let time_passed = this.helper.getTimePassed(acct_create_date, true);
+				const acct_create_date = new Date(body.data[0].created_at);
+				const time_passed = this.helper.getTimePassed(acct_create_date, true);
 				this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
 			}).catch(err => this.#generateAPIErrorResponse(err, target));
 		} catch (err) { console.error(err); }
@@ -310,7 +310,7 @@ export class TwitchAPI {
 	
 			//now get the list of "victims" and choose, at random, who gets hit
 			await fetch(url, data).then(result => result.json()).then(body => {
-				let list = body.chatters.viewers;
+				const list = body.chatters.viewers;
 				console.log(body.chatters.viewers);
 	
 				//with the list gathered, loop through each time and time out the member all at once
@@ -471,7 +471,7 @@ export class TwitchAPI {
 	//@param   user     The user requesting the tags
 	//@param   target   The chatroom the list of tags will be posted into
 	async getStreamTags(user, target) {
-		let tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
+		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
 		let msg = `@${user.username}: Tags for this stream are `;
 
 		try {
@@ -502,7 +502,7 @@ export class TwitchAPI {
 	async replaceStreamTags(user, target, list_of_tags) {
 
 		this.#getAndUpdateTagsList("#pope_pontus");
-		let tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
+		const tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
 
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
 		//first, read in the contents of the tags list file to memory so we can search it easier
@@ -687,19 +687,19 @@ export class TwitchAPI {
 
 		try {
 			//get all necessary data from the DB and go from there
-			let session_info = await this.#data_base.getTwitchSessionInfo();
+			const session_info = await this.#data_base.getTwitchSessionInfo();
 
 			//all necessary vars needed to get the auth token so we can get the request token
-			let post_data = {
+			const post_data = {
 				'method': 'POST'
 			};
-			let url = `https://id.twitch.tv/oauth2/authorize?client_id=${session_info[0]}&redirect_uri=${session_info[3]}&response_type=code&scope=${session_info[2]}&state=${session_info[4]}`;
+			const url = `https://id.twitch.tv/oauth2/authorize?client_id=${session_info[0]}&redirect_uri=${session_info[3]}&response_type=code&scope=${session_info[2]}&state=${session_info[4]}`;
 
 			let code, post_url;
 
 			//first, we get the auth code to get the request token via getting a server up and running
 			let s = http.createServer((req, res) => {
-				let u = new URL(req.url, "http://localhost:3000");
+				const u = new URL(req.url, "http://localhost:3000");
 				if (u.searchParams.get('code') != null) code = u.searchParams.get('code');
 				post_url = `https://id.twitch.tv/oauth2/token?client_id=${session_info[0]}&client_secret=${session_info[1]}&code=${code}&grant_type=authorization_code&redirect_uri=${session_info[3]}`;
 				res.end();
@@ -723,19 +723,19 @@ export class TwitchAPI {
 	//When called (i.e. when an API call fails or every 2 hours or so while active) it will query the Helix API and get us a new access token when needed
 	async #refreshTwitchTokens() {
 		//standard data object so the API knows we're refreshing the token we got
-		let data = {
+		const data = {
 			'method': 'POST'
 	   	};
 
 		//from the DB object passed into the class, we grab the refresh token we're gonna need for this to work
-		let refresh_token = await this.#data_base.getTwitchInfo(1);
+		const refresh_token = await this.#data_base.getTwitchInfo(1);
 
 		//get the client secret and all that fun stuff so we can make the proper request
-		let client_stuff = await this.#data_base.getIdAndSecret();
+		const client_stuff = await this.#data_base.getIdAndSecret();
 
 		const encodedTok = encodeURIComponent(refresh_token);
 
-		let url = `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodedTok}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
+		const url = `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodedTok}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
 		
 		//send the request and write the tokens to the DB for safe keeping
 		await fetch(url, data).then(result => result.text()).then(body => {
@@ -750,7 +750,7 @@ export class TwitchAPI {
 	//made so I have to do less typing/make less redundant code
 	//@returns                A header object in the correct format for accessing the Helix API
 	async #createTwitchDataHeader() {
-		let s = await this.#data_base.getIdAndSecret();
+		const s = await this.#data_base.getIdAndSecret();
 		return {
 			'method': 'GET',
 			'headers': {
@@ -773,9 +773,9 @@ export class TwitchAPI {
 	#hasTokenExpired() {
 
 		//get the difference between the time the token was accquired and right now at this call
-		let cur_time = new Date();
+		const cur_time = new Date();
 		//make sure to get the correct token here
-		let token_time = this.#twitch_token_get_time; 
+		const token_time = this.#twitch_token_get_time; 
 		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
 
 		//if we have a large enough difference between the two times, refresh the specified token

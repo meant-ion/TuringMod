@@ -35,7 +35,7 @@ export class Trainer {
     //@param   prompt        The prompt we sent out to OpenAI's GPT-3 API for a response
     //@param   time_posted   The time the request to make the prompt went out to GPT-3
     addPromptToTrainingData(target, prompt, time_posted) {
-        let data_pt = {
+        const data_pt = {
             [time_posted]: {
                 "prompt": prompt + "\n\n###\n\n",
                 "response": ""
@@ -60,8 +60,8 @@ export class Trainer {
         //for each element in the channel's prompt/response array, make an object
         //and then pipe it into the file
         Object.keys(this.#training_data[target]).forEach(key => {
-            let item = this.#training_data[target][key];
-            let obj = {
+            const item = this.#training_data[target][key];
+            const obj = {
                 "prompt": item.prompt,
                 "completion": item.response
             };
@@ -77,7 +77,7 @@ export class Trainer {
 
         //first, we check to see if we have a flie for the fine-tuning uploaded already
         let files_url = 'https://api.openai.com/v1/files';
-        let files_header = {
+        const files_header = {
             'Authorization': `Bearer ${key}`
         };
 

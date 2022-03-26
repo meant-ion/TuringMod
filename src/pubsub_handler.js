@@ -100,7 +100,7 @@ export class PubSubHandler {
     //@param   topic        The topic we wish to listen to/stop listening to
     //@param   auth_token   Token we need to send out these requests
     requestToListen(topics, auth_token) {
-        let req = {
+        const req = {
             type: 'LISTEN',
             nonce: `pope_pontus-${new Date().getTime()}`,
             data: {
@@ -130,7 +130,7 @@ export class PubSubHandler {
     //@param   is_listen    Tells us if we want to start listening to (true) or stop listening to (false) a topic
     //@returns              A request object for the PubSub WebSocket
     #makeReq(topic, auth_token, is_listen) {
-        let _type = is_listen ? 'LISTEN' : 'UNLISTEN';
+        const _type = is_listen ? 'LISTEN' : 'UNLISTEN';
         return {
             type: _type,
             nonce: `pope_pontus-${new Date().getTime()}`,
@@ -168,7 +168,7 @@ class Ping {
     //sends out a ping message to the PubSub API
     sendPing() {
         try {
-            let pingus = { 'type': 'PING' };
+            const pingus = { 'type': 'PING' };
             this.#pubsub.send(JSON.stringify(pingus));
             this.awaitPong();
         } catch (err) {

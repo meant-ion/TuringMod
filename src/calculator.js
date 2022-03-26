@@ -253,7 +253,7 @@ export class Calculator {
 
     //calculates a problem using RPN function defined above
     //can handle multiple different sized math problems
-    //operators possible: =, -, *, /, %, :, ^, !, <, >, <=, >=, |, &, ^
+    //operators possible: =, -, *, /, %, :, ^, !, <, >, <=, >=, |, &
     //functions possible (treated as operators in execution): 
     //                    sin(), cos(), tan(), sec(), csc(), cot(), sinh(), cosh(), tanh(), csch(), sech(), coth(),
     //                    lcm(), gcm(), sqrt(), xor() (technically an operator, but using ^ for exponents)

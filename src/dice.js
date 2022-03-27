@@ -86,6 +86,14 @@ export class Dice {
 		} else this.client.say(target, `Lucky you!`);
 	}
 
+	generateHexColorCode() {
+		//0123456789abcdef
+		//#000000 -> BLACK
+		let color_code = '#';
+		for (let i = 0; i < 6; ++i) color_code += (Math.floor(Math.random() * 16)).toString(16);
+		return color_code;
+	}
+
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
 	//@param   num_dice   The number of dice we need to roll
 	//@param   sides      The number of sides the dice have

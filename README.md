@@ -118,6 +118,8 @@ COMMANDS:
 
 	- !bonk: bonks the user specified by the chat member
 
+	- !color: gives a randomly generated hex code representing a color
+
 
 MOD/STREAMER ONLY COMMANDS:
 

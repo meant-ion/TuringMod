@@ -32,21 +32,21 @@ const opts = {
 	]
 };
 
-let client = new _client(opts);
+const client = new _client(opts);
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
-let commands_holder = new CommandArray();
-let helper = new Helper();
-let lurk_list = new LurkList();
-let twitch_api = new TwitchAPI(client, commands_holder);
-let spotify_api = new SpotifyAPI(client, commands_holder);
-let misc_api = new MiscAPI(client, commands_holder);
-let dice = new Dice(client);
-let calculator = new Calculator();
-let clip_collector = new ClipCollector(twitch_api);
-let post = new Post(discord_client, client);
-let pubsubs = new PubSubHandler(client, twitch_api);
-let trainer = new Trainer(commands_holder);
+const commands_holder = new CommandArray();
+const helper = new Helper();
+const lurk_list = new LurkList();
+const twitch_api = new TwitchAPI(client, commands_holder);
+const spotify_api = new SpotifyAPI(client, commands_holder);
+const misc_api = new MiscAPI(client, commands_holder);
+const dice = new Dice(client);
+const calculator = new Calculator();
+const clip_collector = new ClipCollector(twitch_api);
+const post = new Post(discord_client, client);
+const pubsubs = new PubSubHandler(client, twitch_api);
+const trainer = new Trainer(commands_holder);
 
 const the_streamer = opts.channels[0];
 
@@ -424,6 +424,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			uploadAndMakeModel();
 
+		} else if (cmd_name == '!color') {
+
+			client.say(target, `Color found: ${dice.generateHexColorCode()}`);
+
 		} else {
 			//check to see if the message is a custom command
 			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");
@@ -514,7 +518,7 @@ async function uploadAndMakeModel() {
 //@param   target   The chatroom that the message will be sent into
 //@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
-	let lurk_msg = lurk_list.removeLurker(user, false);
+	const lurk_msg = lurk_list.removeLurker(user, false);
 	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) 
 		client.say(target, lurk_msg);
 }
@@ -574,7 +578,7 @@ async function adsIntervalHandler() {
 
 	} else if (mins > 1) {//we called it after the 30 min mark is passed
 		const time_since_midrolls_started = mins - 1;
-		let remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
+		const remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
 				60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark

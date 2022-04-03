@@ -454,6 +454,9 @@ export class CommandArray {
 		});
 	}
 
+	//adds the name of the fine tune model for the channel to the sqlite3 db
+	//@param    model_name   The named model for the channel
+	//@paramm   channel      The name of the channel we made the model for
 	addFineTuneModel(model_name, channel) {
 
 		const update_sql = `UPDATE fine_tune SET finetune_id = ? WHERE channel = ?`;
@@ -463,6 +466,9 @@ export class CommandArray {
 		})
 	}
 
+	//adds/updates the id for the file that the fine tuning uses to train the model
+	//@param   id        The file's id according to OpenAI
+	//@param   channel   The name of the channel the file is attached to
 	addFineTuningFileID(id, channel) {
 		const update_sql = `UPDATE fine_tune SET filename = ? WHERE channel = ?;`;
 

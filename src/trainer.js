@@ -137,12 +137,14 @@ export class Trainer {
         await fetch(files_url, i_lost_the_will_to_live).then(result => result.json())
         .then(body => this.#data_base.addFineTuningFileID(body.id, "pope_pontus"));
 
+        console.log("* New Training File Uploaded to OpenAI");
+
     }
 
     //check to see if the fine tune job has completed
-    async checkForFineTuneCompletion(key, channel) {
-        console.log(this.#finetune_id);
-        const check_url = `https://api.openai.com/v1/fine-tunes/${this.#finetune_id}`;
+    async checkForFineTuneCompletion(key, channel, temp) {
+        console.log(temp);
+        const check_url = `https://api.openai.com/v1/fine-tunes/${temp}`;
         const check_header = {
             'method': 'GET',
             'Authorization': `Bearer ${key}`
@@ -150,6 +152,7 @@ export class Trainer {
         let is_done = false;
         let model_id = '';
         await fetch(check_url, {method: 'GET', headers: check_header}).then(result => result.json()).then(body => {
+            console.log(body);
             if (body.fine_tuned_model != null) {
                 model_id = body.fine_tuned_model;
                 console.log(model_id);
@@ -158,13 +161,13 @@ export class Trainer {
         }).catch(err => console.error(err));
 
         //if the job isnt done, we set a timer to check again in 10 mins or so
-        if (!is_done) setTimeout(this.checkForFineTuneCompletion.bind(null, key, channel), 36000);
+        if (!is_done) setTimeout(this.checkForFineTuneCompletion.bind(Trainer, key, channel, temp), 36000);
         //otherwise, we write the name of the model to the db
         else this.#data_base.addFineTuneModel(model_id, channel);
         
     }
 
-    //creates a fine tuning job for OpenAI's API. Used in conjunction with !post2
+    //creates a fine tuning job for OpenAI's API; said fine tuned model used in conjunction with !post2
     //@param   key       The API key for GPT-3. Need this for EVERYTHING here
     //@param   channel   The name of the channel we are creating the model for
     async createFineTuning(key, channel) {
@@ -184,7 +187,9 @@ export class Trainer {
         await fetch(finetune_url, {method: 'POST', headers: finetune_header, body: JSON.stringify(finetune_body)})
             .then(result => result.json())
             .then(body => {
+                console.log(body);
                 temp = body.id;
+                console.log(temp);
             })
             .catch(err => {
                 console.error(err);
@@ -192,7 +197,67 @@ export class Trainer {
             });
         this.#finetune_id = temp;
         //if we flunk out from getting the model made, we don't set up a timer for it
-        if (!err_found) setTimeout(this.checkForFineTuneCompletion.bind(null, key, channel), 36000);
+        if (!err_found) setTimeout(this.checkForFineTuneCompletion.bind(Trainer, key, channel, temp), 36000);
+    }
+
+    //gets the list of all fine tuned models with OpenAI and deletes them completely and cancells their fine tune jobs
+    //@param   key   The OpenAI API key
+    async findAndDeleteAllFineTunedModels(key) {
+
+        //Step 1: We get the list of all fine tuned models via GET request
+        let fine_tunes_url = 'https://api.openai.com/v1/fine-tunes';
+        const fine_tune_headers = {
+            'Authorization': `Bearer ${key}`
+        };
+        let fine_tune_model_list = [];
+        let fine_tune_ids = [];
+        await fetch(fine_tunes_url, {method: 'GET', headers: fine_tune_headers}).then(result => result.json())
+        .then(body => {
+            body.data.forEach(model => {
+                fine_tune_model_list.push(model.fine_tuned_model);
+                fine_tune_ids.push(model.id);
+            });
+        }).catch(err => {
+            console.error(err);
+            console.log('* Could not retrieve list of fine tuned models from OpenAI API');
+            return;
+        });
+
+
+        //Step 2: Use list of model id's, we delete them one at a time via DELETE requests
+        const delete_url = `https://api.openai.com/v1/models/`;
+
+        for await (const model of fine_tune_model_list) {
+            await fetch(delete_url + model, {method: 'DELETE', headers: fine_tune_headers})
+            .then(result => result.json())
+            .then(body => {
+                console.log(body);
+                if (body.error.type != 'invalid_request_error') {//seems like the list is kept even when deleted, so added check here
+                    if (!body.deleted) console.log(`* Failed to delete model ${model} from OpenAI's API`);
+                    else console.log(` Model ${model} has been deleted from OpenAI's servers`);
+                }
+            }).catch(err => {
+                console.error(err);
+                console.log('* Error in deleting models from OpenAI API');
+                return;
+            });
+        }
+
+        //Step 3: With the models removed, we cancel the fine tune jobs via a POST request
+        for await (const ids of fine_tune_ids) {
+            await fetch(`${fine_tunes_url}/${ids}/cancel`, {method: 'POST', headers: fine_tune_headers})
+            .then(result => result.json())
+            .then(body => {
+                console.log(body);
+                if (body.error != undefined) {
+                    if (body.status != 'cancelled') console.log(`* Could not delete fine tune job ${ids}`);
+                    else console.log(`* Fine tune job ${ids} cancelled successfully`);
+                }
+            }).catch(err => {
+                console.error(err);
+                console.log('* Error in cancelling fine tune jobs');
+            });
+        }
     }
 
 }

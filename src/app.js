@@ -315,7 +315,7 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else if (cmd_name == '!convert') {
 
-			client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], parseInt(input_msg[2]))}`);
+			client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`);
 
 		  //gets the current time in Central Standard Time (CST)
 		} else if (cmd_name == "!time") {
@@ -424,6 +424,10 @@ function onMessageHandler(target, user, msg, self) {
 
 			uploadAndMakeModel();
 
+		} else if (cmd_name == '!delm' && helper.checkIfModOrStreamer(user, the_streamer)) {
+
+			deleteModels();
+
 		} else if (cmd_name == '!color') {
 
 			client.say(target, `Color found: ${dice.generateHexColorCode()}`);
@@ -512,6 +516,11 @@ async function uploadAndMakeModel() {
 	const key = await commands_holder.getAPIKeys(0);
 	await trainer.uploadFileToFineTune(key);
 	await trainer.createFineTuning(key, the_streamer.slice(1, the_streamer.length));
+}
+
+async function deleteModels() {
+	const key = await commands_holder.getAPIKeys(0);
+	await trainer.findAndDeleteAllFineTunedModels(key);
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

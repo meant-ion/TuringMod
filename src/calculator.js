@@ -8,6 +8,7 @@ Array.prototype.clean = function () {
     return this;
 }
 
+import { parse } from 'dotenv';
 import Helper from './helper.js';
 
 //our list/dictionary of operators/functions that we will be dealing with
@@ -440,25 +441,35 @@ export class Calculator {
     //@param   to    the number system we're converting to 
     //@return        The same number, but converted to a different base
     convert(to, num) {
-        let result = undefined;
-        switch(to.toLowerCase()) {
-            case 'hex':
-            case 'hexadecimal':
-                result = num.toString(16);
-                break;
-            case 'dec':
-            case 'decimal':
-                result = num.toString(10);
-                break;
-            case 'bin':
-            case 'binary':
-                result = num.toString(2);
-                break;
-            case 'oct':
-            case 'octal':
-                result = num.toString(8);
-                break;
-        }
+        const num_type = num.substring(0,1);
+        const base_dict = {
+            '0x': 16,
+            '0b': 2,
+            '0o': 8,
+            '0d': 10
+        };
+        num = parseInt(num.substring(2));
+        let result = parseInt(num, base_dict[num_type]);
+        // switch(to.toLowerCase()) {
+        //     case 'hex':
+        //     case 'hexadecimal':
+        //         result = parseInt(num, base_dict[num_type]);
+        //         break;
+        //     case 'dec':
+        //     case 'decimal':
+        //         result = num.toString(10);
+        //         break;
+        //     case 'bin':
+        //     case 'binary':
+        //         result = num.toString(2);
+        //         break;
+        //     case 'oct':
+        //     case 'octal':
+        //         console.log(num.toString(8));
+        //         console.log(num);
+        //         result = num.toString(8);
+        //         break;
+        // }
         return result;
     }
 
@@ -501,6 +512,20 @@ export class Calculator {
     //Math.log() is effectively a natural logarithm, so we use the change of base formula/identity to handle that
     //@returns   log_b_(n)
     #log(n, b) { return Math.log(n) / Math.log(b); }
+
+    //tells if a number is binary by grabbing the rightmost digit. If greater than 1, obviously not binary
+    //@param   n   The number to test
+    //@returns     True/False depending on the number provided being binary
+    #isBinary(n) {
+        if (n == 0 || n == 1 || n < 0) return false;
+
+        //continually dividing by 10 to get the rightmost digit with %
+        while (n != 0) {
+            if (n % 10 > 1) return false;
+            n = n / 10;
+        }
+        return true
+    }
 
 }
 

@@ -110,6 +110,226 @@ function execTheBot() {
 	discord_client.login(token);
 }
 
+//generic object holding the functions that the bot uses for commands
+const func_obj = { 
+	//START OF ALL MOD/STREAMER ONLY COMMANDS
+	//--------------------------------------------------------------------------------------------------------------------------
+	//mods/streamer wish to give a shoutout to a chat member/streamer
+	'!so': (input_msg, user, target) => {
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
+	}, 
+	//mod/streamer wants to have the bot listen in on a PubSub topic
+	'!makesub': (input_msg, user) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) twitch_api.makePubSubscription(input_msg[1], pubsubs);
+	}, 
+	//a moderator or the streamer wishes to flush the bot's posting prompt
+	'!flush': (input_msg, user) => {
+		//make sure we don't waste time flushing a prompt that is just empty
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			if (prompt.length == 0) {
+				client.say(target, "Cannot flush and erase an empty prompt");
+			} else {
+				resetPrompt();
+				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
+			}
+		}
+	}, 
+	//starts clip collection services
+	'!startcollect': (input_msg, user, target) => {
+		if (!collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
+			collect_clips = true;
+			client.say(target, "Clip collection is turned on!");
+		}
+	}, 
+	//ends clip collection services
+	'!endcollect': (input_msg, user, target) => {
+		if (collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) getClipsInOrder(target);
+	},
+	//activates GPT-3 for a post. Heavily controlled
+	'!post': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) generatePost(target);
+	}, 
+	//for mods/streamer to add a custom command
+	'!addcommand': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			commands_holder.createAndWriteCommandsToFile(client, target, user, input_msg);
+	}, 
+	//for mods/streamer to remove a custom command
+	'!removecommand': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			commands_holder.removeCommand(client, target, user, input_msg[2], (input_msg[1] == true));
+	}, 
+	//for mods/streamer to edit a custom command
+	'!editcommand': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			commands_holder.editCommand(client, target, user, input_msg);
+	},  
+	//moderator/streamer wishes to change the category of the stream
+	'!changegame': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			twitch_api.editChannelCategory(user, helper.combineInput(input_msg, true), target);
+	},  
+	//moderator/streamer wishes to change the title of the stream
+	'!changetitle': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			twitch_api.editStreamTitle(helper.combineInput(input_msg, true), target);
+	},  
+	//moderator/streamer wants to have the "banhammer" hit randomly
+	/*'!shotgun': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
+			//as if that will ever happen of course
+			twitch_api.shotgunTheChat(client_id);
+	},  */
+	//mod/streamer wants to see chances channel is being viewbotted
+	'!testviewers': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer))
+			twitch_api.getChancesStreamIsViewbotted(target);
+	},  
+	//mod/streamer toggles quiet mode
+	'!quiet': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			quiet_mode_enabled = !quiet_mode_enabled;
+			let msg = quiet_mode_enabled ? `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off` 
+						: `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer` ;
+			client.say(target, msg);
+		}
+	},  
+	//mod/streamer wants to shut bot down safely
+	'!shutdown': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) shutDownBot(target);
+	},
+	//streamer died in video game and either they or mod wants to update the count  
+	'!died': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.getAndUpdateDeathCount(client, target);
+	},  
+	//mod/streamer wants to reset the death counter
+	'!rdeaths': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.setDeathsToZero(client, target);
+	}, 
+	//mod/streamer wants to edit the tags applied to the stream
+	'!edittags': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			input_msg.splice(0, 1);
+			twitch_api.replaceStreamTags(user, target, input_msg, true);
+		}
+	}, 
+	//mod/streamer needs to delete the current vod for whatever reason
+	'!delvod': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) twitch_api.deleteLastVOD(target);
+	},
+	//--------------------------------------------------------------------------------------------------------------------------
+	//END OF MOD/STREAMER ONLY COMMANDS
+	//START OF UNIVERSALLY AVAILABLE COMMANDS
+	//--------------------------------------------------------------------------------------------------------------------------
+	//the user wishes to enter lurk mode
+	'!lurk': (input_msg, user, target) => client.say(target, lurk_list.addLurker(user, input_msg)),
+	//the user wishes to exit lurk mode
+	'!unlurk': (input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, false)),
+	//user is letting the stream know they're heading out for the stream
+	'!leave': (input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, true)),
+	//gets a list of all custom commands on the channel
+	'!customlist': (input_msg, user, target) => commands_holder.postListOfCreatedCommands(client, target, user),
+	//dumb little command for whenever my voice cracks, which is apparently often
+	'!voice': (input_msg, user, target) => commands_holder.getAndUpdateVoiceCracks(client, target),
+	//user wants a magic 8 ball fortune
+	'!8ball': (input_msg, user, target) => commands_holder.magic8Ball(client, user, target),
+	//user wants to know how long they've followed the stream
+	'!followage': (input_msg, user, target) => {
+		if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
+			client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
+		else 
+			twitch_api.getFollowAge(user, target);
+	},
+	//tells asking user what the current title of the stream is
+	'!title': (input_msg, user, target) => twitch_api.getStreamTitle(user, target),
+	//tells user what category stream is under
+	'!game': (input_msg, user, target) => twitch_api.getCategory(user, target),
+	//allows chat member to take a chance at being timed out
+	'!roulette': (input_msg, user, target) => {
+		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
+			this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
+		else 
+			dice.takeAChanceAtBeingBanned(user, target);
+	},
+	//user wants to know how long the stream has been going for
+	'!uptime': (input_msg, user, target) => twitch_api.getStreamUptime(user, target),
+	//returns a link to the stream schedule
+	'!schedule': (input_msg, user, target) => twitch_api.getChannelSchedule(user, target),
+	//returns the bio of the streamer
+	'!who': (input_msg, user, target) =>  twitch_api.getChannelSummary(user, target),
+	//returns the age of the account asking
+	'!accountage': (input_msg, user, target) =>  twitch_api.getUserAcctAge(user, target),
+	//returns the current tags applied to the stream
+	'!tags': (input_msg, user, target) =>  twitch_api.getStreamTags(user, target),
+	//returns the song and artist playing through Spotify
+	'!song': (input_msg, user, target) => spotify_api.getCurrentSongTitleFromSpotify(target, user),
+	//tallies requests to change song and changes it at a threshold of those
+	'!skipsong': (input_msg, user, target) => thresholdCalc(target, user),
+	//user wants to add a song to the playlist queue
+	'!addsong': (input_msg, user, target) => spotify_api.addSongToQueue(target, user, input_msg),
+	//a chatmember has a suggestion on what to add to the bot
+	'!sg': (input_msg, user, target) => {
+		client.say(target, 
+			`${writeSuggestionToFile(input_msg) ? `@${user.username}, your suggestion has been written down. Thank you!` :`@${user.username}, empty suggestion not written to file`}`);
+	},
+	//simple dice rolling command. Can do many sided dice, not just a d20 or d6
+	'!roll': (input_msg, user, target) => dice.getDiceRoll(input_msg[1], user, target),
+	//flips a coin and returns the result to chat
+	'!flip': (input_msg, user, target) => dice.flipCoin(user, target),
+	//randomly generates and sends out a hex color code
+	'!color': (input_msg, user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
+	//chat member wants to do basic math with the bot
+	'!calc': (input_msg, user, target) => client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`),
+	//converts a number in a given base to the same number in a different base
+	'!convert': (input_msg, user, target) => client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`),
+	//gets the current time in Central Standard Time (CST)
+	'!time': (input_msg, user, target) => helper.getCurrentTime(client, target, user),
+	//user wants their message flipped upside down
+	'!reverse': (input_msg, user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
+	//user wants to see what has been suggested but not yet implemented currently
+	'!suggestionlist': (input_msg, user, target) => misc_api.getAllCurrentSuggestions(target),
+	//user wants to get a random word from the Merriam-Webster Dictionary
+	'!dictrand': (input_msg, user, target) =>  misc_api.getRandomWordFromDictionary(user, target),
+	//user wants to see how much changed from the last two commits
+	'!gitchanges': (input_msg, user, target) => misc_api.getGithubRepoInfo(target),
+	//user wants to convert an amount of one currency to another
+	'!convertcash': (input_msg, user, target) => misc_api.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3])),
+	//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
+	'!pokerand':  (input_msg, user, target) => misc_api.getRandomPokemon(target),
+	//user wants a fact about a random number
+	'!numrand':  (input_msg, user, target) => misc_api.getRandomNumberFact(target),
+	//chat member wants to know about something random off wikipedia
+	'!wikirand': (input_msg, user, target) => misc_api.getRandWikipediaArticle(user, target),
+	//user wants to see the NASA Space Pic of the Day
+	'!spacepic': (input_msg, user, target) => misc_api.getNASAPicOfTheDay(target),
+	//user wants to look at a random esolang
+	'!randlang': (input_msg, user, target) => misc_api.getRandEsoLang(user, target),
+	//user wants a list of currently free games on the Epic Store
+	'!freegame': (input_msg, user, target) => misc_api.getFreeGamesOnEpicStore(target),
+	//user wants to bonk someone
+	'!bonk': (input_msg, user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
+	//--------------------------------------------------------------------------------------------------------------------------
+	//END OF UNIVERSALLY AVAILABLE COMMANDS
+	//START OF TESTING COMMANDS
+	//--------------------------------------------------------------------------------------------------------------------------
+	//for writing training data for a fine tuned model to a JSONL file
+	'!write': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) trainer.writeTrainingDataToFile(target);
+	},
+	//for uploading a training file to OpenAI's servers
+	'!upl': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) uploadAndMakeModel();
+	},
+	//for deleting all models and files from OpenAI's servers
+	'!delm': (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) deleteModels();;
+	},
+	//--------------------------------------------------------------------------------------------------------------------------
+	//END OF TESTING COMMANDS
+};
+
 //called every time a message gets sent in
 function onMessageHandler(target, user, msg, self) {
 	if (self) { return; }
@@ -121,316 +341,13 @@ function onMessageHandler(target, user, msg, self) {
 	const cmd_name = input_msg[0].toLowerCase();
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
-	if (user.username != 'Saint_Isidore_BOT') {
+	if (user.username != 'Saint_Isidore_BOT') {	
 
-		  //mods/streamer wish to give a shoutout to a chat member/streamer
-		if (cmd_name == '!so' && input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
+		//check our function dictionary to see if it's a known, non-custom command
+		if (typeof func_obj[cmd_name] === 'function') {
 
-			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
-
-		  //mod/streamer wants to have the bot listen in on a PubSub topic
-		} else if (cmd_name == '!makesub' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			twitch_api.makePubSubscription(input_msg[1], pubsubs);
-
-		  //a moderator or the streamer wishes to flush the bot's posting prompt
-		} else if (cmd_name == '!flush' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			//make sure we don't waste time flushing a prompt that is just empty
-			if (prompt.length == 0) 
-				client.say(target, "Cannot flush and erase an empty prompt");
-			else {
-				resetPrompt();
-				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
-			}
-
-			//starts clip collection services
-		} else if (cmd_name == '!startcollect' && !collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			collect_clips = true;
-			client.say(target, "Clip collection is turned on!");
-
-			//ends clip collection services
-		} else if (cmd_name == '!endcollect' && collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			getClipsInOrder(target);
-
-			//activates GPT-3 for a post. Heavily controlled
-		} else if (cmd_name == '!post' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			generatePost(target);
-
-			//for mods/streamer to add a custom command
-		} else if (cmd_name == '!addcommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			commands_holder.createAndWriteCommandsToFile(client, target, user, input_msg);
-
-			//for mods/streamer to remove a custom command
-		} else if (cmd_name == '!removecommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			commands_holder.removeCommand(client, target, user, input_msg[2], (input_msg[1] == true));
-
-		  //for mods/streamer to edit a custom command
-		} else if (cmd_name == '!editcommand' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			commands_holder.editCommand(client, target, user, input_msg);
-
-		  //moderator/streamer wishes to change the category of the stream
-		} else if (cmd_name == '!changegame' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			twitch_api.editChannelCategory(user, helper.combineInput(input_msg, true), target);
-
-		  //moderator/streamer wishes to change the title of the stream
-		} else if (cmd_name == '!changetitle' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			twitch_api.editStreamTitle(helper.combineInput(input_msg, true), target);
-
-		  //moderator/streamer wants to have the "banhammer" hit randomly
-		//} else if (cmdName == '!shotgun' && helper.checkIfModOrStreamer(user, theStreamer)) {
-
-			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
-			//as if that will ever happen of course
-			//twitch_api.shotgunTheChat(client_id);
-
-		  //mod/streamer wants to see chances channel is being viewbotted
-		} else if (cmd_name == '!testviewers' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			twitch_api.getChancesStreamIsViewbotted(target);
-
-		  //mod/streamer toggles quiet mode
-		} else if (cmd_name == '!quiet' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			quiet_mode_enabled = !quiet_mode_enabled;
-			let msg = quiet_mode_enabled ? `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off` 
-						: `@${user.username}: Quiet mode has been disabled. Feel free to @ the streamer` ;
-			client.say(target, msg);
-
-		  //mod/streamer wants to shut bot down safely
-		} else if (cmd_name == '!shutdown' && helper.checkIfModOrStreamer(user, the_streamer)) {
-			
-			shutDownBot(target);
-
-		  //streamer died in video game and either they or mod wants to update the count
-		} else if (cmd_name == '!died' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			commands_holder.getAndUpdateDeathCount(client, target);
-
-		  //mod/streamer wants to reset the death counter
-		} else if (cmd_name == '!rdeaths' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			commands_holder.setDeathsToZero(client, target);
-
-		  //mod/streamer wants to edit the tags applied to the stream
-		} else if (cmd_name == '!edittags' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			input_msg.splice(0, 1);
-			twitch_api.replaceStreamTags(user, target, input_msg, true);
-
-		  //mod/streamer needs to delete the current vod for whatever reason
-		} else if (cmd_name == '!delvod' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			twitch_api.deleteLastVOD(target);
-
-		  //the user wishes to enter lurk mode
-		} else if (cmd_name == '!lurk') {
-
-			client.say(target, lurk_list.addLurker(user, input_msg));
-
-		  //the user wishes to exit lurk mode
-		} else if (cmd_name == '!unlurk') {
-
-			client.say(target, lurk_list.removeLurker(user, false));
-
-		  //user is letting the stream know they're heading out for the stream
-		} else if (cmd_name == '!leave') {
-
-			client.say(target, lurk_list.removeLurker(user, true));
-
-		  //gets a list of all custom commands on the channel
-		} else if (cmd_name == '!customlist') {
-
-			commands_holder.postListOfCreatedCommands(client, target, user);
-
-		  //user wants to know how long they've followed the stream
-		} else if (cmd_name == '!followage') {
-
-			if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
-				client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
-			else 
-				twitch_api.getFollowAge(user, target);
-
-		  //a chatmember has a suggestion on what to add to the bot
-		} else if (cmd_name == '!sg') {
-
-			client.say(target, 
-				`${writeSuggestionToFile(input_msg) ? `@${user.username}, your suggestion has been written down. Thank you!` :`@${user.username}, empty suggestion not written to file`}`);
-
-		  //tells asking user what the current title of the stream is
-		} else if (cmd_name == '!title') {
-
-			twitch_api.getStreamTitle(user, target);
-
-		  //tells user what category stream is under
-		} else if (cmd_name == '!game') {
-
-			twitch_api.getCategory(user, target);
-
-		  //allows chat member to take a chance at being timed out
-		} else if (cmd_name == '!roulette') {
-
-			if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
-				this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
-			else 
-				dice.takeAChanceAtBeingBanned(user, target);
-
-		  //dumb little command for whenever my voice cracks, which is apparently often
-		} else if (cmd_name == '!voice') {
-
-			commands_holder.getAndUpdateVoiceCracks(client, target);
-
-		  //chat member wants to know about something random off wikipedia
-		} else if (cmd_name == '!wikirand') {
-
-			misc_api.getRandWikipediaArticle(user, target);
-
-		  //simple dice rolling command. Can do many sided dice, not just a d20 or d6
-		} else if (cmd_name == '!roll') {
-
-			dice.getDiceRoll(input_msg[1], user, target);
-
-		  //flips a coin and returns the result to chat
-		} else if (cmd_name == "!flip") {
-
-			dice.flipCoin(user, target);
-
-		  //user wants to know how long the stream has been going for
-		} else if (cmd_name == '!uptime') {
-
-			twitch_api.getStreamUptime(user, target);
-
-		  //chat member wants to do basic math with the bot
-		} else if (cmd_name == '!calc') {
-
-			client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`);
-
-		} else if (cmd_name == '!convert') {
-
-			client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`);
-
-		  //gets the current time in Central Standard Time (CST)
-		} else if (cmd_name == "!time") {
-
-			helper.getCurrentTime(client, target, user);
-
-		  //returns a link to the stream schedule
-		} else if (cmd_name == '!schedule') {
-
-			twitch_api.getChannelSchedule(user, target);
-
-		  //returns the bio of the streamer
-		} else if (cmd_name == '!who') {
-
-			twitch_api.getChannelSummary(user, target);
-
-		  //returns the age of the account asking
-		} else if (cmd_name == '!accountage') {
-
-			twitch_api.getUserAcctAge(user, target);
-
-		  //returns the current tags applied to the stream
-		} else if (cmd_name == '!tags') {
-
-			twitch_api.getStreamTags(user, target);
-
-		  //returns the song and artist playing through Spotify
-		} else if (cmd_name == '!song') {
-
-		 	spotify_api.getCurrentSongTitleFromSpotify(target, user);
-
-		  //tallies requests to change song and changes it at a threshold of those
-		} else if (cmd_name == '!skipsong') {
-
-		    thresholdCalc(target, user);
-
-		} else if (cmd_name == '!addsong') {//user wants to add a song to the playlist queue
-
-			spotify_api.addSongToQueue(target, user, input_msg);
-
-		  //user wants to see what has been suggested but not yet implemented currently
-		} else if (cmd_name == '!suggestionlist') {
-
-			misc_api.getAllCurrentSuggestions(target);
-
-		  //user wants to get a random word from the Merriam-Webster Dictionary
-		} else if (cmd_name == '!dictrand') {
-
-			misc_api.getRandomWordFromDictionary(user, target);
-
-		  //user wants to see how much changed from the last two commits
-		} else if (cmd_name == '!gitchanges') {
-			
-			misc_api.getGithubRepoInfo(target);
-		
-		  //user wants to convert an amount of one currency to another
-		} else if (cmd_name == '!convertcash') {
-
-			misc_api.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3]));
-
-		  //user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
-		} else if (cmd_name == '!pokerand') {
-
-			misc_api.getRandomPokemon(target);
-
-		  //user wants a fact about a random number
-		} else if (cmd_name == '!numrand') {
-
-			misc_api.getRandomNumberFact(target);
-
-		  //user wants a magic 8 ball fortune
-		} else if (cmd_name == '!8ball') {
-
-			commands_holder.magic8Ball(client, user, target);
-
-		  //user wants to see the NASA Space Pic of the Day
-		} else if (cmd_name == '!spacepic') {
-
-			misc_api.getNASAPicOfTheDay(target);
-
-		  //user wants to look at a random esolang
-		} else if (cmd_name == '!randlang') {
-
-			misc_api.getRandEsoLang(user, target);
-
-		  //user wants a list of currently free games on the Epic Store
-		} else if (cmd_name == '!freegame') {
-
-			misc_api.getFreeGamesOnEpicStore(target);
-
-		  //user wants their message flipped upside down
-		} else if (cmd_name == '!reverse') {
-
-			client.say(target, helper.flipText(helper.combineInput(input_msg, true)));
-
-		  //user wants to bonk someone
-		} else if (cmd_name == '!bonk') {
-
-			client.say(target, `${input_msg[1]} has been bonked! BOP`);
-
-		} else if (cmd_name == "!write" && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			trainer.writeTrainingDataToFile(target);
-
-		} else if (cmd_name == '!upl' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			uploadAndMakeModel();
-
-		} else if (cmd_name == '!delm' && helper.checkIfModOrStreamer(user, the_streamer)) {
-
-			deleteModels();
-
-		} else if (cmd_name == '!color') {
-
-			client.say(target, `Color found: ${dice.generateHexColorCode()}`);
+			//calling it this way executes the command
+			func_obj[cmd_name](input_msg, user, target);
 
 		} else {
 			//check to see if the message is a custom command

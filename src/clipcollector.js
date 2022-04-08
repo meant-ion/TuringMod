@@ -33,7 +33,7 @@ export class ClipCollector {
     //so that the links are actually hyperlinks and they dont have to be copy/pasted to see them
     writeClipsToHTMLFile() {
         //start building the basic body for the HTML page and get the clips
-        let rtf_body = `<body>\n<div>\n<p>\n`
+        let rtf_body = `<body>\n<div>\n<p>\n`;
         const list = this.#twitch_api.getClipList();
 
         //add in the clips to the HTML page

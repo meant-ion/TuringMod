@@ -8,7 +8,6 @@ Array.prototype.clean = function () {
     return this;
 }
 
-import { parse } from 'dotenv';
 import Helper from './helper.js';
 
 //our list/dictionary of operators/functions that we will be dealing with

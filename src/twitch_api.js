@@ -24,10 +24,12 @@ export class TwitchAPI {
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getFollowAge(user, target) {
+	async getFollowAge(user) {
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
+
+			let msg = '';
 
 			let acct_found = false;
 			let follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229';
@@ -43,8 +45,9 @@ export class TwitchAPI {
 							if (body.data[i].from_login == user.username) {//finally found the user following
 								acct_found = true;
 								let followedDate = new Date(body.data[i].followed_at);
-								this.client.say(target, `@${user.username} has been following for: ` 
-									+ `${this.helper.getTimePassed(followedDate, true)}`);
+								//this.client.say(target, `@${user.username} has been following for: ` 
+									//+ `${this.helper.getTimePassed(followedDate, true)}`);
+								msg = `has been following for: ${this.helper.getTimePassed(followedDate, true)}`;
 								break;
 							}
 	
@@ -52,12 +55,14 @@ export class TwitchAPI {
 						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + 
 							`&after=${body.pagination.cursor}`;
 					} else {
-						this.client.say(target, `@${user.username}: You are currently not following this channel`);
+						//this.client.say(target, `@${user.username}: You are currently not following this channel`);
+						msg = 'You are currently not following this channel';
 						acct_found = true;//setting this to be true to avoid infinite loop
 					}
 
-				}).catch(err => this.#generateAPIErrorResponse(err, target));
+				}).catch(err => { return this.#generateAPIErrorResponse(err); });
 			}
+			return msg;
 
 		} catch (err) { console.error(err); }
 
@@ -66,11 +71,13 @@ export class TwitchAPI {
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
 	//@param   user     The name of the chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getChannelSchedule(user, target) {
+	async getChannelSchedule() {
 
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
+
+			let msg = '';
 
 			await fetch('https://api.twitch.tv/helix/schedule?broadcaster_id=71631229&utc_offset=-300&first=6', data).then(result => result.json())
 				.then(body => {
@@ -81,8 +88,11 @@ export class TwitchAPI {
 						if (i + 1 == body.data.segments.length) stream_dates += curDate.toDateString();
 						else stream_dates += curDate.toDateString() + ", ";	
 					}
-					this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+					msg = `Streams for the next week starting today are on ${stream_dates}`;
+					//this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
 		} catch (err) { console.error(err); }
 
 	}
@@ -90,39 +100,49 @@ export class TwitchAPI {
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
 	//@param   user     The name of the chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getStreamUptime(user, target) {
+	async getStreamUptime() {
 
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
+			let msg = '';
+
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
 				//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
 				if (body.data[0].started_at == undefined) {
-					this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
-						" the next stream is. Thank you! :)");
+					msg = "Stream is currently offline. Use !schedule to find out when the next stream is. Thank you! :)";
+					// this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
+					// 	" the next stream is. Thank you! :)");
 				} else {
 					const start_time = new Date(body.data[0].started_at);
-					const time_msg = this.helper.getTimePassed(start_time, false);
-					this.client.say(target, `@${user.username}: ${time_msg}`);
+					msg = this.helper.getTimePassed(start_time, false);
+					//this.client.say(target, `@${user.username}: ${time_msg}`);
 				}
 				
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
 		} catch (err) { console.error(err); }
 	}
 
 	//gets and returns the title of the stream
 	//@param   user     The name of the chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getStreamTitle(user, target) {
+	async getStreamTitle() {
 
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
+			let msg = '';
+
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-				this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+				//this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
+				msg = `Title is: ${body.data[0].title}`;
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
 		} catch (err) { console.error(err); }
 
 	}
@@ -130,51 +150,65 @@ export class TwitchAPI {
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
 	//@param   user     The name of the chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getUserAcctAge(user, target) {
+	async getUserAcctAge(user) {
 
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/users?login=${user.username}`;
+
+			let msg = '';
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
 				const acct_create_date = new Date(body.data[0].created_at);
 				const time_passed = this.helper.getTimePassed(acct_create_date, true);
-				this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+				//this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
+				msg = `your account is ${time_passed} old`
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
 		} catch (err) { console.error(err); }
 
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
-	//@param   client_id      The bot's Twitch ID, so we can get to the API easier
 	//@param   user           The name of the chat member that typed in the command
 	//@param   target         The chatroom that the message will be sent into
-	async getCategory(user, target) {
+	async getCategory() {
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+
+			let msg = '';
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
-				this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
-		} catch (err) { console.error(err); }
+				//this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
+				msg = `Current category is ${body.data[0].game_name}`;
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
+			return msg;
+		} catch (err) { console.error(err); }
 	}
 
-	async getChannelSummary(user, target) {
+	//gets and returns the streamer's channel summary
+	async getChannelSummary() {
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
 			const url = "https://api.twitch.tv/helix/users?user_id=71631229";
 
+			let msg = '';
+
 			await fetch(url, data).then(result => result.json()).then(body => {
-				this.client.say(target, `@${user.username}: ${body.data[0].description}`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+				//this.client.say(target, `@${user.username}: ${body.data[0].description}`);
+				msg = body.data[0].description;
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
 
 		} catch (err) { console.error(err); }
 	}
@@ -187,11 +221,11 @@ export class TwitchAPI {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
-			const url = "https://api.twitch.tv/helix/clips" + `?id=${clip_id}`;
+			const url = `https://api.twitch.tv/helix/clips?id=${clip_id}`;
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
 				if (body.data[0].url != undefined) this.#clip_list.push(`<a href="${body.data[0].url}">${body.data[0].url}</a>`);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 		} catch (err) { console.error(err); }
 
 	}
@@ -201,11 +235,13 @@ export class TwitchAPI {
 	//edits the channel category/game to one specified by a moderator
 	//@param   user           The name of the chat member that typed in the command
 	//@param   game_name       The name of the category that we wish to change the stream over to
-	async editChannelCategory(user, game_name, target) {
+	async editChannelCategory(game_name) {
 
 		try {
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
+
+			let msg = '';
 
 			game_name = game_name.slice(1);
 			game_name = game_name.replace(/&/g, "%26");
@@ -219,10 +255,7 @@ export class TwitchAPI {
 			await fetch(game_id_URL, data).then(result => result.json()).then(body => {
 				game_ID = body.data[0].id;
 				edit_channel_URL = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
-			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-				return;
-			});
+			}).catch(err => { return this.#generateAPIErrorResponse(err); } );
 
 			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
 			const c_id = await this.#data_base.getIdAndSecret();
@@ -243,11 +276,15 @@ export class TwitchAPI {
 	
 			//send out the info and edit the channel's category
 			await fetch(edit_channel_URL, edit_data).then(() => {
-				this.client.say(target, `@${user.username}: Category Successfully Updated`);
+				//this.client.say(target, `@${user.username}: Category Successfully Updated`);
+				msg = 'Category Successfully Updated';
 			}).catch(err => {
-				this.client.say(target, "Error in changing category. Most likely a bad category name");
-				this.#generateAPIErrorResponse(err, target);
+				//this.client.say(target, "Error in changing category. Most likely a bad category name");
+				msg = 'Bad Category Name';
+				return this.#generateAPIErrorResponse(err);
 			});	
+
+			return msg;
 
 		} catch (err) { console.error(err); }
 
@@ -256,14 +293,17 @@ export class TwitchAPI {
 	//edits the stream's title to one requested by streamer/moderator
 	//@param   title          The title we wish to now use on the stream
 	//@param   target         The channel who's title we wish to change
-	async editStreamTitle(title, target) {
+	async editStreamTitle(title) {
 
 		if (title.length == 0 || title == " ") {//catch if the title is empty and prevent it from passing through
-			this.client.say(target, "Cant change stream title to empty title");
+			//this.client.say(target, "Cant change stream title to empty title");
+			return "Can't change stream title to empty string";
 		} else {
 			try {
 				this.#hasTokenExpired();
 				const url  =`https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+
+				let msg = '';
 
 				//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
 				const c_id = await this.#data_base.getIdAndSecret();
@@ -284,29 +324,35 @@ export class TwitchAPI {
 		
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
-					this.client.say(target, `${(res.status == 204) ? `Title successfully updated!` : `Error, could not change title`}`)
-				}).catch(err => this.#generateAPIErrorResponse(err, target));
+					//this.client.say(target, `${(res.status == 204) ? `Title successfully updated!` : `Error, could not change title`}`)
+					msg = (res.status == 204) ? `Title successfully updated!` : `Error, could not change title`;
+				}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+				return msg;
 			} catch (err) { console.error(err); }
 		}
-
-
 	}
 
 	//grabs a list of all members in the chatroom currently and times random ones out for a short time
 	//to be seriously used when there is enough people to actually use it on
 	//@param   target         The chatroom that the message will be sent into
-	async shotgunTheChat(target) {
+	async shotgunTheChat() {
 
 		try {
 			this.#hasTokenExpired();
 			const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
 
 			const data = await this.#createTwitchDataHeader();
+
+			let client_msg = [];
+			client_msg.push("Uh oh, someone fired the banhammer off again!");
 	
-			this.client.say(target, "Uh oh, someone fired the banhammer off again!");
+			//this.client.say(target, "Uh oh, someone fired the banhammer off again!");
 	
 			//get the number of people hit by the shotgun "pellets"
 			const victims = Math.floor(Math.random() * 5) + 1;
+
+			let victim_list;
 	
 			//now get the list of "victims" and choose, at random, who gets hit
 			await fetch(url, data).then(result => result.json()).then(body => {
@@ -316,18 +362,22 @@ export class TwitchAPI {
 				//with the list gathered, loop through each time and time out the member all at once
 				for (i = 0; i < victims; ++i) {
 					let victim_index = Math.floor(Math.random() * list.length);
+
+					victim_list.push(list[victim_index]);
 	
-					let victim_name = list[victim_index];
+					//let victim_name = list[victim_index];
 	
-					this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
+					//this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
 				}
-			}).catch(err => this.#generateAPIErrorResponse(err, target));;
+				client_msg.push(victim_list);
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+			return client_msg;
 		} catch (err) { console.error(err); }
 	}
 
 	//simple little function that will get a rough guess of whether or not the channel is a victim of view botting
 	//@param   target   The channel we are posting the message to
-	async getChancesStreamIsViewbotted(target) {
+	async getChancesStreamIsViewbotted() {
 		//get our URLs and counts set up here
 		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
 		const helix_url = 'https://api.twitch.tv/helix/users?id=71631229';
@@ -343,18 +393,17 @@ export class TwitchAPI {
 			//get # of viewers watching the stream
 			await fetch(helix_url, helix_data).then(result => result.data()).then(body => {
 				viewer_count = body[0].viewer_count;
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			//get # of poeple in the chatroom currently
 			await fetch(chatroom_url, chatroom_data).then(result => result.json()).then(body => {
 				chatroom_member_count = body.chatters.viewers.length;
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			//if any one of the gathered values is zero, we send a msg and exit this function
-			if (chatroom_member_count <= 0 || viewer_count <= 0) {
-				this.client.say(target, "Cannot get that statistic due to divide by zero error");
-				return;
-			}
+			if (chatroom_member_count <= 0 || viewer_count <= 0) 
+				//this.client.say(target, "Cannot get that statistic due to divide by zero error");
+				return "Cannot get that statistic due to divide by zero error";
 
 			//get the ratio and then tell the chatroom what the verdict is
 			const viewers_to_chat_ratio = (chatroom_member_count / viewer_count) * 100.0;
@@ -364,7 +413,8 @@ export class TwitchAPI {
 			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}` + 
 				`${(viewers_to_chat_ratio < 35.0) ? `; This looks like a viewbotting issue to me :(` : `; This doesn't look like viewbotting to me at all :)`}`;
 
-			this.client.say(target, msg);
+			//this.client.say(target, msg);
+			return msg;
 
 		} catch (err) { console.error(err); }
 	}
@@ -382,7 +432,7 @@ export class TwitchAPI {
                 if (body.data[0].started_at == undefined) time = NaN;
 				else time = ((new Date()).getTime() - (new Date(body.data[0].started_at)).getTime()) / 1000;
 
-			}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			return time;
 
@@ -416,11 +466,8 @@ export class TwitchAPI {
 		await fetch(settings_url, data).then(result => result.json()).then(body => {
 			cur_chat_settings = body.data[0];
 		}).catch(err => {
-			this.#generateAPIErrorResponse(err, "#pope_pontus");
-			req_failed = true;
+			return this.#generateAPIErrorResponse(err);
 		});
-
-		if (req_failed) return;
 
 		//now we get to check each of the 5 categories we want chat to be able to change,
 
@@ -461,18 +508,22 @@ export class TwitchAPI {
 			'body': JSON.stringify(body_obj),
 		};
 
+		let msg = '';
+
 		await fetch(settings_url, edit_data).then(result => result.json()).then(body => {
-			this.client.say("#pope_pontus", `@${username}: ${body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings"}`);
-		}).catch(err => this.#generateAPIErrorResponse(err, "#pope_pontus"));
+			//this.client.say("#pope_pontus", `@${username}: ${body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings"}`);
+			msg = body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings";
+		}).catch(err => { return this.#generateAPIErrorResponse(err); });
+		return msg;
 		
 	}
 
 	//gets and returns the list of tags currently applied to the stream
 	//@param   user     The user requesting the tags
 	//@param   target   The chatroom the list of tags will be posted into
-	async getStreamTags(user, target) {
+	async getStreamTags() {
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
-		let msg = `@${user.username}: Tags for this stream are `;
+		let msg = "Tags for this stream are ";
 
 		try {
 
@@ -490,16 +541,17 @@ export class TwitchAPI {
 					else 
 						msg += `${tag.localization_names['en-us']}, `;
 				}
-				this.client.say(target, msg);
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
-		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+				//this.client.say(target, msg);
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+			return msg;
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
 	//changes the tags of the stream to new ones. Cannot change automatic tags at all
 	//@param   user           The user requesting the tags
 	//@param   target         The chatroom the list of tags will be posted into
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
-	async replaceStreamTags(user, target, list_of_tags) {
+	async replaceStreamTags(list_of_tags) {
 
 		this.#getAndUpdateTagsList("#pope_pontus");
 		const tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
@@ -528,20 +580,18 @@ export class TwitchAPI {
 						j = list_of_tags.length;
 					}
 				}
-				if (!tag_found) {
-					this.client.say(target, `@${user.username}: Error with unsupported tag ${orig_tag}`);
-					return;
-				}
+				if (!tag_found) 
+					//this.client.say(target, `@${user.username}: Error with unsupported tag ${orig_tag}`);
+					return `Error with unsupported tag ${orig_tag}`;
 			} else {
 				tags_array.push(tags_list[tag]);
 			}
 		}
 		//Twitch only allows for 5 tags to be input by the streamer at a time. Any more and it wont go through
 		//if more than 5 tags, reject them and put out message saying so
-		if (tags_array.length > 5) {
-			this.client.say(target, `@${user.username}: Too many tags provided. Max 5`);
-			return;
-		}
+		if (tags_array.length > 5)
+			//this.client.say(target, `@${user.username}: Too many tags provided. Max 5`);
+			return 'Too many tags provided. Max 5';
 
 		//with tags assembled, we send out the request 
 		try {
@@ -557,10 +607,15 @@ export class TwitchAPI {
 					'tag_ids': tags_array
 				})
 			};
+
+			let msg = '';
+
 			await fetch(tags_url, data)
-			.then(this.client.say(target, `@${user.username}: Tags edited successfully!`))
-			.catch(err => this.#generateAPIErrorResponse(err, target));
-		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+			.then(msg = 'Tags Edited Successfully')
+			.catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			return msg;
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
 
 	}
 
@@ -568,7 +623,7 @@ export class TwitchAPI {
 	//TODO when bigger: make this work for multiple goals 
 	//(I doubt I will have > 1 active at a time, but it'd be interesting to handle anyway)
 	//@param   target   The chatroom the goal(s) will be sent into
-	async getCreatorGoals(target) {
+	async getCreatorGoals() {
 		const goals_url = 'https://api.twitch.tv/helix/goals?broadcaster_id=71631229';
 
 		const data = this.#createTwitchDataHeader();
@@ -585,14 +640,14 @@ export class TwitchAPI {
 				msg = `Current goal is for ${response.type}; Currently have ${response.current_amount} / ${response.target_amount}`;
 			
 
-			this.client.say(target, msg);
-		}).catch(err => this.#generateAPIErrorResponse(err, target));
+			return msg
+		}).catch(err => { return this.#generateAPIErrorResponse(err); });
 	}
 
 	//deletes the last vod on the channel. Useful if something against Twitch's TOS happens accidentally and I 
 	//need to try to prevent my own ban from it
 	//@param   target   the chat room the messgae will be posted into
-	async deleteLastVOD(target) {
+	async deleteLastVOD() {
 		//Part 1: We get the id of the last vod
 
 		//we only want the last vod for the channel, so we set the type of vod to uploads and set 
@@ -607,10 +662,11 @@ export class TwitchAPI {
 		await fetch(vod_url, data).then(result => result.json()).then(body => {
 			if (body.data[0].id != undefined) 
 				vod_id = body.data[0].id;
-		});
+		}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 		if (vod_id == "-1")
-			this.client.say(target, "Error in fetching VOD ID of last published vod");
+			//this.client.say(target, "Error in fetching VOD ID of last published vod");
+			return "Error in fetching VOD ID of last published vod";
 
 		//Part 2: We delete the vod
 
@@ -626,9 +682,13 @@ export class TwitchAPI {
 				},
 			}
 
-			await fetch(delete_vod_url, data).then(result => this.client.say(target, "VOD successfully deleted"));
+			let msg = '';
 
-		} catch (err) { this.#generateAPIErrorResponse(err, target); }
+			await fetch(delete_vod_url, data).then(result => /*this.client.say(target, "VOD successfully deleted")*/msg = "VOD successfully deleted");
+
+			return msg;
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
 
 
 	}
@@ -638,7 +698,7 @@ export class TwitchAPI {
 	//gathers the list of tags that Twitch provides
 	//definitly gonna be worked on better later in time tho
 	//@param   target   the chatroom we post the error message to if getting the tag list fails
-	async #getAndUpdateTagsList(target) {
+	async #getAndUpdateTagsList() {
 		//get the first 100 tags of the total list of tags
 		let tags_url =  "https://api.twitch.tv/helix/tags/streams?first=100";
 		let pagination_target = '';
@@ -669,7 +729,7 @@ export class TwitchAPI {
 	
 					//this.#iterateAndGetTags(tags_url, data, tags_list, pagination_target, target);
 	
-				}).catch(err => this.#generateAPIErrorResponse(err, target));
+				}).catch(err => { return this.#generateAPIErrorResponse(err) });
 			}
 
 			//with all relevant tags got, write the list of them to file
@@ -713,7 +773,7 @@ export class TwitchAPI {
 				this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 				console.log("* Full OAuth Access Token to Helix API Accquired");
-			}).catch(err => this.#generateAPIErrorResponse(err, target));
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			s.close();
 		} catch (err) { console.error(err); }
@@ -743,7 +803,7 @@ export class TwitchAPI {
 			 	this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes
 			}
-		}).catch(err => this.#generateAPIErrorResponse(err, target));;
+		}).catch(err => { return this.#generateAPIErrorResponse(err) });;
 	}
 
     //simple helper function for setting up a basic Helix API header using provided values
@@ -763,9 +823,9 @@ export class TwitchAPI {
     //simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated
 	//@param   target   The name of the chatroom we are posting to
-	#generateAPIErrorResponse(err, target) {
-		this.client.say(target, "Error: API currently not responding");
+	#generateAPIErrorResponse(err) {
 		console.error(err);
+		return 'Error: Twitch API currently not responding';
 	}
 
     //simple helper to tell us if the token is expired for one of our two main APIs

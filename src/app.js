@@ -39,9 +39,9 @@ const commands_holder = new CommandArray();
 const helper = new Helper();
 const lurk_list = new LurkList();
 const twitch_api = new TwitchAPI(client, commands_holder);
-const spotify_api = new SpotifyAPI(client, commands_holder);
-const misc_api = new MiscAPI(client, commands_holder);
-const dice = new Dice(client);
+const spotify_api = new SpotifyAPI(commands_holder);
+const misc_api = new MiscAPI(commands_holder);
+const dice = new Dice();
 const calculator = new Calculator();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
@@ -166,26 +166,32 @@ const func_obj = {
 			commands_holder.editCommand(client, target, user, input_msg);
 	},  
 	//moderator/streamer wishes to change the category of the stream
-	'!changegame': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			twitch_api.editChannelCategory(user, helper.combineInput(input_msg, true), target);
+	'!changegame': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, await twitch_api.editChannelCategory(helper.combineInput(input_msg, true)));
 	},  
 	//moderator/streamer wishes to change the title of the stream
-	'!changetitle': (input_msg, user, target) => {
+	'!changetitle': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer))
-			twitch_api.editStreamTitle(helper.combineInput(input_msg, true), target);
+			client.say(target, await twitch_api.editStreamTitle(helper.combineInput(input_msg, true)));
 	},  
 	//moderator/streamer wants to have the "banhammer" hit randomly
-	/*'!shotgun': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
+	/*'!shotgun': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
 			//as if that will ever happen of course
-			twitch_api.shotgunTheChat(client_id);
-	},  */
+			//twitch_api.shotgunTheChat(client_id);
+			let client_list = await twitch_api.shotgunTheChat();
+			client.say(target, client_list[0]);
+			for (const victim in client_list[1]) {
+				client.say(target, `@${victim} has been hit by the blast!`);
+				client.timeout(target, victim, 10);
+			}
+	},  }*/
 	//mod/streamer wants to see chances channel is being viewbotted
-	'!testviewers': (input_msg, user, target) => {
+	'!testviewers': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer))
-			twitch_api.getChancesStreamIsViewbotted(target);
+			client.say(target, await twitch_api.getChancesStreamIsViewbotted());
 	},  
 	//mod/streamer toggles quiet mode
 	'!quiet': (input_msg, user, target) => {
@@ -209,15 +215,16 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.setDeathsToZero(client, target);
 	}, 
 	//mod/streamer wants to edit the tags applied to the stream
-	'!edittags': (input_msg, user, target) => {
+	'!edittags': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			input_msg.splice(0, 1);
-			twitch_api.replaceStreamTags(user, target, input_msg, true);
+			client.say(target, await twitch_api.replaceStreamTags(input_msg));
 		}
 	}, 
 	//mod/streamer needs to delete the current vod for whatever reason
-	'!delvod': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) twitch_api.deleteLastVOD(target);
+	'!delvod': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, await twitch_api.deleteLastVOD());
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF MOD/STREAMER ONLY COMMANDS
@@ -236,48 +243,65 @@ const func_obj = {
 	//user wants a magic 8 ball fortune
 	'!8ball': (input_msg, user, target) => commands_holder.magic8Ball(client, user, target),
 	//user wants to know how long they've followed the stream
-	'!followage': (input_msg, user, target) => {
+	'!followage': async (input_msg, user, target) => {
 		if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 			client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 		else 
-			twitch_api.getFollowAge(user, target);
+			client.say(target, `@${user.username}: ${await twitch_api.getFollowAge(user)}`);
 	},
 	//tells asking user what the current title of the stream is
-	'!title': (input_msg, user, target) => twitch_api.getStreamTitle(user, target),
+	'!title': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${ await twitch_api.getStreamTitle()}`);
+	},
 	//tells user what category stream is under
-	'!game': (input_msg, user, target) => twitch_api.getCategory(user, target),
-	//allows chat member to take a chance at being timed out
-	'!roulette': (input_msg, user, target) => {
-		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
-			this.client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
-		else 
-			dice.takeAChanceAtBeingBanned(user, target);
+	'!game': async (input_msg, user, target) => {
+		client.say(target, `${user.username}: ${await twitch_api.getCategory()}`);
 	},
 	//user wants to know how long the stream has been going for
-	'!uptime': (input_msg, user, target) => twitch_api.getStreamUptime(user, target),
+	'!uptime': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await twitch_api.getStreamUptime()}`);
+	},
 	//returns a link to the stream schedule
-	'!schedule': (input_msg, user, target) => twitch_api.getChannelSchedule(user, target),
+	'!schedule': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await twitch_api.getChannelSchedule()}`)
+	},
 	//returns the bio of the streamer
-	'!who': (input_msg, user, target) =>  twitch_api.getChannelSummary(user, target),
+	'!who': async (input_msg, user, target) => {
+		client.say(target, await twitch_api.getChannelSummary());
+	},
 	//returns the age of the account asking
-	'!accountage': (input_msg, user, target) =>  twitch_api.getUserAcctAge(user, target),
+	'!accountage': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}, ${await twitch_api.getUserAcctAge(user)}`);
+	},
 	//returns the current tags applied to the stream
-	'!tags': (input_msg, user, target) =>  twitch_api.getStreamTags(user, target),
+	'!tags': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await twitch_api.getStreamTags()}`);
+	},
 	//returns the song and artist playing through Spotify
-	'!song': (input_msg, user, target) => spotify_api.getCurrentSongTitleFromSpotify(target, user),
+	'!song': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.getCurrentSongTitleFromSpotify()}`),
 	//tallies requests to change song and changes it at a threshold of those
-	'!skipsong': (input_msg, user, target) => thresholdCalc(target, user),
+	'!skipsong': async (input_msg, user, target) => thresholdCalc(target, user),
 	//user wants to add a song to the playlist queue
-	'!addsong': (input_msg, user, target) => spotify_api.addSongToQueue(target, user, input_msg),
+	'!addsong': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.addSongToQueue(input_msg)}`),
 	//a chatmember has a suggestion on what to add to the bot
 	'!sg': (input_msg, user, target) => {
 		client.say(target, 
 			`${writeSuggestionToFile(input_msg) ? `@${user.username}, your suggestion has been written down. Thank you!` :`@${user.username}, empty suggestion not written to file`}`);
 	},
 	//simple dice rolling command. Can do many sided dice, not just a d20 or d6
-	'!roll': (input_msg, user, target) => dice.getDiceRoll(input_msg[1], user, target),
+	'!roll': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await dice.getDiceRoll(input_msg[1])}`),
 	//flips a coin and returns the result to chat
-	'!flip': (input_msg, user, target) => dice.flipCoin(user, target),
+	'!flip': (input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
+	//allows chat member to take a chance at being timed out
+	'!roulette': (input_msg, user, target) => {
+		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
+			client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
+		else {
+			const msg = dice.takeAChanceAtBeingBanned();
+			client.say(target, msg);
+			if (msg == 'How very unfortunate') client.timeout(target, user.username, 10);
+		}
+	},
 	//randomly generates and sends out a hex color code
 	'!color': (input_msg, user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
 	//chat member wants to do basic math with the bot
@@ -285,29 +309,33 @@ const func_obj = {
 	//converts a number in a given base to the same number in a different base
 	'!convert': (input_msg, user, target) => client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`),
 	//gets the current time in Central Standard Time (CST)
-	'!time': (input_msg, user, target) => helper.getCurrentTime(client, target, user),
+	'!time': (input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
 	//user wants their message flipped upside down
 	'!reverse': (input_msg, user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
 	//user wants to see what has been suggested but not yet implemented currently
-	'!suggestionlist': (input_msg, user, target) => misc_api.getAllCurrentSuggestions(target),
+	'!suggestionlist': (input_msg, user, target) => misc_api.getAllCurrentSuggestions(),
 	//user wants to get a random word from the Merriam-Webster Dictionary
-	'!dictrand': (input_msg, user, target) =>  misc_api.getRandomWordFromDictionary(user, target),
+	'!dictrand': async (input_msg, user, target) =>  client.say(target, `@${user.username}: ${await misc_api.getRandomWordFromDictionary()}`),
 	//user wants to see how much changed from the last two commits
-	'!gitchanges': (input_msg, user, target) => misc_api.getGithubRepoInfo(target),
+	'!gitchanges': async (input_msg, user, target) => client.say(target, await misc_api.getGithubRepoInfo()),
 	//user wants to convert an amount of one currency to another
-	'!convertcash': (input_msg, user, target) => misc_api.getCurrencyExchangeRate(user, target, input_msg[1], input_msg[2], Number(input_msg[3])),
+	'!convertcash': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await misc_api.getCurrencyExchangeRate(input_msg.slice(1, 4))}`),
 	//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
-	'!pokerand':  (input_msg, user, target) => misc_api.getRandomPokemon(target),
+	'!pokerand': async (input_msg, user, target) => client.say(target, await misc_api.getRandomPokemon()),
 	//user wants a fact about a random number
-	'!numrand':  (input_msg, user, target) => misc_api.getRandomNumberFact(target),
+	'!numrand': async (input_msg, user, target) => client.say(target, await misc_api.getRandomNumberFact()),
 	//chat member wants to know about something random off wikipedia
-	'!wikirand': (input_msg, user, target) => misc_api.getRandWikipediaArticle(user, target),
+	'!wikirand': async (input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await misc_api.getRandWikipediaArticle()}`);
+	},
 	//user wants to see the NASA Space Pic of the Day
-	'!spacepic': (input_msg, user, target) => misc_api.getNASAPicOfTheDay(target),
+	'!spacepic': async (input_msg, user, target) => client.say(target, misc_api.getNASAPicOfTheDay()),
 	//user wants to look at a random esolang
-	'!randlang': (input_msg, user, target) => misc_api.getRandEsoLang(user, target),
+	'!randlang': async (input_msg, user, target) => client.say(target, await misc_api.getRandEsoLang()),
 	//user wants a list of currently free games on the Epic Store
-	'!freegame': (input_msg, user, target) => misc_api.getFreeGamesOnEpicStore(target),
+	'!freegame': async (input_msg, user, target) => {
+		client.say(target, await misc_api.getFreeGamesOnEpicStore());
+	},
 	//user wants to bonk someone
 	'!bonk': (input_msg, user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
 	//--------------------------------------------------------------------------------------------------------------------------
@@ -387,7 +415,7 @@ async function intervalMessages() {
 //hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
 //@param   target   The chatroom that the message will be sent into
 //@param   user     The chat member that typed in the command
-function thresholdCalc(target, user) {
+async function thresholdCalc(target, user) {
 	if (skip_threshold < 5) {
 		if (!skip_list.includes(user.username)) {
 			++skip_threshold;
@@ -395,7 +423,7 @@ function thresholdCalc(target, user) {
 			client.say(target, `@${user.username}: Skip request recorded. ${skip_threshold}/5 requests put through`);
         }
 	} else {
-		spotify_api.skipToNextSong(target, user);
+		client.say(target, await spotify_api.skipToNextSong());
 		skip_threshold = 0;
 		skip_list = [];
 	}

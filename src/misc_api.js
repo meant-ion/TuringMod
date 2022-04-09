@@ -10,8 +10,7 @@ export class MiscAPI {
 
     //@param   c     The bot's Twitch client
 	//@param   d_b   The bot's client for accessing its database
-    constructor(c, d_b) {
-        this.client = c;
+    constructor(d_b) {
         this.#data_base = d_b;
 		this.helper = new Helper();
         this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
@@ -21,41 +20,46 @@ export class MiscAPI {
     //prints out all current suggestions within suggestions.txt and sends it to chat
 	//needs testing for format and looks
 	//@param    target    The name of the channel the list of suggestions is being sent to
-	async getAllCurrentSuggestions(target) {
+	async getAllCurrentSuggestions() {
 		fs.readFile('./data/suggestions.txt', 'utf8', (err, data) => {
 			if (err) {
-				this.client.say(target, "Error in reading from suggestions file");
+				//this.client.say(target, "Error in reading from suggestions file");
 				console.error(err);
-			} else this.client.say(target, data);
+				return "Error in reading from suggestions file";
+			} else return data;
 		});
 	}
 
-	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another; most likely to staple this into a conversion calculator
-	//@param   user              The chat member that typed in the command
-	//@param   target            The chatroom that the message will be sent into
-	//@param   start_currency    The abbreviation of the currency we're converting from
-	//@param   target_currency   The abbreviation of the currency we're converting to
-	//@param   amt               The amount of currency we're converting from the starting currency to the target
-	async getCurrencyExchangeRate(user, target, start_currency, target_currency, amt) {
-		const start_abbrev = start_currency.toUpperCase();
-		const target_abbrev = target_currency.toUpperCase();
+	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another
+	//most likely to staple this into a conversion calculator
+	//@param   data   An array of three items: the starting currency, the target currency, and the amount in the starting currency
+	//@return         A message showing the conversion of the starting currency amount to the target currency
+	async getCurrencyExchangeRate(data) {
+		const start_abbrev = data[0].toUpperCase();
+		const target_abbrev = data[1].toUpperCase();
+		const amt = Number(data[2]);
 
 		try {
 			const key = await this.#data_base.getAPIKeys(2);
 			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
+			let msg = '';
 
 			await fetch(currency_url).then(result => result.json()).then(body => {
 				const rate = Number(body.conversion_rates[target_abbrev]);
-				const msg = `@${user.username}: ${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate, false)} ${target_abbrev}`;
-				this.client.say(target, msg);
-			}).catch(err => console.error(err));
+				msg = `${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate, false)} ${target_abbrev}`;
+				//this.client.say(target, msg);
+			}).catch(err => {
+				return this.#generateAPIErrorResponse(err);
+			});
+
+			return msg;
 
 		} catch (err) { console.error(err); }
 	}
 
 	//gets and returns the list of games on the Epic Store that have been marked down as completely free
 	//@param   target   The chat room we are posting the list into
-	async getFreeGamesOnEpicStore(target) {
+	async getFreeGamesOnEpicStore() {
 		//finally found the URL to get the list of games from this repo here: 
 		//https://github.com/kjanuska/EpicFreeGames/blob/main/check_games.js
 		const epic_url = 'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions';
@@ -76,8 +80,7 @@ export class MiscAPI {
 			 	games_arr = body.data.Catalog.searchStore.elements;
 			 	games_count = body.data.Catalog.searchStore.paging.total;
 			}).catch( err => {
-			 	this.#generateAPIErrorResponse(err, target);
-				return;
+				return this.#generateAPIErrorResponse(err);
 			});
 		} catch (err) { console.error(err); }
 
@@ -91,8 +94,8 @@ export class MiscAPI {
 
 		//if there are no free games, send the message in the chat and return
 		if (complete_discounted_games_list.length == 0) {
-			this.client.say(target, 'Sorry, no free games found at this time :(');
-			return;
+			//this.client.say(target, 'Sorry, no free games found at this time :(');
+			return 'Sorry, no free games found at this time :(';
 		}
 
 		//with all games found and inserted into the list, we can now compose our message
@@ -110,33 +113,38 @@ export class MiscAPI {
 		}
 
 		//with the message fully composed, we now send the message out to the chatroom
-		this.client.say(target, msg);
+		return msg;
 
 	}
 
 	//gets a random wikipedia article from the wikimedia API and delivers it to chat
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getRandWikipediaArticle(user, target) {
+	async getRandWikipediaArticle() {
 
 		const wiki_url = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
 
+		let msg = '';
+
 		await fetch(wiki_url).then(result => result.json()).then(body => {
 			const page_title = body.query.random[0].title.replace(/ /g, "_");
-			const wiki_page_url = "https://en.wikipedia.org/wiki/" + page_title;
-			this.client.say(target, `@${user.username}: Here's a link to a random wikipedia page. Have Fun! ${wiki_page_url}`);
+			msg = `Here's a link to a random wikipedia page: https://en.wikipedia.org/wiki/${page_title}`;
 		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
+			return this.#generateAPIErrorResponse(err);
 		});
+
+		return msg;
 
 	}
 
 	//gets a random esoteric programming language (esolang) from the esolang wiki and sends the link to chat
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getRandEsoLang(user, target) {
+	async getRandEsoLang() {
 
 		const eso_url = `https://esolangs.org/wiki/Special:RandomInCategory/Languages`;
+
+		let url = '';
 
 		await fetch(eso_url).then(result => result.text()).then(body => {
 			//split up the body (literally an HTML page), grab the title (4th line), slice off the <title> start tag,
@@ -150,15 +158,18 @@ export class MiscAPI {
 				str += word + '_';
 			}
 			str = str.slice(0, -1);//remove the extra '_' from the string so we can get the correct title
-			const url = 'https://esolangs.org/wiki/' + str;
-			this.client.say(target, `@${user.username}: Here is a link to a random esolang! Enjoy! ${url}`);
+			url = `https://esolangs.org/wiki/${str}`;
+		}).catch(err => {
+			return this.#generateAPIErrorResponse(err);
 		});
+
+		return `Here is a link to a random esolang! Enjoy! ${url}`;
 
 	}
 
 	//Function that gathers data about the changes from this bot's GitHub repo and sends it to chat
 	//@param   target   The chatroom that the message will be sent in to
-	async getGithubRepoInfo(target) {
+	async getGithubRepoInfo() {
 		const github_url = 'https://api.github.com/repos/meant-ion/TuringMod/commits';
 		let current_repo_info, last_repo_info = undefined;//the URLS for the repos we need
 		let current_repo_stats, last_repo_stats = undefined;//the info that the repos have
@@ -168,18 +179,15 @@ export class MiscAPI {
 			current_repo_info = body[0].url;
 			last_repo_info = body[1].url;
 		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-			return;
+			return this.#generateAPIErrorResponse(err);
 		});
 
 		await fetch(current_repo_info).then(result => result.json()).then(body => { current_repo_stats = body.stats; }).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-			return;
+			return this.#generateAPIErrorResponse(err);
 		});
 
 		await fetch(last_repo_info).then(result => result.json()).then(body => { last_repo_stats = body.stats; }).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
-			return;
+			return this.#generateAPIErrorResponse(err);
 		});
 
 		//set up what's gonna hold our data in place
@@ -216,24 +224,23 @@ export class MiscAPI {
 		if (percentages_array[2] == 'Infinity' || percentages_array[2] == '-Infinity') percentages_array[2] = '0';
 
 		//now we make the abomination of a message and send it out to the chatroom
-		const message = `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
+		return `Current commit has ${current_array[0]} changes, ${indicators[0]} from last repo's ${last_array[0]} changes ` 
 				+ `(${percentages_array[0]}% difference). ` +
 				`Of the current total, ${current_array[1]} were additions (${indicators[1]} from last repo's ${last_array[1]} ` 
 				+ `(${percentages_array[1]}% difference))` + 
 				` and ${current_array[2]} were deletions (${indicators[2]} from last repo's ${last_array[2]} ` 
 				+ `(${percentages_array[2]}% difference))`;
-
-		this.client.say(target, message);
 	}
 
 	//gets a random pokemon from the list of all pokemon and returns its flavor text
 	//@param   target   The name of the chatroom that the message will be posted in
-	async getRandomPokemon(target) {
+	async getRandomPokemon() {
 		//get our requesting URL and its headers in a row and go from there
 		//As of 8/22/2021, according to Bulbapedia, there are 898 separate entries for pokemon for the "National Pokedex"
 		const pokemon_id = Math.floor(Math.random() * 898) + 1;
 		const pokemon_url = `https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`;
 		let en_array = ["", "", ""];
+		let msg = '';
 
 		await fetch(pokemon_url).then(result => result.json()).then(body => {
 			//arrays of all the entries in various languages for the pokemon's data
@@ -251,40 +258,48 @@ export class MiscAPI {
 			pokemon_name_array.forEach(item => {
 				if (this.#isLangEn(item)) en_array[0] = item.name;
 			});
-			const msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
-			this.client.say(target, msg);
-		}).catch(err => this.#generateAPIErrorResponse(err, target));
+			msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
+		}).catch(err => {
+			return this.#generateAPIErrorResponse(err);
+		});
+
+		return msg;
 
 	}
 
 	//gets a fact about a random number, either of trivia, math, a date, or a year
 	//@param   target   The name of the chatroom that the message will be posted in
-	async getRandomNumberFact(target) {
+	async getRandomNumberFact() {
 
 		//from the list below, get a random type for us to get info on and paste it to url
 		const types_array = ["trivia", "math", "date", "year"];
 
 		const number_url = `http://numbersapi.com/random/${types_array[Math.floor(Math.random() * types_array.length)]}?notfound=floor`;
 
+		let msg = ''
+
 		//now just get the data and post it, this API isn't terribly complex
 		await fetch(number_url).then(result => result.text()).then(body => {
-			this.client.say(target, body);
+			msg = body;
 		}).catch(err => {
-			this.#generateAPIErrorResponse(err, target);
+			return this.#generateAPIErrorResponse(err);
 		});
+
+		return msg;
 
 	}
 
 	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into
-	async getRandomWordFromDictionary(user, target) {
+	async getRandomWordFromDictionary() {
 
 		//we can't get a random word through the dictionary API, so we get it through a different, free API
 		const random_word_URL = `https://random-words-api.herokuapp.com/w?n=1`;
 		let dictionary_url;
 		let word = "";
 		let gr_abbrev = "";//the abbreviation of the grammatical function of the word
+		let definition = '';
 
 		try {
 			let key = await this.#data_base.getAPIKeys(1);
@@ -293,14 +308,13 @@ export class MiscAPI {
 				word = body[0];
 				dictionary_url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${key}`;
 			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
-				return;
+				return this.#generateAPIErrorResponse(err);
 			});
 	
 			//now we get the data on the word
 			await fetch(dictionary_url).then(result => result.json()).then(body => {
 	
-				const definition = body[0].shortdef[0];
+				definition = body[0].shortdef[0];
 				const grammar_function = body[0].fl;
 	
 			//now we get the abbreviation of the grammar function to shorten the chat message
@@ -390,16 +404,17 @@ export class MiscAPI {
 						gr_abbrev == grammar_function;
 						break;
 				 }
-				 this.client.say(target, `@${user.username}: ${word}: ${gr_abbrev}; ${definition}`);
 			}).catch(err => {
-				this.#generateAPIErrorResponse(err, target);
+				return this.#generateAPIErrorResponse(err);
 			});
 		} catch (err) { console.error(err); }
+
+		return `${word}: ${gr_abbrev}; ${definition}`;
     }
 
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
 	//@param   target    The name of the chatroom we are posting the photo into
-	async getNASAPicOfTheDay(target) {
+	async getNASAPicOfTheDay() {
 
 		try {
 			const url = `https://api.nasa.gov/planetary/apod?api_key=${await this.#data_base.getAPIKeys(3)}`;
@@ -411,17 +426,19 @@ export class MiscAPI {
 					await fetch(url).then(result => result.json()).then(body => {
 						this.#space_url = body.hdurl;
 					}).catch(err => {
-						this.#generateAPIErrorResponse(err, target);
+						return this.#generateAPIErrorResponse(err);
 					});
 				}
 			} else {//we havent gotten the image yet as of launch, so get it immediately
 				await fetch(url).then(result => result.json()).then(body => this.#space_url = body.hdurl)
-				.catch(err => this.#generateAPIErrorResponse(err, target));
+				.catch(err => {
+					return this.#generateAPIErrorResponse(err);
+				});
 			}
 	
 			//assuming that there was something to get, we send out the link
-			if (this.#space_url != "") this.client.say(target, `Here is NASA's Space Photo of the Day! ${this.#space_url}`);
-			else this.client.say(target, `Error retrieving NASA's Space Photo of the Day`);
+			if (this.#space_url != "") return `Here is NASA's Space Photo of the Day! ${this.#space_url}`;
+			else return `Error retrieving NASA's Space Photo of the Day`;
 
 		} catch (err) { console.error(err); }
 		
@@ -435,9 +452,10 @@ export class MiscAPI {
     //simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated
 	//@param   target   The name of the chatroom we are posting to
-	#generateAPIErrorResponse(err, target) {
-		this.client.say(target, "Error: API currently not responding");
+	#generateAPIErrorResponse(err) {
+		//this.client.say(target, "Error: API currently not responding");
 		console.error(err);
+		return "Error:  requested API currently not responding";
 	}
 
 }

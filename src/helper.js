@@ -116,21 +116,17 @@ export class Helper {
     //@param   target     The chatroom that the message will be sent into
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
-    detectUnicode(input_msg, target, user, client) {
+    detectUnicode(input_msgS) {
         const regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}|\p{S}|\p{N}/u;//range of all ascii chars, punctuation and emojis
         //split string into words via for-each loop
         input_msg.forEach(item => {
             //split word into character array and loop through it, testing each char w/ regex
             let char_arr = item.split("");
             char_arr.forEach(char => {
-                if (!regex.test(char)) {
-                    client.say(target, `@${user.username}: English only characters please`);
-                    client.timeout(target, user.username, 10, "No non-ASCII/Emoji chars please");
-                    return true;
-                }
+                if (!regex.test(char)) return 'English only characters please';
             });
         });
-        return false;
+        return '';
     }
 
     //Tells if the message sent by the user is @-ing the streamer
@@ -173,8 +169,8 @@ export class Helper {
         if (cur_mins < 10) cur_mins = String("0" + cur_mins);
 
         //calculate the minutes, craft the message, and then send to chat
-        const msg = `@${user.username}: Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
-        client.say(target, msg);
+        return `Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
+        //client.say(target, msg);
     }
 
     //takes a number and rounds it out to two decimal points (for use as percentages)

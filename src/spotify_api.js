@@ -34,7 +34,6 @@ export class SpotifyAPI {
 
 			//get the data from the API and send out the relevant bits to chat
 			await fetch(url, data).then(result => result.json()).then(body => 
-				//this.client.say(target, `@${user.username}: Now Playing "${body.item.name}" by ${body.item.artists[0].name}`)
 				msg = `Now Playing "${body.item.name}" by ${body.item.artists[0].name}`
 			).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -108,12 +107,10 @@ export class SpotifyAPI {
 					if (body != undefined) {
 						//making sure that we do not add in an explicit song into the queue
 						if (body.tracks.items[0].explicit != false) {
-							//this.client.say(target, "Error: Cannot enter an explicit song into queue");
 							msg =  "Error: Cannot enter an explicit song into queue";
 						}
 						queue_url += '?uri=' + body.tracks.items[0].uri;
 					} else {
-						//this.client.say(target, "Error in adding in song from command. Please try again later");
 						msg =  "Error in adding in song from command. Please try again later";
 					}	
 				}).catch(err => { return this.#generateAPIErrorResponse(err); });

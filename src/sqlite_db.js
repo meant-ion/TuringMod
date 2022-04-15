@@ -19,62 +19,55 @@ export class CommandArray {
 
 	//allows for the mods and the streamer to create a command and then write it to file for safe keeping
 	//currently only allows for message commands, next iteration should allow for moderator commands if possible
-	//@param   user       The name of the chat member that typed in the command
-	//@param   target     The chatroom that the message will be sent into
-	//@param   client     The Twitch chat client we will send the message through
+	//@param   user       The username of the chat member that typed in the command
 	//@param   inputMsg   The array of words sent in as a message to the chatroom
-	createAndWriteCommandsToFile(client, target, user, inputMsg) {
+	createAndWriteCommandsToFile(user, input_msg) {
 
-		//determine if this command is freely callable or called on an interval (different tables for them)
+		return new Promise((resolve, _reject) => {
+			if (input_msg.length == 0) resolve('Invalid input for a command');
+			else {
+				const ins_sql = !(input_msg[1] == 'true')? `INSERT INTO stdcommands VALUES(?,?,?);` : `INSERT INTO intervalcommands VALUES(?,?,?);`;
 
-		//just a check for a valid input from the mod/streamer
-		if (inputMsg.length == 0) client.say(target, `@${user.username}: Invalid input for a command`);
+				//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
+				const name = input_msg[2];
+				let msg = '';
+				for (let i = 3; i < input_msg.length; ++i) msg += input_msg[i] + " ";
 
-		else {
-
-			const ins_sql = !(inputMsg[1] == 'true')? `INSERT INTO stdcommands VALUES(?,?,?);` : `INSERT INTO intervalcommands VALUES(?,?,?);`;
-	
-			//inputMsg will have form !command isInterval(t/f) cmdName(string) msg(rest of message)
-			const creating_mod = user.username;
-			const name = inputMsg[2];
-			let msg = "";//safety measure to avoid there being any messages overlapping each other/wrong messages
-	
-			//add in the remaining elements of the message to the command message variable
-			for (let i = 3; i < inputMsg.length; ++i) msg += inputMsg[i] + " ";
-	
-			//run the sql command and spit out the result
-			this.#db.run(ins_sql, [name, creating_mod, msg], (err) => {
-				if (err) {
-					client.say(target, `@${user.username}: Error adding command to database`);
-					console.error(err);
-				} else client.say(target, `@${user.username}: Command successfully added to database`);
-				
-			});
-		}
+				//run the command through the db and send out the resolution
+				this.#db.run(ins_sql, [name, user, msg], (err) => {
+					if (err) {
+						console.error(err);
+						resolve('Error adding command to database');
+					} else {
+						resolve(`Command successfully added to database`);
+					}
+				});
+			}
+		});
 	}
 
 	//removes a command from the list of custom commands
-	//@param   user         The name of the chat member that typed in the command
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
 	//@param   command      The command that needs to be deleted
 	//@param   is_interval   Tells us if the command that needs to be deleted is one that is called on an interval
-	removeCommand(client, target, user, command, is_interval) {
+	removeCommand(command, is_interval) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
 		const del_sql = !is_interval ? `DELETE FROM stdcommands WHERE name = ?;` : `DELETE FROM intervalcommands WHERE name = ?;`;
 
-		//run the sql command and spit out the result
-		this.#db.run(del_sql, command, (err) => {
-			if (err) {
-				client.say(target, `@${user.username}: Could not find specific command to delete`);
-				console.error(err);
-			} else {
-				client.say(target, `@${user.username}: Command successfully deleted from database`);
-				console.log(`Rows deleted ${this.changes}`);
-            }
-				
-		});
+		return new Promise((resolve, _reject) => {
+			this.#db.run(del_sql, command, (err) => {
+				if (err) {
+					// client.say(target, `@${user.username}: Could not find specific command to delete`);
+					// console.error(err);
+					resolve(`Could not find specific command to delete`);
+					console.error(err);
+				} else {
+					// client.say(target, `@${user.username}: Command successfully deleted from database`);
+					resolve(`Command successfully deleted from database`);
+				}
+			});
+		})
+
 	}
 
 	//edits the message of the command
@@ -82,52 +75,61 @@ export class CommandArray {
 	//@param   target       The chatroom that the message will be sent into
 	//@param   client       The Twitch chat client we will send the message through
 	//@param   command      The command that needs to be deleted
-	editCommand(client, target, user, input_msg) {
+	editCommand(input_msg) {
 
-		//determine if this command is freely callable or called on an interval (different tables for them)
-		const update_sql = !((input_msg[1] == 'true')) ? `UPDATE stdcommands SET msg = ? WHERE name = ?;` : `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
+		return new Promise((resolve, _reject) => {
+			//determine if this command is freely callable or called on an interval (different tables for them)
+			const update_sql = !((input_msg[1] == 'true')) ? `UPDATE stdcommands SET msg = ? WHERE name = ?;` : `UPDATE intervalcommands SET msg = ? WHERE name = ?;`;
 
-		//assemble the message to post back into place
-		const commandToEdit = input_msg[2];
-		let message = "";
-		for (let i = 3; i < input_msg.length; ++i) message += input_msg[i] + " ";
+			//assemble the message to post back into place
+			const command_to_edit = input_msg[2];
+			let msg = "";
+			for (let i = 3; i < input_msg.length; ++i) msg += input_msg[i] + " ";
 
-		//run the sql command and spit out the result
-		this.#db.run(update_sql, [message, commandToEdit], (err) => {
-			if (err) {
-				client.say(target, `@${user.username}: Could not find command to edit`);
-				console.error(err);
-			} else {
-				client.say(target, `@${user.username}: Command successfully updated in database`);
-				console.log(`Rows updated ${this.changes}`);
-			}
-
+			//run the sql command and spit out the result
+			this.#db.run(update_sql, [msg, command_to_edit], (err) => {
+				if (err) {
+					//client.say(target, `@${user.username}: Could not find command to edit`);
+					console.error(err);
+					resolve('Could not find command to edit');
+				} else {
+					//client.say(target, `@${user.username}: Command successfully updated in database`);
+					resolve('Command successfully updated in database');
+				}
+			});
 		});
     }
 
 	//prints out a list of all custom created commands for use
-	//@param   user         The name of the chat member that typed in the command
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
-	postListOfCreatedCommands(client, target, user) {
-		let msg = `@${user.username}: These are the current custom commands available: `;
+	postListOfCreatedCommands() {
+		return new Promise((resolve, _reject) => {
+			let msg = 'These are the current custom commands available: ';
 
-		this.#db.all('SELECT name, msg FROM stdcommands;', [], (err, rows) => {
-			if (err) console.error(err);
-			rows.forEach((row) => msg += row.name + ", ");
-			client.say(target, msg);
+			this.#db.all('SELECT name, msg FROM stdcommands;', [], (err, rows) => {
+				if (err) {
+					console.error(err);
+					resolve('NaN. Error in getting list of custom commands');
+				} else {
+					rows.forEach((row) => msg += row.name + ", ");
+					resolve(msg);
+				}
+			});
 		});
 	}
 
 	//gets a command for the interval message loop with provided index
 	//@param   index   The provided index for getting the message
-	getIntervalCommand(index, client) {
-		const search_sql = `SELECT msg FROM intervalcommands;`;
-		 this.#db.all(search_sql, (err, rows) => {
-		 	if (err)console.error(err);
-			//just using the hard-coded target channel here since this version of the bot will only be used on this channel
-		 	else client.say('#pope_pontus', rows[index].msg);
-         });
+	getIntervalCommand(index) {
+		return new Promise((resolve, _reject) => {
+			this.#db.all(`SELECT msg FROM intervalcommands;`, (err, rows) => {
+				if (err) {
+					console.error(err);
+					resolve('Error in getting interval command');
+				}
+			   //just using the hard-coded target channel here since this version of the bot will only be used on this channel
+				else resolve(rows[index].msg);
+			});
+		})
 	}
 
 	//resets the index of the command we're getting for the interval messages
@@ -150,83 +152,90 @@ export class CommandArray {
 	}
 
 	//gets and updates the amount of times my voice has cracked on stream
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
-	getAndUpdateVoiceCracks(client, target) {
-
-		const vcrack_sql = `SELECT num FROM voicecracks;`;
-
-		//get the current count and push it out to the chat room
-		this.#db.get(vcrack_sql, (err, row) => {
-
-			if (err) console.error(err); else {
-				let count = parseInt(row['num']) + 1;
-				client.say(target, `Streamer's voice has cracked ${count} times.`);
-				let update_sql = `UPDATE voicecracks SET num = ?;`
-
-				//now we update the count by 1 and push that new count to the DB
-				this.#db.run(update_sql, [count.toString()], (err) => {
-					if (err) console.error(err); else console.log("* Voice cracks count updated");
-				});
-			}
+	getAndUpdateVoiceCracks() {
+		return new Promise((resolve, _reject) => {
+			this.#db.get('SELECT num FROM voicecracks;', (err, row) => {
+				if (err) {
+					console.error(err); 
+					resolve('Error in getting voice cracks');
+				} else {
+					const count = parseInt(row['num']) + 1;
+					//client.say(target, `Streamer's voice has cracked ${count} times.`);
+					const update_sql = `UPDATE voicecracks SET num = ?;`
+	
+					//now we update the count by 1 and push that new count to the DB
+					this.#db.run(update_sql, [count.toString()], (err) => {
+						if (err) {
+							console.error(err); 
+							resolve('Error updating number of voicecracks');
+						} else {
+							console.log("* Voice cracks count updated");
+						}
+					});
+					resolve(count);
+				}
+			});
 		});
 	}
 
 	//updates the death count for when I play a difficult game and/or just bad at games
 	//syntactically similar to above function for voice cracks
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
-	getAndUpdateDeathCount(client, target) {
-		
-		const death_sql = 'SELECT deaths FROM death_count;';
+	getAndUpdateDeathCount() {
+		return new Promise((resolve, _reject) => {
+			this.#db.get('SELECT deaths FROM death_count;', (err, row) => {
 
-		this.#db.get(death_sql, (err, row) => {
-
-			if (err) console.error(err); else {
-				let count = parseInt(row['deaths']) + 1;
-				client.say(target, `Death Count: ${count}`);
-
-				let update_sql = 'UPDATE death_count SET num = ?;';
-				this.#db.run(update_sql, [count], (err) => {
-					if (err) console.error(err); else console.log("* Death count updated");
-				});
-			}
+				if (err) { 
+					console.error(err); 
+					resolve('Error in getting death counts');
+				} else {
+					let count = parseInt(row['deaths']) + 1;
+					const update_sql = 'UPDATE death_count SET deaths = ?;';
+					this.#db.run(update_sql, [count], (err) => {
+						if (err) {
+							console.error(err); 
+							resolve('Error in updating death count');
+						} else {
+							console.log("* Death count updated");
+						} 
+					});
+					resolve(count);
+				}
+			});
 		});
 	}
 
 	//sets the death counts for a game back to zero
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
-	setDeathsToZero(client, target) {
-		const zero_sql = 'UPDATE death_count SET num = 0;';
-
-		this.#db.get(zero_sql, (err) => {
-			if (err) console.error(err); else client.say(target, 'Death count reset back to zero');
+	setDeathsToZero() {
+		return new Promise((resolve, _reject) => {
+			this.#db.get('UPDATE death_count SET deaths = 0;', (err) => {
+				if (err) {
+					console.error(err);
+					resolve('Error in resetting death count');
+				}  else {
+					resolve('Death count reset back to zero');
+				}
+			});
 		});
 	}
 
 	//fetches the custom commands stored in the database for posting in the chat room
-	//@param   client       The Twitch chat client we will send the message through
-	//@param   target       The chatroom that the message will be sent into
 	//@param   command      The command we are searching the db for
-	//@return               True/False depending on if the command was found
-	getCustomCommand(client, target, command) {
-		const search_sql = `SELECT name, msg FROM stdcommands WHERE name = ?;`;
-
-		//Go into the db and find what we are looking for here
-		//i.e. search each found row and post out the message it has
-		this.#db.serialize(() => {
-			this.#db.each(search_sql, command, (err, row) => {
-				if (err) console.error(err);
-				else if (row == undefined) return false;
-				else {
-					client.say(target, row.msg);
-					return true;
-                }	
+	getCustomCommand(command) {
+		return new Promise((resolve, _reject) => {
+			//Go into the db and find what we are looking for here
+			//i.e. search each found row and post out the message it has
+			this.#db.serialize(() => {
+				this.#db.each(`SELECT name, msg FROM stdcommands WHERE name = ?;`, command, (err, row) => {
+					if (err) {
+						console.error(err);
+						resolve('');
+					} 
+					else resolve(row.msg);	
+				});
 			});
-			return false;
 		});
-		return false;
+
+
     }
 
 	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat
@@ -234,20 +243,18 @@ export class CommandArray {
 	//means that I dont have to have 2 connections to the db open at a time
 	//@param   user      The user who sent the command in the first place
 	//@param   target    The specific chat room that the command came from
-	magic8Ball(client, user, target) {
-		const phrase_index = Math.floor(Math.random() * 20) + 1
-
-		const search_sql = `SELECT saying FROM sayings WHERE id = ?;`;
-
-		this.#db.serialize(() => {
-			this.#db.each(search_sql, phrase_index, (err, row) => {
-				if (err) console.error(err); else if (row == undefined) return false;
-				else {
-					client.say(target, `@${user.username}: ${row.saying}`);
-					return true;
-				}
+	magic8Ball() {
+		return new Promise((resolve, _reject) => {
+			this.#db.serialize(() => {
+				this.#db.each(`SELECT saying FROM sayings WHERE id = ${Math.floor(Math.random() * 20) + 1};`, [], (err, row) => {
+					if (err) {
+						console.error(err);
+						resolve('Error in getting 8-Ball to respond');
+					} else {
+						resolve(row.saying)
+					}
+				});
 			});
-			return false;
 		});
 	}
 

@@ -47,7 +47,6 @@ export class MiscAPI {
 			await fetch(currency_url).then(result => result.json()).then(body => {
 				const rate = Number(body.conversion_rates[target_abbrev]);
 				msg = `${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate, false)} ${target_abbrev}`;
-				//this.client.say(target, msg);
 			}).catch(err => {
 				return this.#generateAPIErrorResponse(err);
 			});
@@ -93,10 +92,7 @@ export class MiscAPI {
 		}
 
 		//if there are no free games, send the message in the chat and return
-		if (complete_discounted_games_list.length == 0) {
-			//this.client.say(target, 'Sorry, no free games found at this time :(');
-			return 'Sorry, no free games found at this time :(';
-		}
+		if (complete_discounted_games_list.length == 0) return 'Sorry, no free games found at this time :(';
 
 		//with all games found and inserted into the list, we can now compose our message
 		let msg = 'The list of free games found on the Epic Games Store are: ';
@@ -453,7 +449,6 @@ export class MiscAPI {
 	//@param   err      The error that has been generated
 	//@param   target   The name of the chatroom we are posting to
 	#generateAPIErrorResponse(err) {
-		//this.client.say(target, "Error: API currently not responding");
 		console.error(err);
 		return "Error:  requested API currently not responding";
 	}

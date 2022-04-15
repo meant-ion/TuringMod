@@ -43,8 +43,6 @@ export class TwitchAPI {
 							if (body.data[i].from_login == user.username) {//finally found the user following
 								acct_found = true;
 								let followedDate = new Date(body.data[i].followed_at);
-								//this.client.say(target, `@${user.username} has been following for: ` 
-									//+ `${this.helper.getTimePassed(followedDate, true)}`);
 								msg = `has been following for: ${this.helper.getTimePassed(followedDate, true)}`;
 								break;
 							}
@@ -53,7 +51,6 @@ export class TwitchAPI {
 						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + 
 							`&after=${body.pagination.cursor}`;
 					} else {
-						//this.client.say(target, `@${user.username}: You are currently not following this channel`);
 						msg = 'You are currently not following this channel';
 						acct_found = true;//setting this to be true to avoid infinite loop
 					}
@@ -87,7 +84,6 @@ export class TwitchAPI {
 						else stream_dates += curDate.toDateString() + ", ";	
 					}
 					msg = `Streams for the next week starting today are on ${stream_dates}`;
-					//this.client.say(target, `@${user.username}: Streams for the next week starting today are on ${stream_dates}`);
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			return msg;
@@ -110,12 +106,9 @@ export class TwitchAPI {
 				//check to see if the stream is live; if we don't, the app crashes hard and needs to be restarted
 				if (body.data[0].started_at == undefined) {
 					msg = "Stream is currently offline. Use !schedule to find out when the next stream is. Thank you! :)";
-					// this.client.say(this.target, `@${user.username}: Stream is currently offline. Use !schedule to find out when` +
-					// 	" the next stream is. Thank you! :)");
 				} else {
 					const start_time = new Date(body.data[0].started_at);
 					msg = this.helper.getTimePassed(start_time, false);
-					//this.client.say(target, `@${user.username}: ${time_msg}`);
 				}
 				
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
@@ -136,7 +129,6 @@ export class TwitchAPI {
 			let msg = '';
 
 			await fetch('https://api.twitch.tv/helix/streams?user_id=71631229', data).then(result => result.json()).then(body => {
-				//this.client.say(target, `@${user.username} Title is: ${body.data[0].title}`);
 				msg = `Title is: ${body.data[0].title}`;
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -161,7 +153,6 @@ export class TwitchAPI {
 			await fetch(url, data).then(result => result.json()).then(body => {
 				const acct_create_date = new Date(body.data[0].created_at);
 				const time_passed = this.helper.getTimePassed(acct_create_date, true);
-				//this.client.say(target, `@${user.username}, your account is ${time_passed} old`);
 				msg = `your account is ${time_passed} old`
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -183,7 +174,6 @@ export class TwitchAPI {
 			let msg = '';
 	
 			await fetch(url, data).then(result => result.json()).then(body => {
-				//this.client.say(target, `@${user.username}: Current category is ${body.data[0].game_name}`);
 				msg = `Current category is ${body.data[0].game_name}`;
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -202,7 +192,6 @@ export class TwitchAPI {
 			let msg = '';
 
 			await fetch(url, data).then(result => result.json()).then(body => {
-				//this.client.say(target, `@${user.username}: ${body.data[0].description}`);
 				msg = body.data[0].description;
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -274,10 +263,8 @@ export class TwitchAPI {
 	
 			//send out the info and edit the channel's category
 			await fetch(edit_channel_URL, edit_data).then(() => {
-				//this.client.say(target, `@${user.username}: Category Successfully Updated`);
 				msg = 'Category Successfully Updated';
 			}).catch(err => {
-				//this.client.say(target, "Error in changing category. Most likely a bad category name");
 				msg = 'Bad Category Name';
 				return this.#generateAPIErrorResponse(err);
 			});	
@@ -322,7 +309,6 @@ export class TwitchAPI {
 		
 				//send out the request and tell if there's been an issue on their end
 				await fetch(url, edit_data).then((res) => {
-					//this.client.say(target, `${(res.status == 204) ? `Title successfully updated!` : `Error, could not change title`}`)
 					msg = (res.status == 204) ? `Title successfully updated!` : `Error, could not change title`;
 				}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
@@ -345,8 +331,6 @@ export class TwitchAPI {
 			let client_msg = [];
 			client_msg.push("Uh oh, someone fired the banhammer off again!");
 	
-			//this.client.say(target, "Uh oh, someone fired the banhammer off again!");
-	
 			//get the number of people hit by the shotgun "pellets"
 			const victims = Math.floor(Math.random() * 5) + 1;
 
@@ -362,10 +346,6 @@ export class TwitchAPI {
 					let victim_index = Math.floor(Math.random() * list.length);
 
 					victim_list.push(list[victim_index]);
-	
-					//let victim_name = list[victim_index];
-	
-					//this.client.timeout(target, victim_name, 10, `@${victim_name} has been hit by the blast!`);
 				}
 				client_msg.push(victim_list);
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
@@ -509,7 +489,6 @@ export class TwitchAPI {
 		let msg = '';
 
 		await fetch(settings_url, edit_data).then(result => result.json()).then(body => {
-			//this.client.say("#pope_pontus", `@${username}: ${body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings"}`);
 			msg = body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings";
 		}).catch(err => { return this.#generateAPIErrorResponse(err); });
 		return msg;
@@ -539,7 +518,6 @@ export class TwitchAPI {
 					else 
 						msg += `${tag.localization_names['en-us']}, `;
 				}
-				//this.client.say(target, msg);
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 			return msg;
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
@@ -578,9 +556,7 @@ export class TwitchAPI {
 						j = list_of_tags.length;
 					}
 				}
-				if (!tag_found) 
-					//this.client.say(target, `@${user.username}: Error with unsupported tag ${orig_tag}`);
-					return `Error with unsupported tag ${orig_tag}`;
+				if (!tag_found) return `Error with unsupported tag ${orig_tag}`;
 			} else {
 				tags_array.push(tags_list[tag]);
 			}
@@ -588,7 +564,6 @@ export class TwitchAPI {
 		//Twitch only allows for 5 tags to be input by the streamer at a time. Any more and it wont go through
 		//if more than 5 tags, reject them and put out message saying so
 		if (tags_array.length > 5)
-			//this.client.say(target, `@${user.username}: Too many tags provided. Max 5`);
 			return 'Too many tags provided. Max 5';
 
 		//with tags assembled, we send out the request 
@@ -663,7 +638,6 @@ export class TwitchAPI {
 		}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 		if (vod_id == "-1")
-			//this.client.say(target, "Error in fetching VOD ID of last published vod");
 			return "Error in fetching VOD ID of last published vod";
 
 		//Part 2: We delete the vod
@@ -682,7 +656,7 @@ export class TwitchAPI {
 
 			let msg = '';
 
-			await fetch(delete_vod_url, data).then(result => /*this.client.say(target, "VOD successfully deleted")*/msg = "VOD successfully deleted");
+			await fetch(delete_vod_url, data).then(() => msg = "VOD successfully deleted");
 
 			return msg;
 

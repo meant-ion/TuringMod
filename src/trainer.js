@@ -144,7 +144,7 @@ export class Trainer {
     //check to see if the fine tune job has completed
     async checkForFineTuneCompletion(key, channel, temp) {
         console.log(temp);
-        console.log(this.#finetune_id);
+        //console.log(this.#finetune_id);
         const check_url = `https://api.openai.com/v1/fine-tunes/${temp}`;
         const check_header = {
             'method': 'GET',
@@ -162,7 +162,7 @@ export class Trainer {
         }).catch(err => console.error(err));
 
         //if the job isnt done, we set a timer to check again in 10 mins or so
-        if (!is_done) setTimeout(this.checkForFineTuneCompletion.bind(Trainer, key, channel, temp), 36000);
+        if (!is_done) setTimeout(this.checkForFineTuneCompletion, 36000, key, channel, temp);
         //otherwise, we write the name of the model to the db
         else this.#data_base.addFineTuneModel(model_id, channel);
         

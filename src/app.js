@@ -151,19 +151,26 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) generatePost(target);
 	}, 
 	//for mods/streamer to add a custom command
-	'!addcommand': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			commands_holder.createAndWriteCommandsToFile(client, target, user, input_msg);
+	'!addcommand': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			const msg = `@${user.username}: ${await commands_holder.createAndWriteCommandsToFile(user.username, input_msg)}`;
+			client.say(target, msg);
+		}
+			//commands_holder.createAndWriteCommandsToFile(user.username, input_msg);
 	}, 
 	//for mods/streamer to remove a custom command
-	'!removecommand': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			commands_holder.removeCommand(client, target, user, input_msg[2], (input_msg[1] == true));
+	'!removecommand': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			let msg = `@${user.username}: ${await commands_holder.removeCommand(input_msg[2], (input_msg[1] == true))}`;
+			client.say(target, msg);
+		}	
 	}, 
 	//for mods/streamer to edit a custom command
-	'!editcommand': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			commands_holder.editCommand(client, target, user, input_msg);
+	'!editcommand': async (input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			const msg = `@${user.username}: ${await commands_holder.editCommand(input_msg)}`
+			client.say(target, msg);
+		}
 	},   
 	//moderator/streamer wants to have the "banhammer" hit randomly
 	/*'!shotgun': async (input_msg, user, target) => {
@@ -197,15 +204,17 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) shutDownBot(target);
 	},
 	//streamer died in video game and either they or mod wants to update the count  
-	'!died': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.getAndUpdateDeathCount(client, target);
+	'!died': async (_input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, `Death count: ${await commands_holder.getAndUpdateDeathCount(client, target)}`);
 	},  
 	//mod/streamer wants to reset the death counter
-	'!rdeaths': (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.setDeathsToZero(client, target);
+	'!rdeaths': async (_input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, `@${user.username}: ${await commands_holder.setDeathsToZero(client, target)}`);
 	},  
 	//mod/streamer needs to delete the current vod for whatever reason
-	'!delvod': async (input_msg, user, target) => {
+	'!delvod': async (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, await twitch_api.deleteLastVOD());
 	},
@@ -216,17 +225,23 @@ const func_obj = {
 	//the user wishes to enter lurk mode
 	'!lurk': (input_msg, user, target) => client.say(target, lurk_list.addLurker(user, input_msg)),
 	//the user wishes to exit lurk mode
-	'!unlurk': (input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, false)),
+	'!unlurk': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, false)),
 	//user is letting the stream know they're heading out for the stream
-	'!leave': (input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, true)),
+	'!leave': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, true)),
 	//gets a list of all custom commands on the channel
-	'!customlist': (input_msg, user, target) => commands_holder.postListOfCreatedCommands(client, target, user),
+	'!customlist': async (_input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await commands_holder.postListOfCreatedCommands()}`);
+	},
 	//dumb little command for whenever my voice cracks, which is apparently often
-	'!voice': (input_msg, user, target) => commands_holder.getAndUpdateVoiceCracks(client, target),
+	'!voice': async (_input_msg, _user, target) => {
+		client.say(target, `Streamer's voice has cracked ${await commands_holder.getAndUpdateVoiceCracks(client, target)} times`);
+	} ,
 	//user wants a magic 8 ball fortune
-	'!8ball': (input_msg, user, target) => commands_holder.magic8Ball(client, user, target),
+	'!8ball': async (_input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await commands_holder.magic8Ball()}`);
+	},
 	//user wants to know how long they've followed the stream
-	'!followage': async (input_msg, user, target) => {
+	'!followage': async (_input_msg, user, target) => {
 		if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
 			client.say(target, "You're literally the streamer, I can't get a follow time for yourself >:-(");
 		else 
@@ -350,7 +365,7 @@ const func_obj = {
 };
 
 //called every time a message gets sent in
-function onMessageHandler(target, user, msg, self) {
+async function onMessageHandler(target, user, msg, self) {
 	if (self) { return; }
 
 	//split the message up into an array so we can see what's actually going on in it
@@ -370,7 +385,10 @@ function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-			if (commands_holder.getCustomCommand(client, target, cmd_name)) console.log("Custom command executed");
+
+			const custom_cmd = await commands_holder.getCustomCommand(cmd_name);
+
+			if (custom_cmd != '') client.say(target, custom_cmd);
 
 			else if (collect_clips) {//if enabled, check to see if it's a clip
 
@@ -399,7 +417,7 @@ function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	commands_holder.getIntervalCommand(call_this_function_number, client);
+	client.say('#pope_pontus', await commands_holder.getIntervalCommand(call_this_function_number));
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 

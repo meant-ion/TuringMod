@@ -144,6 +144,7 @@ export class Trainer {
     //check to see if the fine tune job has completed
     async checkForFineTuneCompletion(key, channel, temp) {
         console.log(temp);
+        console.log(this.#finetune_id);
         const check_url = `https://api.openai.com/v1/fine-tunes/${temp}`;
         const check_header = {
             'method': 'GET',

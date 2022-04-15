@@ -116,7 +116,7 @@ export class Helper {
     //@param   target     The chatroom that the message will be sent into
     //@param   user       The user that typed in the offending message
     //@return             True or false, depending on if the message was found to be spam
-    detectUnicode(input_msgS) {
+    detectUnicode(input_msg) {
         const regex = /\p{Script=Latin}|\p{Emoji_Presentation}|\p{P}|\p{S}|\p{N}/u;//range of all ascii chars, punctuation and emojis
         //split string into words via for-each loop
         input_msg.forEach(item => {

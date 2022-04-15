@@ -21,12 +21,12 @@ export class MiscAPI {
 	//needs testing for format and looks
 	//@param    target    The name of the channel the list of suggestions is being sent to
 	async getAllCurrentSuggestions() {
-		fs.readFile('./data/suggestions.txt', 'utf8', (err, data) => {
+		return fs.readFileSync('./data/suggestions.txt', 'utf8', (err, data) => {
 			if (err) {
 				//this.client.say(target, "Error in reading from suggestions file");
 				console.error(err);
 				return "Error in reading from suggestions file";
-			} else return data;
+			} else console.log(data);
 		});
 	}
 
@@ -99,7 +99,7 @@ export class MiscAPI {
 		}
 
 		//with all games found and inserted into the list, we can now compose our message
-		let msg = 'The list of free games found are: ';
+		let msg = 'The list of free games found on the Epic Games Store are: ';
 
 		//insert the games into the message 
 		for (let i = 0; i < complete_discounted_games_list.length; ++i) {

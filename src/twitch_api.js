@@ -10,10 +10,8 @@ export class TwitchAPI {
 	#data_base;
     #twitch_token_get_time;
 
-    //@param   c     The bot's Twitch client
 	//@param   d_b   The bot's client for accessing its database
-    constructor(c, d_b) {
-        this.client = c;
+    constructor(d_b) {
         this.helper = new Helper();
         this.#data_base = d_b;
         this.#clip_list = [];

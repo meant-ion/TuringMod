@@ -3,14 +3,16 @@
 This wonderful pile of feature bloat and strangeness is my own interpretation of a twitch.tv chat bot, spceifically 
 using OpenAI's GPT3 API to mimic the members in the chatroom, along with a large handful of other functions.
 
-Most likely, I will end up making a fork of this repo that is just for the !post and !flush commands, 
-and keep the other parts of the bot listed here for my own personal channel
+A fork of this bot containing only the chat mimicking functions (meant more for multiple channels at once) can be
+found here: https://github.com/meant-ion/TuringModLite
 
 COMMANDS: 
 
 	- !title: returns the current title of the current stream to the chatroom
+			  * Can edit the title if the user is a mod or the streamer
 
 	- !game: returns the current category of the stream
+			 * Can edit the game/category if the user is a mod or the streamer
 
 	- !roulette: determines randomly if the asking user will be banned or not on chance
 
@@ -81,6 +83,7 @@ COMMANDS:
 	- !who: reiterates the streamer's bio/summary
 
 	- !tags: gets and returns all tags currently applied to the stream
+			 * Can edit the tags if the user is a mod or the streamer
 
 	- !song: returns the name and artist of the song currently playing on stream through Spotify
 
@@ -144,10 +147,6 @@ MOD/STREAMER ONLY COMMANDS:
 	- !startcollect: tells the bot to start collecting any and all twitch clip links and store them into file for the streamer
 
 	- !endcollect: tells the bot to stop collecting twitch clip links
-			  
-	- !changegame: changes the category on the stream
-	
-	- !changetitle: changes the title of the stream to a user defined one
 
 	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
 			 NOW FULLY ENABLED AS OF AUGUST 10, 2021
@@ -167,15 +166,17 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution
 
-	- !edittags: changes the tags on stream to the ones specified by the streamer/mod
-
 	- !delvod: deletes the last vod on the channel. Good for handling issues with dox/TOS
 
 FUNCTIONS HANDLED BY THE BOT AUTOMATICALLY:
 
 	- Posting a warning about an incoming midroll ad break to the chatroom
 
-	- (Coming Soon) Posting a shoutout message whenever a streamer raids my channel
+	- Handling of certain channel point redemptions
+				* Sending out a timeout for a specific user
+				* VIP-ing a user who spends enough channel points
+				* Firing the nerf turret (WIP)
+				* Changing chatroom settings (sub only, emote only, unique messages only, etc.)
 
 PLANNED FUNCTIONALITIES/FEATURES:
 
@@ -210,6 +211,3 @@ PLANNED FUNCTIONALITIES/FEATURES:
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
 
 	- get further testing for the calculator, specifically for negative numbers
-
-	- !modlist or !mods: gets a list of all mods through a manager and returns a list through chat
-			* Half baked; need to think this out more and get it more concrete

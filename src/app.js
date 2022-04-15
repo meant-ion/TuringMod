@@ -38,7 +38,7 @@ const client = new _client(opts);
 const commands_holder = new CommandArray();
 const helper = new Helper();
 const lurk_list = new LurkList();
-const twitch_api = new TwitchAPI(client, commands_holder);
+const twitch_api = new TwitchAPI(commands_holder);
 const spotify_api = new SpotifyAPI(commands_holder);
 const misc_api = new MiscAPI(commands_holder);
 const dice = new Dice();
@@ -164,17 +164,7 @@ const func_obj = {
 	'!editcommand': (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer))
 			commands_holder.editCommand(client, target, user, input_msg);
-	},  
-	//moderator/streamer wishes to change the category of the stream
-	'!changegame': async (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) 
-			client.say(target, await twitch_api.editChannelCategory(helper.combineInput(input_msg, true)));
-	},  
-	//moderator/streamer wishes to change the title of the stream
-	'!changetitle': async (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			client.say(target, await twitch_api.editStreamTitle(helper.combineInput(input_msg, true)));
-	},  
+	},   
 	//moderator/streamer wants to have the "banhammer" hit randomly
 	/*'!shotgun': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -213,14 +203,7 @@ const func_obj = {
 	//mod/streamer wants to reset the death counter
 	'!rdeaths': (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) commands_holder.setDeathsToZero(client, target);
-	}, 
-	//mod/streamer wants to edit the tags applied to the stream
-	'!edittags': async (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			input_msg.splice(0, 1);
-			client.say(target, await twitch_api.replaceStreamTags(input_msg));
-		}
-	}, 
+	},  
 	//mod/streamer needs to delete the current vod for whatever reason
 	'!delvod': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
@@ -249,13 +232,19 @@ const func_obj = {
 		else 
 			client.say(target, `@${user.username}: ${await twitch_api.getFollowAge(user)}`);
 	},
-	//tells asking user what the current title of the stream is
+	//tells asking user what the current title of the stream is. Can change title if user asking is mod
 	'!title': async (input_msg, user, target) => {
-		client.say(target, `@${user.username}: ${ await twitch_api.getStreamTitle()}`);
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, await twitch_api.editStreamTitle(helper.combineInput(input_msg, true)));
+		else
+			client.say(target, `@${user.username}: ${ await twitch_api.getStreamTitle()}`);
 	},
-	//tells user what category stream is under
+	//tells user what category stream is under. Can change category of stream if user asking is mod
 	'!game': async (input_msg, user, target) => {
-		client.say(target, `${user.username}: ${await twitch_api.getCategory()}`);
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, await twitch_api.editChannelCategory(helper.combineInput(input_msg, true)));
+		else 
+			client.say(target, `${user.username}: ${await twitch_api.getCategory()}`);
 	},
 	//user wants to know how long the stream has been going for
 	'!uptime': async (input_msg, user, target) => {
@@ -273,9 +262,13 @@ const func_obj = {
 	'!accountage': async (input_msg, user, target) => {
 		client.say(target, `@${user.username}, ${await twitch_api.getUserAcctAge(user)}`);
 	},
-	//returns the current tags applied to the stream
+	//returns the current tags applied to the stream. Can edit tags if user is mod
 	'!tags': async (input_msg, user, target) => {
-		client.say(target, `@${user.username}: ${await twitch_api.getStreamTags()}`);
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
+			input_msg.splice(0, 1);
+			client.say(target, await twitch_api.replaceStreamTags(input_msg));
+		} else 
+			client.say(target, `@${user.username}: ${await twitch_api.getStreamTags()}`);
 	},
 	//returns the song and artist playing through Spotify
 	'!song': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.getCurrentSongTitleFromSpotify()}`),
@@ -292,7 +285,7 @@ const func_obj = {
 	'!roll': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await dice.getDiceRoll(input_msg[1])}`),
 	//flips a coin and returns the result to chat
 	'!flip': (input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
-	//allows chat member to take a chance at being timed out
+	//allows chat member to take a chance at being timed out. Doesn't work on the streamer
 	'!roulette': (input_msg, user, target) => {
 		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
 			client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
@@ -313,7 +306,7 @@ const func_obj = {
 	//user wants their message flipped upside down
 	'!reverse': (input_msg, user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
 	//user wants to see what has been suggested but not yet implemented currently
-	'!suggestionlist': (input_msg, user, target) => misc_api.getAllCurrentSuggestions(),
+	'!suggestionlist': async (input_msg, user, target) => client.say(target, await misc_api.getAllCurrentSuggestions()),
 	//user wants to get a random word from the Merriam-Webster Dictionary
 	'!dictrand': async (input_msg, user, target) =>  client.say(target, `@${user.username}: ${await misc_api.getRandomWordFromDictionary()}`),
 	//user wants to see how much changed from the last two commits
@@ -329,13 +322,11 @@ const func_obj = {
 		client.say(target, `@${user.username}: ${await misc_api.getRandWikipediaArticle()}`);
 	},
 	//user wants to see the NASA Space Pic of the Day
-	'!spacepic': async (input_msg, user, target) => client.say(target, misc_api.getNASAPicOfTheDay()),
+	'!spacepic': async (input_msg, user, target) => client.say(target, await misc_api.getNASAPicOfTheDay()),
 	//user wants to look at a random esolang
 	'!randlang': async (input_msg, user, target) => client.say(target, await misc_api.getRandEsoLang()),
 	//user wants a list of currently free games on the Epic Store
-	'!freegame': async (input_msg, user, target) => {
-		client.say(target, await misc_api.getFreeGamesOnEpicStore());
-	},
+	'!freegame': async (input_msg, user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
 	'!bonk': (input_msg, user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
 	//--------------------------------------------------------------------------------------------------------------------------
@@ -555,7 +546,7 @@ async function adsIntervalHandler() {
 	}
 
 	//actually set up the callback to this function so the warning goes through
-	if (intervalTime <= 0) console.log("Interval time not positive, error occurred");
+	if (intervalTime <= 0 || intervalTime == NaN) console.log("Interval time not positive, error occurred");
 	else setTimeout(adsIntervalHandler, intervalTime);
 	
 }

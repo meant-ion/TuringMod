@@ -377,6 +377,8 @@ async function onMessageHandler(target, user, msg, self) {
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {	
 
+		console.log(typeof func_obj[cmd_name] === 'function');
+
 		//check our function dictionary to see if it's a known, non-custom command
 		if (typeof func_obj[cmd_name] === 'function') {
 
@@ -385,7 +387,6 @@ async function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-
 			const custom_cmd = await commands_holder.getCustomCommand(cmd_name);
 
 			if (custom_cmd != '') client.say(target, custom_cmd);
@@ -399,18 +400,18 @@ async function onMessageHandler(target, user, msg, self) {
 				if (possibleClipURL != "") clip_collector.validateAndStoreClipLink(twitch_api, possibleClipURL);
 
 			  //detect if this message is either non-english (unicode) or symbol spam
-			} //else if (!helper.detectUnicode(input_msg, target, user, client)) {
-				//check if quiet mode has been enabled and if the user has mentioned the streamer if so
-				//if both are true, remove the msg via a 1-second timeout
-				if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
-					!helper.isStreamer(user.username, the_streamer)) {
-					client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
-				} else {//if it isn't, we send the message through the prompt and check for other fun things
-					prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';
-					lines_count++;
-					lurkerHasTypedMsg(target, user);
-				}
-			//}
+			}
+			//check if quiet mode has been enabled and if the user has mentioned the streamer if so
+			//if both are true, remove the msg via a 1-second timeout
+			if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
+				!helper.isStreamer(user.username, the_streamer)) {
+				client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
+			} else {//if it isn't, we send the message through the prompt and check for other fun things
+				console.log('Inside of else statement for message event handler');
+				prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';
+				lines_count++;
+				lurkerHasTypedMsg(target, user);
+			}
 		}
 	}
 }
@@ -550,11 +551,16 @@ async function adsIntervalHandler() {
 			client.say('#pope_pontus', msg);
 			intervalTime = 360000;
 		} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
-			client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
-			intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
+			if (curr_time != NaN) {
+				client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
+				intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
+			} else {
+				intervalTime = 60000;
+			}
+
 		}
 
-	} else {
+	} else if (1 - mins != NaN) {
 
 		const _mins = 1 - mins;
 		client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);

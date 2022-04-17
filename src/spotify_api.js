@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env'});
 import Helper from './helper.js';
 import fetch from 'node-fetch';
+import { ChildProcess, exec } from 'child_process';
 import open from 'open';
 import http from 'http';
 
@@ -180,6 +181,9 @@ export class SpotifyAPI {
 			//get our data from the DB
 			const session_data = await this.#data_base.getSpotifySessionInfo();
 
+			//for windows, need to use escape for & symbols otherwise it will not include them
+			//const ands = process.platform == 'win32' ? '^&' : '&';
+
 			//build the URLS that we need to access for the requests
 			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}&response_type=code&redirect_uri=${session_data[2]}&scope=${session_data[3]}&state=${session_data[4]}`;
 	
@@ -193,7 +197,7 @@ export class SpotifyAPI {
 				//get the auth code
 				let u = new URL(req.url, "http://localhost:4000");
 				if (u.searchParams.get('code') != null) code = u.searchParams.get('code');
-	
+
 				//build the items necessary to get the tokens
 				let b = Buffer.from(session_data[0] + ':' + session_data[1], 'utf-8')
 				encoded_header = {
@@ -210,6 +214,9 @@ export class SpotifyAPI {
 	
 			//open the url and get what we want from it
 			await open(url, { wait: true }).then(console.log("* Spotify Test Page Opened!"));
+			//console.log(url);
+			//const start_opts = (process.platform == 'darwin' ? 'open' : process.platform == 'win32' ? 'start' : 'xdg-open');
+			//exec(`${start_opts} ${url}`);
 	
 			//with all data gathered, we send out a fetch request and get the tokens stored
 			await fetch(token_url, { method: 'POST', headers: encoded_header, body: new URLSearchParams(params).toString()} )

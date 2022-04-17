@@ -803,15 +803,20 @@ export class TwitchAPI {
     //simple helper to tell us if the token is expired for one of our two main APIs
 	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
 	#hasTokenExpired() {
-
+		
 		//get the difference between the time the token was accquired and right now at this call
-		const cur_time = new Date();
-		//make sure to get the correct token here
-		const token_time = this.#twitch_token_get_time; 
-		const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
-
-		//if we have a large enough difference between the two times, refresh the specified token
-		if (diff >= 3600) this.#refreshTwitchTokens();
+		try {
+			const cur_time = new Date();
+			//make sure to get the correct token here
+			const token_time = this.#twitch_token_get_time; 
+			const diff = (cur_time.getTime() - token_time.getTime()) / 1000;
+	
+			//if we have a large enough difference between the two times, refresh the specified token
+			if (diff >= 3600) this.#refreshTwitchTokens();
+		} catch (err) {
+			console.error(err);
+			console.log('Error with refreshing tokens for twitch api, most likely due to issue with connection to API');
+		}
 	}
 
 }

@@ -224,14 +224,11 @@ export class CommandArray {
 		return new Promise((resolve, _reject) => {
 			//Go into the db and find what we are looking for here
 			//i.e. search each found row and post out the message it has
-			this.#db.serialize(() => {
-				this.#db.each(`SELECT name, msg FROM stdcommands WHERE name = ?;`, command, (err, row) => {
-					if (err) {
-						console.error(err);
-						resolve('');
-					} 
-					else resolve(row.msg);	
-				});
+			this.#db.get(`SELECT name, msg FROM stdcommands WHERE name = ${command};`, (err, row) => {
+				//error would be that command does not exist, so we don't print that
+				//otherwise the terminal would be crowded with those messages
+				if (err) resolve('');
+				else resolve(row.msg);
 			});
 		});
 

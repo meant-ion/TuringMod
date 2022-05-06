@@ -133,6 +133,18 @@ export class MiscAPI {
 
 	}
 
+	async getCakes() {
+
+		const test_url = 'https://en.wikipedia.org/wiki/List_of_cakes';
+
+		await fetch(test_url).then(result => result.text()).then(body => {
+			console.log(body);
+		}).catch(err => {
+			console.error(err);
+		})
+
+	}
+
 	//gets a random esoteric programming language (esolang) from the esolang wiki and sends the link to chat
 	//@param   user     The chat member that typed in the command
 	//@param   target   The chatroom that the message will be sent into

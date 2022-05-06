@@ -124,7 +124,7 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) twitch_api.makePubSubscription(input_msg[1], pubsubs);
 	}, 
 	//a moderator or the streamer wishes to flush the bot's posting prompt
-	'!flush': (input_msg, user) => {
+	'!flush': (_input_msg, user) => {
 		//make sure we don't waste time flushing a prompt that is just empty
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			if (prompt.length == 0) {
@@ -136,18 +136,18 @@ const func_obj = {
 		}
 	}, 
 	//starts clip collection services
-	'!startcollect': (input_msg, user, target) => {
+	'!startcollect': (_input_msg, user, target) => {
 		if (!collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
 			collect_clips = true;
 			client.say(target, "Clip collection is turned on!");
 		}
 	}, 
 	//ends clip collection services
-	'!endcollect': (input_msg, user, target) => {
+	'!endcollect': (_input_msg, user, target) => {
 		if (collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) getClipsInOrder(target);
 	},
 	//activates GPT-3 for a post. Heavily controlled
-	'!post': (input_msg, user, target) => {
+	'!post': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) generatePost(target);
 	}, 
 	//for mods/streamer to add a custom command
@@ -186,12 +186,12 @@ const func_obj = {
 			}
 	},  }*/
 	//mod/streamer wants to see chances channel is being viewbotted
-	'!testviewers': async (input_msg, user, target) => {
+	'!testviewers': async (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer))
 			client.say(target, await twitch_api.getChancesStreamIsViewbotted());
 	},  
 	//mod/streamer toggles quiet mode
-	'!quiet': (input_msg, user, target) => {
+	'!quiet': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			quiet_mode_enabled = !quiet_mode_enabled;
 			let msg = quiet_mode_enabled ? `@${user.username}: Quiet mode has been enabled. All messages @-ing the streamer will be removed unitl turned off` 
@@ -200,7 +200,7 @@ const func_obj = {
 		}
 	},  
 	//mod/streamer wants to shut bot down safely
-	'!shutdown': (input_msg, user, target) => {
+	'!shutdown': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) shutDownBot(target);
 	},
 	//streamer died in video game and either they or mod wants to update the count  
@@ -262,19 +262,19 @@ const func_obj = {
 			client.say(target, `${user.username}: ${await twitch_api.getCategory()}`);
 	},
 	//user wants to know how long the stream has been going for
-	'!uptime': async (input_msg, user, target) => {
+	'!uptime': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await twitch_api.getStreamUptime()}`);
 	},
 	//returns a link to the stream schedule
-	'!schedule': async (input_msg, user, target) => {
+	'!schedule': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await twitch_api.getChannelSchedule()}`)
 	},
 	//returns the bio of the streamer
-	'!who': async (input_msg, user, target) => {
+	'!who': async (_input_msg, user, target) => {
 		client.say(target, await twitch_api.getChannelSummary());
 	},
 	//returns the age of the account asking
-	'!accountage': async (input_msg, user, target) => {
+	'!accountage': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}, ${await twitch_api.getUserAcctAge(user)}`);
 	},
 	//returns the current tags applied to the stream. Can edit tags if user is mod
@@ -286,9 +286,9 @@ const func_obj = {
 			client.say(target, `@${user.username}: ${await twitch_api.getStreamTags()}`);
 	},
 	//returns the song and artist playing through Spotify
-	'!song': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.getCurrentSongTitleFromSpotify()}`),
+	'!song': async (_input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.getCurrentSongTitleFromSpotify()}`),
 	//tallies requests to change song and changes it at a threshold of those
-	'!skipsong': async (input_msg, user, target) => thresholdCalc(target, user),
+	'!skipsong': async (_input_msg, user, target) => thresholdCalc(target, user),
 	//user wants to add a song to the playlist queue
 	'!addsong': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.addSongToQueue(input_msg)}`),
 	//a chatmember has a suggestion on what to add to the bot
@@ -299,9 +299,9 @@ const func_obj = {
 	//simple dice rolling command. Can do many sided dice, not just a d20 or d6
 	'!roll': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await dice.getDiceRoll(input_msg[1])}`),
 	//flips a coin and returns the result to chat
-	'!flip': (input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
+	'!flip': (_input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
 	//allows chat member to take a chance at being timed out. Doesn't work on the streamer
-	'!roulette': (input_msg, user, target) => {
+	'!roulette': (_input_msg, user, target) => {
 		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
 			client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
 		else {
@@ -311,55 +311,61 @@ const func_obj = {
 		}
 	},
 	//randomly generates and sends out a hex color code
-	'!color': (input_msg, user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
+	'!color': (_input_msg, _user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
 	//chat member wants to do basic math with the bot
 	'!calc': (input_msg, user, target) => client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`),
 	//converts a number in a given base to the same number in a different base
 	'!convert': (input_msg, user, target) => client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`),
 	//gets the current time in Central Standard Time (CST)
-	'!time': (input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
+	'!time': (_input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
 	//user wants their message flipped upside down
-	'!reverse': (input_msg, user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
+	'!reverse': (input_msg, _user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
 	//user wants to see what has been suggested but not yet implemented currently
-	'!suggestionlist': async (input_msg, user, target) => client.say(target, await misc_api.getAllCurrentSuggestions()),
+	'!suggestionlist': async (_input_msg, user, target) => client.say(target, await misc_api.getAllCurrentSuggestions()),
 	//user wants to get a random word from the Merriam-Webster Dictionary
-	'!dictrand': async (input_msg, user, target) =>  client.say(target, `@${user.username}: ${await misc_api.getRandomWordFromDictionary()}`),
+	'!dictrand': async (_input_msg, user, target) =>  client.say(target, `@${user.username}: ${await misc_api.getRandomWordFromDictionary()}`),
 	//user wants to see how much changed from the last two commits
-	'!gitchanges': async (input_msg, user, target) => client.say(target, await misc_api.getGithubRepoInfo()),
+	'!gitchanges': async (_input_msg, _user, target) => client.say(target, await misc_api.getGithubRepoInfo()),
 	//user wants to convert an amount of one currency to another
 	'!convertcash': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await misc_api.getCurrencyExchangeRate(input_msg.slice(1, 4))}`),
 	//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
-	'!pokerand': async (input_msg, user, target) => client.say(target, await misc_api.getRandomPokemon()),
+	'!pokerand': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandomPokemon()),
 	//user wants a fact about a random number
-	'!numrand': async (input_msg, user, target) => client.say(target, await misc_api.getRandomNumberFact()),
+	'!numrand': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandomNumberFact()),
 	//chat member wants to know about something random off wikipedia
-	'!wikirand': async (input_msg, user, target) => {
+	'!wikirand': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await misc_api.getRandWikipediaArticle()}`);
 	},
 	//user wants to see the NASA Space Pic of the Day
-	'!spacepic': async (input_msg, user, target) => client.say(target, await misc_api.getNASAPicOfTheDay()),
+	'!spacepic': async (_input_msg, _user, target) => client.say(target, await misc_api.getNASAPicOfTheDay()),
 	//user wants to look at a random esolang
-	'!randlang': async (input_msg, user, target) => client.say(target, await misc_api.getRandEsoLang()),
+	'!randlang': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandEsoLang()),
 	//user wants a list of currently free games on the Epic Store
-	'!freegame': async (input_msg, user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
+	'!freegame': async (_input_msg, _user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
-	'!bonk': (input_msg, user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
+	'!bonk': (input_msg, _user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 	//for writing training data for a fine tuned model to a JSONL file
-	'!write': (input_msg, user, target) => {
+	'!write': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) trainer.writeTrainingDataToFile(target);
 	},
 	//for uploading a training file to OpenAI's servers
-	'!upl': (input_msg, user, target) => {
+	'!upl': (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) uploadAndMakeModel();
 	},
 	//for deleting all models and files from OpenAI's servers
-	'!delm': (input_msg, user, target) => {
+	'!delm': (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) deleteModels();;
 	},
+	'!url': async (_input_msg, user, _target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) await spotify_api.openTestPage();
+	},
+	'!cake': async (_input_msg, user, _target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
+	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
 };
@@ -377,8 +383,6 @@ async function onMessageHandler(target, user, msg, self) {
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {	
 
-		console.log(typeof func_obj[cmd_name] === 'function');
-
 		//check our function dictionary to see if it's a known, non-custom command
 		if (typeof func_obj[cmd_name] === 'function') {
 
@@ -387,7 +391,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 		} else {
 			//check to see if the message is a custom command
-			const custom_cmd = await commands_holder.getCustomCommand(cmd_name);
+			const custom_cmd = cmd_name.substring(0,1) == '!' ? await commands_holder.getCustomCommand(cmd_name) : '';
 
 			if (custom_cmd != '') client.say(target, custom_cmd);
 
@@ -407,7 +411,6 @@ async function onMessageHandler(target, user, msg, self) {
 				!helper.isStreamer(user.username, the_streamer)) {
 				client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
 			} else {//if it isn't, we send the message through the prompt and check for other fun things
-				console.log('Inside of else statement for message event handler');
 				prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';
 				lines_count++;
 				lurkerHasTypedMsg(target, user);

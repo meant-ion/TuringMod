@@ -70,12 +70,6 @@ export class PubSubHandler {
     //@param   parsed_data   The bulk of the data received from the WebSocket
     #rewardHandler(parsed_data) {
         switch (parsed_data.data.redemption.reward.title) {
-            case '!timeout'://auto-timeout a viewer chosen by the redeemer
-                const timeout_victim = parsed_data.data.redemption.user_input;
-                const reward_redeemer = parsed_data.data.redemption.user.display_name;
-                this.#twitch_chat_client.say('#pope_pontus', `@${timeout_victim} has been timed out by @${reward_redeemer}`);
-                this.#twitch_chat_client.timeout('#pope_pontus', timeout_victim, 60, "You were chosen for a timeout");
-                break;
             case 'VIP Me'://user redeemed reward to become a VIP
                 const new_vip = parsed_data.data.redemption.user.display_name;
                 this.#twitch_chat_client.say('#pope_pontus', `@${new_vip} has become a new VIP!`);
@@ -83,10 +77,10 @@ export class PubSubHandler {
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
-                /*this.#port.write("f", (err) => {
+                this.#port.write("f", (err) => {
                     if (err) return console.error(err);
                     console.log("* Fire command sent out!");
-                })*/
+                });
                 break;
             case 'Change Chat Settings'://user redeemed to change some chatroom settings
                 const user_inputs = (parsed_data.data.redemption.user_input).split(" ");

@@ -224,15 +224,14 @@ export class CommandArray {
 		return new Promise((resolve, _reject) => {
 			//Go into the db and find what we are looking for here
 			//i.e. search each found row and post out the message it has
-			this.#db.get(`SELECT name, msg FROM stdcommands WHERE name = ${command};`, (err, row) => {
+			this.#db.get(`SELECT name, msg FROM stdcommands WHERE name = ?;`, [command], (err, row) => {
 				//error would be that command does not exist, so we don't print that
 				//otherwise the terminal would be crowded with those messages
 				if (err) resolve('');
+				else if (row == undefined) resolve('');
 				else resolve(row.msg);
 			});
 		});
-
-
     }
 
 	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat

@@ -738,7 +738,7 @@ export class TwitchAPI {
 			}).listen(3000);
 
 			//open up the page to get access to the auth code
-			await open(url, {wait:true}).then(console.log("* Page opened"));
+			await open(url, {wait:true}).then(console.log("* Twitch API Page opened"));
 
 			//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
 			await fetch(post_url, post_data).then(result => result.json()).then(body => {

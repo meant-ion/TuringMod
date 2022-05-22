@@ -360,9 +360,6 @@ const func_obj = {
 	'!delm': (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) deleteModels();;
 	},
-	'!url': async (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) await spotify_api.openTestPage();
-	},
 	'!cake': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
 	}

@@ -2,10 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env'});
 import Helper from './helper.js';
 import fetch from 'node-fetch';
-import { spawn, exec, execFileSync } from 'child_process';
 import open from 'open';
 import http from 'http';
-import { encode } from 'punycode';
 
 export class SpotifyAPI {
 
@@ -138,47 +136,6 @@ export class SpotifyAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
-	async openTestPage() {
-		const session_data = await this.#data_base.getSpotifySessionInfo();
-
-		//for windows, need to use escape for & symbols otherwise it will not include them
-		const ands = '&';
-
-		//build the URLS that we need to access for the requests
-		const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}${ands}response_type=code${ands}redirect_uri=${session_data[2]}${ands}scope=${session_data[3]}${ands}state=${session_data[4]}`;
-
-
-		let start_opts = undefined;
-		switch (process.platform) {
-		 case 'darwin':
-			 start_opts = 'open';
-			 break;
-		 case 'win32':
-			 start_opts = 'start';
-			 break;
-		 default:
-			 start_opts = 'xdg-open';
-			break;
-		}
-
-		return new Promise((resolve, reject) => {
-			try {
-				const e = exec(`${start_opts} "" "${url}"`);
-				e.once('error', reject);
-
-				e.once('close', exit_code => {
-					if (exit_code > 0) {
-						reject(new Error(`Exited with code ${exit_code}`));
-						return;
-					} 
-					resolve(e);
-				});
-				return resolve;
-			} catch (err) { console.error(err); }
-		})
-
-	}
-
 	//simple helper to tell us if the token is expired for one of our two main APIs
 	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
 	#hasTokenExpired() {
@@ -222,13 +179,8 @@ export class SpotifyAPI {
 		try {
 			//get our data from the DB
 			const session_data = await this.#data_base.getSpotifySessionInfo();
-
-			//for windows, need to use escape for & symbols otherwise it will not include them
-			//const ands = process.platform == 'win32' ? '^&' : '&';
-			const ands = '&';
-
 			//build the URLS that we need to access for the requests
-			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}${ands}response_type=code${ands}redirect_uri=${session_data[2]}${ands}scope=${session_data[3]}${ands}state=${session_data[4]}`;
+			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}&response_type=code&redirect_uri=${session_data[2]}&scope=${session_data[3]}&state=${session_data[4]}`;
 	
 			let token_url = 'https://accounts.spotify.com/api/token';
 	
@@ -253,31 +205,8 @@ export class SpotifyAPI {
 				 	'grant_type': "authorization_code",
 				 	'redirect_uri': session_data[2],
 				};
-				// res.writeHead(200, { 'Content-Type': 'application/json' });
-				// res.end(JSON.stringify({
-				// 	params: {
-				// 		'code': code,
-				// 		'grant_type': "authorization_code",
-				// 		'redirect_uri': session_data[2],
-				// 	},
-				// 	encoded_header: {
-				// 		'Authorization': `Basic ${b.toString('base64')}`,
-				// 		'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-				// 	}
-				// }));
 			}).listen(4000);
 	
-			//open the url and get what we want from it
-			// await this.openTestPage()
-			// .then(res => {
-			// 	console.log('* Spotify API Page Opened!');
-			// 	console.log(res);
-			// 	encoded_header = res.encoded_header;
-			// 	params = res.params;
-			// 	console.log(encoded_header);
-			// 	console.log(params);
-			// })
-			// .catch(err => console.error(err));
 			await open(url, {wait:true}).then(console.log("* Page opened"));
 			
 	

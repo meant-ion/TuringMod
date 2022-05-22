@@ -2,6 +2,10 @@ import WebSocket from 'ws';
 import SerialPort from 'serialport';
 import pkg from '@serialport/parser-readline';
 const { Readline } = pkg;
+//importing otherwise literally does not work for me, forgive me coding gods
+import {PythonShell} from 'python-shell';
+
+
 
 //a little class that will manage and handle our PubSubs and notifications coming from them
 //this will be the main operator when dealing with the (eventual) chat-activated turret, as activating it will
@@ -85,6 +89,78 @@ export class PubSubHandler {
             case 'Change Chat Settings'://user redeemed to change some chatroom settings
                 const user_inputs = (parsed_data.data.redemption.user_input).split(" ");
                 this.#twitch_api.editChatroomSettings(user_inputs, parsed_data.data.redemption.user.display_name);
+                break;
+            case 'Random Sound Effect':
+                PythonShell.run('./src/audio/audio.py', {pythonPath: 'C:/Program Files/Python310/python.exe'}, (err) => {
+                    if (err) console.error(err);
+                })
+                break;
+            //for calling specific sound effects
+            case 'Shotgun':
+                case 'AAAAAAAAA':
+                    PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 0}, (err) => {
+                        if (err) console.error(err);
+                    });
+                    break;
+            case 'BONK':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 2}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'REEE':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 2}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case "That's a lot of damage!":
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 3}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Air Horn':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 4}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'FAIL!':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 5}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Emotional Damage':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 6}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Not Fine':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 7}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'God And Anime':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 8}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'AAAAAAAAA':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 9}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Rack the Shotgun':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 10}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'No God Please No':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 11}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Tactical Nuke Inbound':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 12}, (err) => {
+                    if (err) console.error(err);
+                });
                 break;
         }
     }

@@ -162,6 +162,16 @@ export class PubSubHandler {
                     if (err) console.error(err);
                 });
                 break;
+            case 'Bababooey':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 13}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
+            case 'Knock':
+                PythonShell.run('./src/audio.py', {pythonPath:'C:/Program Files/Python310/python.exe',args: 14}, (err) => {
+                    if (err) console.error(err);
+                });
+                break;
         }
     }
 

@@ -91,8 +91,11 @@ export class PubSubHandler {
                 this.#twitch_api.editChatroomSettings(user_inputs, parsed_data.data.redemption.user.display_name);
                 break;
             case 'Random Sound Effect':
-                PythonShell.run('./src/audio/audio.py', {pythonPath: 'C:/Program Files/Python310/python.exe'}, (err) => {
+                PythonShell.run('./src/audio/audio.py', 
+                                {pythonPath: 'C:/Program Files/Python310/python.exe'}, 
+                                (err, result) => {
                     if (err) console.error(err);
+                    console.log(result);
                 });
                 break;
         }

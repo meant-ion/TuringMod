@@ -350,7 +350,7 @@ const func_obj = {
 		//play bonk sound effect when bonking commences
 		PythonShell.run('./src/audio/audio.py', {
 			pythonPath: 'C:/Program Files/Python310/python.exe',
-			args: [1]
+			args: ["bonk.mp3"]
 		}, err => {
 			if (err) console.error(err);
 		})

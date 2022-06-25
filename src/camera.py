@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 import obspython as S
 import random, time
 
@@ -110,11 +109,22 @@ class CameraMover:
     # new filter value
     def reset_camera_filter(self, source):
         old_filter = S.obs_source_get_filter_by_name(source, "DVD Screensaver Edge Color Change")
-        if old_filter is not NULL:
+        if old_filter is not None:
             S.obs_source_filter_remove(source, old_filter)
             S.obs_source_release(old_filter)
 
 
 cam = CameraMover()
 
-cam.move_camera()
+# cam.move_camera()
+
+def screen_saver(props, prop):
+    cam.move_camera()
+
+def script_description():
+    return "Makes the facecam do a DVD screensaver style animation"
+
+def script_properties():
+    props = S.obs_properties_create()
+    S.obs_properties_add_button(props, "button1", "Activate The Screen Saver", screen_saver)
+    return props

@@ -4,6 +4,7 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
+import {PythonShell} from 'python-shell';
 import Calculator from './calculator.js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -343,7 +344,17 @@ const func_obj = {
 	//user wants a list of currently free games on the Epic Store
 	'!freegame': async (_input_msg, _user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
-	'!bonk': (input_msg, _user, target) => client.say(target, `${input_msg[1]} has been bonked! BOP`),
+	'!bonk': (input_msg, _user, target) => {
+		client.say(target, `${input_msg[1]} has been bonked! BOP`);
+
+		//play bonk sound effect when bonking commences
+		PythonShell.run('./src/audio/audio.py', {
+			pythonPath: 'C:/Program Files/Python310/python.exe',
+			args: [1]
+		}, err => {
+			if (err) console.error(err);
+		})
+	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS

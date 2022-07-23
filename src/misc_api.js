@@ -137,11 +137,13 @@ export class MiscAPI {
 
 		const test_url = 'https://en.wikipedia.org/wiki/List_of_cakes';
 
-		await fetch(test_url).then(result => result.text()).then(body => {
-			console.log(body);
-		}).catch(err => {
-			console.error(err);
-		})
+		await fetch(test_url).then(result => console.log(result));
+
+		// await fetch(test_url).then(result => result.text()).then(body => {
+		// 	console.log(body);
+		// }).catch(err => {
+		// 	console.error(err);
+		// })
 
 	}
 

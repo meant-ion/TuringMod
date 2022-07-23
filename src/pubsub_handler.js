@@ -93,10 +93,7 @@ export class PubSubHandler {
             case 'Random Sound Effect':
                 PythonShell.run('./src/audio/audio.py', 
                                 {pythonPath: 'C:/Program Files/Python310/python.exe'}, 
-                                (err, result) => {
-                    if (err) console.error(err);
-                    console.log(result);
-                });
+                                (err) => {if (err) console.error(err)})
                 break;
         }
     }

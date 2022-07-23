@@ -25,10 +25,7 @@ export class Dice {
 
 			//at maximum, the roll command string when split, is of length 5 and minimum 2
 			//if any higher or lower, its an invalid roll
-			if (split_cmd.length > 5 || split_cmd.length < 2) {
-				//this.client.say(target, 'Invalid command syntax');
-				return 'Invalid command syntax';
-			}
+			if (split_cmd.length > 5 || split_cmd.length < 2) return 'Invalid command syntax';
 
 			//get the location of the r in the string if applicable
 			//will be used to make sure input is valid and trailing number comes after minimum roll
@@ -42,15 +39,9 @@ export class Dice {
 			const d_loc = split_cmd.indexOf('d');
 
 			//if we have no d, we dont know what to roll. So we return an error and go from there
-			if (!has_d) {
-				//this.client.say(target, `Invalid command use. Please use 'd' to specify the number of sides on a die`);
-				return "Invalid command use. Please use 'd' to specify the number of sides on a die";
-			}
+			if (!has_d) return "Invalid command use. Please use 'd' to specify the number of sides on a die";
 
-			if (r_loc == split_cmd.length - 1) {
-				//this.client.say(target, 'Invalid command use; Missing minimum roll amount');
-				return 'Invalid command use; Missing minimum roll amount';
-			}
+			if (r_loc == split_cmd.length - 1) return 'Invalid command use; Missing minimum roll amount';
 
 			//with all possible cases checked, we will make the roll and return the result to the chatroom
 			const num_dice_to_roll = (d_loc == 0) ? 1 : split_cmd[0];

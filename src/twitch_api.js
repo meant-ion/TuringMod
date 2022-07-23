@@ -428,11 +428,9 @@ export class TwitchAPI {
 
 	//edits the channel's chatroom settings as requested by a user. This is used within pubsub_handler.js
 	//@param   settings   array of settings the user wants to change
-	//@param   username   the user requesting the change
-	async editChatroomSettings(settings, username) {
+	async editChatroomSettings(settings) {
 		//need to get the bot's user id so we can make the request go through
 
-		let req_failed = false;
 		this.#hasTokenExpired();
 		const data = await this.#createTwitchDataHeader();
 

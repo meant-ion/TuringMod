@@ -10,7 +10,7 @@ def main():
     playsound(os.path.join(sys.path[0], sound_list[random.randint(0, len(sound_list) - 1)]))
 
 if __name__ == "__main__":
-    # just to play the bonk sound effect on command
+    # to play either the bonk sound effect or to play the AI TTS file
     if len(sys.argv) != 1:
         val = sys.argv[1:]
         i = str(val[0])

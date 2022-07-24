@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import SerialPort from 'serialport';
 import pkg from '@serialport/parser-readline';
+import UberAPI from './ubertts.js';
 const { Readline } = pkg;
 //importing otherwise literally does not work for me, forgive me coding gods
 import {PythonShell} from 'python-shell';
@@ -19,12 +20,14 @@ export class PubSubHandler {
     #port;               //the serial port we will use to communicate with the rpi's turret
     #parser;             //what we will use for processing communications between the arduino and the rpi
     #twitch_api;         //object for handling all API requests to Twitch
+    #tts_api;            //object for handling Uberduck API requests/playing
 
     //@param   c     The Twitch Chat IRC client we need to send messages through
     //@param   t_a   The twitch_api object
     constructor(c, t_a) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
+
         this.#twitch_chat_client = c;
         this.#topics_list = [];
         /* Uncomment when moved to rpi with arduino port written to it 
@@ -35,6 +38,7 @@ export class PubSubHandler {
         this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
         */
         this.#twitch_api = t_a;
+        this.#tts_api = new UberAPI();
         //with the pubsub made, we can now get it working handling msgs
         this.start();
     }
@@ -95,6 +99,9 @@ export class PubSubHandler {
                                 {pythonPath: 'C:/Program Files/Python310/python.exe'}, 
                                 (err) => {if (err) console.error(err)})
                 break;
+            case 'AI Speech': 
+                const user_str = parsed_data.data.redemption.user_input;
+                this.#tts_api.generate_tts_speech(user_str);
         }
     }
 

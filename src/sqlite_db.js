@@ -479,6 +479,23 @@ export class CommandArray {
 			if (err) console.error(err); else console.log(`* New file for ${channel} uploaded to OpenAI`);
 		});
 	}
+
+	//gets the key and secret for the Uberduck AI TTS API
+	getUberduckInfo() {
+		const user_sql = 'SELECT key, secret FROM uberduck;';
+
+		return new Promise((resolve, reject) => {
+			this.#db.get(user_sql, (err, row) => {
+				if (err) reject(err);
+				else {
+					let arr = [];
+					arr.push(row.secret);
+					arr.push(row.key);
+					resolve(arr);
+				}
+			})
+		});
+	}
 }
 
 export default CommandArray;

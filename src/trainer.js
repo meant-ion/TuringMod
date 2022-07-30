@@ -135,7 +135,7 @@ export class Trainer {
         };
 
         await fetch(files_url, i_lost_the_will_to_live).then(result => result.json())
-        .then(body => this.#data_base.addFineTuningFileID(body.id, "pope_pontus"));
+        .then(body => this.#data_base.addFineTuningFileID(body.id, "pope_pontius"));
 
         console.log("* New Training File Uploaded to OpenAI");
 

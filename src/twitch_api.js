@@ -324,7 +324,7 @@ export class TwitchAPI {
 
 		try {
 			this.#hasTokenExpired();
-			const url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
+			const url = `https://tmi.twitch.tv/group/user/pope_pontius/chatters`;
 
 			const data = await this.#createTwitchDataHeader();
 
@@ -357,7 +357,7 @@ export class TwitchAPI {
 	//@param   target   The channel we are posting the message to
 	async getChancesStreamIsViewbotted() {
 		//get our URLs and counts set up here
-		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontus/chatters`;
+		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontius/chatters`;
 		const helix_url = 'https://api.twitch.tv/helix/users?id=71631229';
 		let chatroom_member_count, viewer_count;
 
@@ -527,7 +527,7 @@ export class TwitchAPI {
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(list_of_tags) {
 
-		this.#getAndUpdateTagsList("#pope_pontus");
+		this.#getAndUpdateTagsList("#pope_pontius");
 		const tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
 
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;

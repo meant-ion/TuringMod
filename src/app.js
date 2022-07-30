@@ -29,7 +29,7 @@ const opts = {
 		reconnect: true
 	},
 	channels: [//I'm really the only one going to use this version, so I'll just have the name be here (for now anyway)
-		"pope_pontus",
+		"pope_pontius",
 	]
 };
 
@@ -93,7 +93,7 @@ function execTheBot() {
 		const input_msg = message.content.split(" ");
 		if (input_msg[0] == '!send') {//the message generated was accepted by admin
 			let response = post.getResponse();
-			trainer.recordResponse("#pope_pontus", response, last_post_gen_time);
+			trainer.recordResponse("#pope_pontius", response, last_post_gen_time);
 
 			//search through the list of responses and channels to find the correct one and then post that out
 			client.say(opts.channels[0], `${response != "" ? `MrDestructoid ${response}` : `No response found for this channel`}`);
@@ -429,7 +429,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	client.say('#pope_pontus', await commands_holder.getIntervalCommand(call_this_function_number));
+	client.say('#pope_pontius', await commands_holder.getIntervalCommand(call_this_function_number));
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 
@@ -548,7 +548,7 @@ async function adsIntervalHandler() {
 	//so we start the interval command after 30 mins
 	if (mins == 1) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
 
-		client.say('#pope_pontus', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
+		client.say('#pope_pontius', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
 		intervalTime = 360000;//call this function again in 1 hour
 
 	} else if (mins > 1) {//we called it after the 30 min mark is passed
@@ -559,11 +559,11 @@ async function adsIntervalHandler() {
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
 			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
 				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
-			client.say('#pope_pontus', msg);
+			client.say('#pope_pontius', msg);
 			intervalTime = 360000;
 		} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
 			if (curr_time != NaN) {
-				client.say('#pope_pontus', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
+				client.say('#pope_pontius', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
 				intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
 			} else {
 				intervalTime = 60000;
@@ -574,7 +574,7 @@ async function adsIntervalHandler() {
 	} else if (1 - mins != NaN) {
 
 		const _mins = 1 - mins;
-		client.say('#pope_pontus', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
+		client.say('#pope_pontius', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
 		//we set a timer callback to this function so we can check again 
 		intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
 

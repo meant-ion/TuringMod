@@ -80,8 +80,8 @@ export class PubSubHandler {
         switch (parsed_data.data.redemption.reward.title) {
             case 'VIP Me'://user redeemed reward to become a VIP
                 const new_vip = parsed_data.data.redemption.user.display_name;
-                this.#twitch_chat_client.say('#pope_pontus', `@${new_vip} has become a new VIP!`);
-                this.#twitch_chat_client.say('#pope_pontus', `/vip ${new_vip}`);
+                this.#twitch_chat_client.say('#pope_pontius', `@${new_vip} has become a new VIP!`);
+                this.#twitch_chat_client.say('#pope_pontius', `/vip ${new_vip}`);
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
@@ -112,7 +112,7 @@ export class PubSubHandler {
     requestToListen(topics, auth_token) {
         const req = {
             type: 'LISTEN',
-            nonce: `pope_pontus-${new Date().getTime()}`,
+            nonce: `pope_pontius-${new Date().getTime()}`,
             data: {
                 topics: [topics],
                 auth_token: auth_token,
@@ -143,7 +143,7 @@ export class PubSubHandler {
         const _type = is_listen ? 'LISTEN' : 'UNLISTEN';
         return {
             type: _type,
-            nonce: `pope_pontus-${new Date().getTime()}`,
+            nonce: `pope_pontius-${new Date().getTime()}`,
             data: {
                 topics: [topic],
                 auth_token: auth_token

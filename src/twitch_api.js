@@ -660,6 +660,67 @@ export class TwitchAPI {
 
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 
+	}
+
+	//used for messages sent on an interval
+	async sendAnnouncement(msg) {
+		const announce_url = 'https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=693520155';
+
+		try {
+
+			let data = this.#createTwitchDataHeader();
+			data.method = 'POST';
+			data.body = JSON.stringify({'message': msg, 'color':'primary'});
+			
+
+			//nothing fancy here like the others, just a fetch. If it fails, no announcement made
+			await fetch(announce_url, data).then((res) => {console.log(res); if (!res.ok) console.log("Failed to announce" + res.status);});
+
+
+		} catch (err) { console.error(err); }
+
+	}
+
+	//If I ever go on a moderator hunting spree, this function will restore the moderators their priveliges
+	async fixModBanGoofs() {
+
+		let mod_arr = [];
+		fs.readFile('./data/modlist.txt', (err, data) => {
+			if(err) console.error(err);
+			mod_arr = data.toString().split('\r\n');
+		});
+
+		const get_mods_url = 'https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=71631229';
+
+		const data = await this.#createTwitchDataHeader();
+
+		let curr_mod_arr = [];
+
+		await fetch(get_mods_url, data).then(result => result.json()).then(body => {
+			for (let i = 0; i < body.data.length; ++i) curr_mod_arr.push(body.data[i].user_id);
+		});
+
+		console.log(curr_mod_arr);
+
+		let add_data = await this.#createTwitchDataHeader();
+		const b_id = add_data.headers['client-id'];
+		add_data.method = 'POST';
+
+		console.log(mod_arr);
+
+		for (let i = 0; i < mod_arr; ++i) {
+			console.log(mod_arr[i]);
+			if (!curr_mod_arr.includes(mod_arr[i])) {
+				console.log(mod_arr[i]);
+				let mod_add_url = `https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${b_id}&user_id=${mod_arr[i]}`;
+				await fetch(mod_add_url, add_data).then((res) => {
+					if (!res.ok) {
+						console.log(res.status);
+						console.log('Error adding in moderator ' + mod);
+					}
+				});
+			}
+		}
 
 	}
 

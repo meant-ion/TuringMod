@@ -46,7 +46,7 @@ const dice = new Dice();
 const calculator = new Calculator();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
-const pubsubs = new PubSubHandler(client, twitch_api);
+const pubsubs = new PubSubHandler(client, twitch_api, commands_holder);
 const trainer = new Trainer(commands_holder);
 
 const the_streamer = opts.channels[0];
@@ -218,6 +218,10 @@ const func_obj = {
 	'!delvod': async (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, await twitch_api.deleteLastVOD());
+	},
+	'!restoremods': async (_input_msg, user, _target) => {
+		if (user.username == 'pope_pontius') 
+			twitch_api.fixModBanGoofs();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF MOD/STREAMER ONLY COMMANDS
@@ -429,6 +433,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
+	//twitch_api.sendAnnouncement(await commands_holder.getIntervalCommand(call_this_function_number));
 	client.say('#pope_pontius', await commands_holder.getIntervalCommand(call_this_function_number));
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }

@@ -9,9 +9,10 @@ export class UberAPI {
 
     #db
 
-    constructor() {
+    //@param   c_h   The database containing the key and secret for the UberDuck API
+    constructor(c_h) {
 
-        this.#db = new CommandArray();
+        this.#db = c_h;
 
     }
 

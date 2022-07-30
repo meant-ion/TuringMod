@@ -24,7 +24,8 @@ export class PubSubHandler {
 
     //@param   c     The Twitch Chat IRC client we need to send messages through
     //@param   t_a   The twitch_api object
-    constructor(c, t_a) {
+    //@param   c_h   The database for the UberDuck API
+    constructor(c, t_a, c_h) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
 
@@ -38,7 +39,7 @@ export class PubSubHandler {
         this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
         */
         this.#twitch_api = t_a;
-        this.#tts_api = new UberAPI();
+        this.#tts_api = new UberAPI(c_h);
         //with the pubsub made, we can now get it working handling msgs
         this.start();
     }

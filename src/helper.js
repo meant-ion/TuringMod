@@ -134,7 +134,7 @@ export class Helper {
     //@returns                T/F if the streamer is @'ed in the message
     isStreamerMentioned(input_msg) {
         input_msg = input_msg.map(item => item.toLowerCase());
-        return input_msg.includes('@pope_pontus');
+        return input_msg.includes('@pope_pontius');
     }
 
     //gets the current time in Central Standard Time in AM/PM configuration

@@ -713,11 +713,11 @@ function initAsClient(websocket, address, protocols, options) {
     ? parsedUrl.hostname.slice(1, -1)
     : parsedUrl.hostname;
   opts.headers = {
+    ...opts.headers,
     'Sec-WebSocket-Version': opts.protocolVersion,
     'Sec-WebSocket-Key': key,
     Connection: 'Upgrade',
-    Upgrade: 'websocket',
-    ...opts.headers
+    Upgrade: 'websocket'
   };
   opts.path = parsedUrl.pathname + parsedUrl.search;
   opts.timeout = opts.handshakeTimeout;
@@ -771,8 +771,11 @@ function initAsClient(websocket, address, protocols, options) {
 
   if (opts.followRedirects) {
     if (websocket._redirects === 0) {
+      websocket._originalUnixSocket = isUnixSocket;
       websocket._originalSecure = isSecure;
-      websocket._originalHost = parsedUrl.host;
+      websocket._originalHostOrSocketPath = isUnixSocket
+        ? opts.socketPath
+        : parsedUrl.host;
 
       const headers = options && options.headers;
 
@@ -788,7 +791,13 @@ function initAsClient(websocket, address, protocols, options) {
         }
       }
     } else if (websocket.listenerCount('redirect') === 0) {
-      const isSameHost = parsedUrl.host === websocket._originalHost;
+      const isSameHost = isUnixSocket
+        ? websocket._originalUnixSocket
+          ? opts.socketPath === websocket._originalHostOrSocketPath
+          : false
+        : websocket._originalUnixSocket
+        ? false
+        : parsedUrl.host === websocket._originalHostOrSocketPath;
 
       if (!isSameHost || (websocket._originalSecure && !isSecure)) {
         //

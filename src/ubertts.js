@@ -29,6 +29,13 @@ export class UberAPI {
         //separate what model the chat member wants and what they want said
         let split_script = script.split(/:(.*)/s);
 
+        //quick check to see if there's no voice defined by the user
+        if (split_script.length == 1) {
+            let temp = split_script[0];
+            split_script[0] = "heavy"; //TF2 Heavy voice
+            split_script.push(temp);
+        }
+
         const uberduck_url = "https://api.uberduck.ai/speak";
 
         const auth = await this.#make_encoded_auth();

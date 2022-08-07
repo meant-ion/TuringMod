@@ -157,7 +157,6 @@ const func_obj = {
 			const msg = `@${user.username}: ${await commands_holder.createAndWriteCommandsToFile(user.username, input_msg)}`;
 			client.say(target, msg);
 		}
-			//commands_holder.createAndWriteCommandsToFile(user.username, input_msg);
 	}, 
 	//for mods/streamer to remove a custom command
 	'!removecommand': async (input_msg, user, target) => {
@@ -319,8 +318,6 @@ const func_obj = {
 	'!color': (_input_msg, _user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
 	//chat member wants to do basic math with the bot
 	'!calc': (input_msg, user, target) => client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`),
-	//converts a number in a given base to the same number in a different base
-	'!convert': (input_msg, user, target) => client.say(target, `@${user.username}: ${calculator.convert(input_msg[1], input_msg[2])}`),
 	//gets the current time in Central Standard Time (CST)
 	'!time': (_input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
 	//user wants their message flipped upside down
@@ -332,7 +329,7 @@ const func_obj = {
 	//user wants to see how much changed from the last two commits
 	'!gitchanges': async (_input_msg, _user, target) => client.say(target, await misc_api.getGithubRepoInfo()),
 	//user wants to convert an amount of one currency to another
-	'!convertcash': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await misc_api.getCurrencyExchangeRate(input_msg.slice(1, 4))}`),
+	'!convert': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await misc_api.getCurrencyExchangeRate(input_msg.slice(1, 4))}`),
 	//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
 	'!pokerand': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandomPokemon()),
 	//user wants a fact about a random number
@@ -377,6 +374,10 @@ const func_obj = {
 	},
 	'!cake': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
+	},
+	'!announce': async (input_msg, user, target) => {
+		input_msg.splice(0,1);
+		if (helper.checkIfModOrStreamer(user, the_streamer)) client.say(target, `/announce ${input_msg.join(' ')}`);
 	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -433,8 +434,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	//twitch_api.sendAnnouncement(await commands_holder.getIntervalCommand(call_this_function_number));
-	client.say('#pope_pontius', await commands_holder.getIntervalCommand(call_this_function_number));
+	client.say('#pope_pontius', `\announce ${await commands_holder.getIntervalCommand(call_this_function_number)}`);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 

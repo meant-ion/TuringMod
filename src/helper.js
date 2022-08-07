@@ -170,7 +170,6 @@ export class Helper {
 
         //calculate the minutes, craft the message, and then send to chat
         return `Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
-        //client.say(target, msg);
     }
 
     //takes a number and rounds it out to two decimal points (for use as percentages)
@@ -204,7 +203,7 @@ export class Helper {
     //@param   input   the original string
     //@return          the input but flipped upside down
     flipText(input) {
-        const flipped_text_map = {
+        let flipped_text_map = {
             'a': '\u0250',
             'b': 'q',
             'c': '\u0254',
@@ -287,10 +286,12 @@ export class Helper {
             '_': '\u203e'
         };
 
+        let total_map = {...flipped_text_map, ...Object.fromEntries(Object.entries(flipped_text_map).map(a => a.reverse()))};
+
         let upsidedown_msg = '';
 
         for (let i = 0; i < input.length; ++i) 
-            upsidedown_msg += `${flipped_text_map[input[i]] != undefined ? flipped_text_map[input[i]] : input[i]}`;
+            upsidedown_msg += `${total_map[input[i]] != undefined ? total_map[input[i]] : input[i]}`;
 
         return upsidedown_msg;
     }

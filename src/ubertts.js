@@ -1,4 +1,3 @@
-import CommandArray from "./sqlite_db.js";
 import fs from 'fs';
 import https from 'https';
 import {PythonShell} from 'python-shell';

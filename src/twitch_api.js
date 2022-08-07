@@ -662,25 +662,6 @@ export class TwitchAPI {
 
 	}
 
-	//used for messages sent on an interval
-	async sendAnnouncement(msg) {
-		const announce_url = 'https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=693520155';
-
-		try {
-
-			let data = this.#createTwitchDataHeader();
-			data.method = 'POST';
-			data.body = JSON.stringify({'message': msg, 'color':'primary'});
-			
-
-			//nothing fancy here like the others, just a fetch. If it fails, no announcement made
-			await fetch(announce_url, data).then((res) => {console.log(res); if (!res.ok) console.log("Failed to announce" + res.status);});
-
-
-		} catch (err) { console.error(err); }
-
-	}
-
 	//If I ever go on a moderator hunting spree, this function will restore the moderators their priveliges
 	async fixModBanGoofs() {
 

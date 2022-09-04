@@ -800,7 +800,7 @@ export class TwitchAPI {
 		const url = `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodedTok}&client_id=${client_stuff[0]}&client_secret=${client_stuff[1]}`;
 		
 		//send the request and write the tokens to the DB for safe keeping
-		await fetch(url, data).then(result => result.text()).then(body => {
+		await fetch(url, data).then(result => result.json()).then(body => {
 			if (body.status == null) {
 			 	this.#data_base.writeTwitchTokensToDB(body.access_token, body.refresh_token);
 				this.#twitch_token_get_time = new Date();//get the time the token was made too, for refresh purposes

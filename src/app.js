@@ -16,7 +16,6 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
-import Trainer from './trainer.js';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -47,7 +46,6 @@ const calculator = new Calculator();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder);
-const trainer = new Trainer(commands_holder);
 
 const the_streamer = opts.channels[0];
 
@@ -93,7 +91,6 @@ function execTheBot() {
 		const input_msg = message.content.split(" ");
 		if (input_msg[0] == '!send') {//the message generated was accepted by admin
 			let response = post.getResponse();
-			trainer.recordResponse("#pope_pontius", response, last_post_gen_time);
 
 			//search through the list of responses and channels to find the correct one and then post that out
 			client.say(opts.channels[0], `${response != "" ? `MrDestructoid ${response}` : `No response found for this channel`}`);
@@ -361,18 +358,6 @@ const func_obj = {
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
-	//for writing training data for a fine tuned model to a JSONL file
-	'!write': (_input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) trainer.writeTrainingDataToFile(target);
-	},
-	//for uploading a training file to OpenAI's servers
-	'!upl': (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) uploadAndMakeModel();
-	},
-	//for deleting all models and files from OpenAI's servers
-	'!delm': (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) deleteModels();;
-	},
 	'!cake': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
 	},
@@ -482,23 +467,11 @@ async function generatePost(target) {
 		//const d = new Date()
 		last_post_gen_time = Date.now();
 		//add the prompt to the training data set for the channel
-		trainer.addPromptToTrainingData(target, prompt, last_post_gen_time);
 		resetPrompt();
 	
 		if (prompt == "") console.log("prompt flushed after response generation successfully!");
 	} catch (err) { console.error(err); }
 
-}
-
-async function uploadAndMakeModel() {
-	const key = await commands_holder.getAPIKeys(0);
-	await trainer.uploadFileToFineTune(key);
-	await trainer.createFineTuning(key, the_streamer.slice(1, the_streamer.length));
-}
-
-async function deleteModels() {
-	const key = await commands_holder.getAPIKeys(0);
-	await trainer.findAndDeleteAllFineTunedModels(key);
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

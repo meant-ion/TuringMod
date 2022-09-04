@@ -232,8 +232,7 @@ export class Trainer {
             await fetch(delete_url + model, {method: 'DELETE', headers: fine_tune_headers})
             .then(result => result.json())
             .then(body => {
-                console.log(body);
-                if (body.error.type != 'invalid_request_error') {//seems like the list is kept even when deleted, so added check here
+                if (body.error.type != undefined && body.error.type != 'invalid_request_error') {//seems like the list is kept even when deleted, so added check here
                     if (!body.deleted) console.log(`* Failed to delete model ${model} from OpenAI's API`);
                     else console.log(` Model ${model} has been deleted from OpenAI's servers`);
                 }
@@ -249,10 +248,8 @@ export class Trainer {
             await fetch(`${fine_tunes_url}/${ids}/cancel`, {method: 'POST', headers: fine_tune_headers})
             .then(result => result.json())
             .then(body => {
-                console.log(body);
                 if (body.error != undefined) {
-                    if (body.status != 'cancelled') console.log(`* Could not delete fine tune job ${ids}`);
-                    else console.log(`* Fine tune job ${ids} cancelled successfully`);
+                    if (body.status == 'cancelled') console.log(`* Fine tune job ${ids} cancelled successfully`);
                 }
             }).catch(err => {
                 console.error(err);

@@ -19,15 +19,25 @@ export class MiscAPI {
 
     //prints out all current suggestions within suggestions.txt and sends it to chat
 	//needs testing for format and looks
-	//@param    target    The name of the channel the list of suggestions is being sent to
 	async getAllCurrentSuggestions() {
-		return fs.readFileSync('./data/suggestions.txt', 'utf8', (err, data) => {
-			if (err) {
-				//this.client.say(target, "Error in reading from suggestions file");
-				console.error(err);
-				return "Error in reading from suggestions file";
-			} else console.log(data);
-		});
+		try {
+			const data = fs.readFileSync('./data/suggestions.txt', 'utf8', (err) => {
+				if (err) return 'Error in reading from file';
+			});
+
+			const lines = data.split(/\r?\n/);
+
+			let msg = 'Top 5 suggestions for the bot are: ';
+
+			for (let i = 0; i < 4; ++i) {
+				msg += lines[i] + ', ';
+			}
+			msg += lines[4];
+
+			return msg;
+		} catch (err) {
+			return 'Error in reading in suggestions from file';
+		}
 	}
 
 	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another
@@ -35,11 +45,11 @@ export class MiscAPI {
 	//@param   data   An array of three items: the starting currency, the target currency, and the amount in the starting currency
 	//@return         A message showing the conversion of the starting currency amount to the target currency
 	async getCurrencyExchangeRate(data) {
-		const start_abbrev = data[0].toUpperCase();
-		const target_abbrev = data[1].toUpperCase();
-		const amt = Number(data[2]);
 
 		try {
+			const start_abbrev = data[0].toUpperCase();
+			const target_abbrev = data[1].toUpperCase();
+			const amt = Number(data[2]);
 			const key = await this.#data_base.getAPIKeys(2);
 			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
 			let msg = '';
@@ -53,7 +63,9 @@ export class MiscAPI {
 
 			return msg;
 
-		} catch (err) { console.error(err); }
+		} catch (err) { 
+			return 'Error in converting currency values';
+		}
 	}
 
 	//gets and returns the list of games on the Epic Store that have been marked down as completely free
@@ -417,7 +429,7 @@ export class MiscAPI {
 			}).catch(err => {
 				return this.#generateAPIErrorResponse(err);
 			});
-		} catch (err) { console.error(err); }
+		} catch (err) { return 'Error in parsing definition'; }
 
 		return `${word}: ${gr_abbrev}; ${definition}`;
     }

@@ -48,9 +48,8 @@ COMMANDS:
 				* Logarithms
 			 Further features may be added in the future
 
-	- !convert: Converts a number from one number system to a different one
-				* Systems available: Binary, Octal, Decimal, Hexadecimal
-				* Format: !convert ${number system goes here} ${value to convert goes here}
+	- !convert: Converts an amount of one currency to its equivalent value in another one
+				* Format: !convert ${currency converting from} ${currency converting to} ${amount in first currency type}
 
 	- !time: gets the time currently where I am located (Chicagoland Metro Area) in Central Standard Time (CST)
 			 * format: HH:MM A.M. or P.M.
@@ -99,10 +98,6 @@ COMMANDS:
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one 
 				   and posts them in chat as a message
 
-	- !convertcash: converts an amount of one currency input by the user into the equivalent amount of a 
-	            currency specified by the user
-			    * Format: !convert Currency_To_Convert_From Currency_To_Convert_To amount
-
 	- !pokerand: gets the data from a randomly found Pokémon; Tried to keep the message sent as close to 
 				 the anime format as I could (as best I remember it really)
 
@@ -115,7 +110,7 @@ COMMANDS:
 	- !randlang: gets a random esoteric programming language (esolang) from the esolang wiki
 
 	- !freegame: gets a list of all games discounted to free on the Epic Store
-				* Does not return games that were always free or on sale for more than free
+				* Does not return games that were always free, free expansions/item packs, or games on sale for more than free
 
 	- !reverse: flips the message sent by the chatter upside down
 

@@ -46,6 +46,7 @@ export class Dice {
 			//with all possible cases checked, we will make the roll and return the result to the chatroom
 			const num_dice_to_roll = (d_loc == 0) ? 1 : split_cmd[0];
 			const num_sides = split_cmd[d_loc+1];
+			if (num_dice_to_roll >= 100000000 || num_sides >= 100000000) return 'Amount to roll or number of sides too high';
 			const total = this.#rollDice(num_dice_to_roll, num_sides, (has_r) ? split_cmd[split_cmd.length - 1] : '');
 			if (total != null) return `You rolled ${num_dice_to_roll} d${num_sides} and got ${total}`;
 			else return 'Minimum roll was higher than possible highest roll';

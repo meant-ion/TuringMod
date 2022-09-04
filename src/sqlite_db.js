@@ -451,6 +451,7 @@ export class CommandArray {
 
 		return new Promise((resolve, reject) => {
 			this.#db.get(search_sql, [channel], (err, row) => {
+				console.log(row);
 				if (err) reject(err);
 				else resolve(row.filename);
 			});
@@ -465,7 +466,8 @@ export class CommandArray {
 		const update_sql = `UPDATE fine_tune SET finetune_id = ? WHERE channel = ?`;
 
 		this.#db.run(update_sql, [model_name, channel], (err) => {
-			if (err) console.error(err); else console.log(`* Model successfully made for ${channel}`);
+			if (err) console.error(err); 
+			else console.log(`* Model successfully made for ${channel}`);
 		})
 	}
 

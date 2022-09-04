@@ -282,6 +282,7 @@ const func_obj = {
 		client.say(target, `@${user.username}, ${await twitch_api.getUserAcctAge(user)}`);
 	},
 	//returns the current tags applied to the stream. Can edit tags if user is mod
+	//currently, tags API is broken. Update is on the way but no ETA on when it's released
 	'!tags': async (input_msg, user, target) => {
 		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
 			input_msg.splice(0, 1);
@@ -375,9 +376,15 @@ const func_obj = {
 	'!cake': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
 	},
-	'!announce': async (input_msg, user, target) => {
-		input_msg.splice(0,1);
-		if (helper.checkIfModOrStreamer(user, the_streamer)) client.say(target, `/announce ${input_msg.join(' ')}`);
+	'!kill': (_input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			PythonShell.run('./src/audio/audio.py', {
+				pythonPath: 'C:/Program Files/Python310/python.exe',
+				args: ["stop"]
+			}, err => {
+				if (err) console.error(err);
+			});
+		}
 	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -434,7 +441,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	client.say('#pope_pontius', `\announce ${await commands_holder.getIntervalCommand(call_this_function_number)}`);
+	client.say('#pope_pontius', `/announce ${await commands_holder.getIntervalCommand(call_this_function_number)}`);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 

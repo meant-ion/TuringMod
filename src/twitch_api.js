@@ -21,7 +21,6 @@ export class TwitchAPI {
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
 	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
 	async getFollowAge(user) {
 		try {
 			this.#hasTokenExpired();
@@ -64,8 +63,6 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
-	//@param   user     The name of the chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
 	async getChannelSchedule() {
 
 		try {
@@ -92,8 +89,6 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
-	//@param   user     The name of the chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
 	async getStreamUptime() {
 
 		try {
@@ -118,8 +113,6 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the title of the stream
-	//@param   user     The name of the chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
 	async getStreamTitle() {
 
 		try {
@@ -139,7 +132,6 @@ export class TwitchAPI {
 
 	//gets an account's creation date, calculates its age, and then returns it to the chatroom
 	//@param   user     The name of the chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
 	async getUserAcctAge(user) {
 
 		try {
@@ -162,8 +154,6 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the stream's category (what we are playing/doing for stream)
-	//@param   user           The name of the chat member that typed in the command
-	//@param   target         The chatroom that the message will be sent into
 	async getCategory() {
 		try {
 			this.#hasTokenExpired();
@@ -220,7 +210,6 @@ export class TwitchAPI {
 	getClipList() { return this.#clip_list; }
 
 	//edits the channel category/game to one specified by a moderator
-	//@param   user           The name of the chat member that typed in the command
 	//@param   game_name       The name of the category that we wish to change the stream over to
 	async editChannelCategory(game_name) {
 
@@ -277,7 +266,6 @@ export class TwitchAPI {
 
 	//edits the stream's title to one requested by streamer/moderator
 	//@param   title          The title we wish to now use on the stream
-	//@param   target         The channel who's title we wish to change
 	async editStreamTitle(title) {
 
 		if (title.length == 0 || title == " ") {//catch if the title is empty and prevent it from passing through
@@ -354,7 +342,6 @@ export class TwitchAPI {
 	}
 
 	//simple little function that will get a rough guess of whether or not the channel is a victim of view botting
-	//@param   target   The channel we are posting the message to
 	async getChancesStreamIsViewbotted() {
 		//get our URLs and counts set up here
 		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontius/chatters`;
@@ -419,7 +406,6 @@ export class TwitchAPI {
 
     //creates a PubSub subscription of the topic deigned by the user
 	//@param   topic             The topic we wish to listen to
-	//@param   commands_holder   The database manipulation object so we can get the oauth token
 	//@param   pubsubs           The PubSub object
 	async makePubSubscription(topic, pubsubs) {
 		const tkn = await this.#data_base.getTwitchInfo(0);
@@ -494,8 +480,6 @@ export class TwitchAPI {
 	}
 
 	//gets and returns the list of tags currently applied to the stream
-	//@param   user     The user requesting the tags
-	//@param   target   The chatroom the list of tags will be posted into
 	async getStreamTags() {
 		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
 		let msg = "Tags for this stream are ";
@@ -522,8 +506,6 @@ export class TwitchAPI {
 	}
 
 	//changes the tags of the stream to new ones. Cannot change automatic tags at all
-	//@param   user           The user requesting the tags
-	//@param   target         The chatroom the list of tags will be posted into
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(list_of_tags) {
 
@@ -554,15 +536,29 @@ export class TwitchAPI {
 						j = list_of_tags.length;
 					}
 				}
-				if (!tag_found) return `Error with unsupported tag ${orig_tag}`;
+				tag = orig_tag;
+				// tag is not found, so we make a custom tag. 
+				// main rule for custom tags: no more than 25 characters in size
+				if (!tag_found) {
+					//combine the list of tags until we reach the 25 char limit
+					for (let j = i + 1; j < list_of_tags.length; ++j) {
+						const wombo_combo = tag + list_of_tags[j];
+						if (wombo_combo.length > 25) {
+							tags_array.push(wombo_combo);
+							j = list_of_tags.length;
+						}
+						tag = wombo_combo;
+					}
+				}
+				// if (!tag_found) return `Error with unsupported tag ${orig_tag}`;
 			} else {
 				tags_array.push(tags_list[tag]);
 			}
 		}
 		//Twitch only allows for 5 tags to be input by the streamer at a time. Any more and it wont go through
 		//if more than 5 tags, reject them and put out message saying so
-		if (tags_array.length > 5)
-			return 'Too many tags provided. Max 5';
+		if (tags_array.length > 10)
+			return 'Too many tags provided. Max 10';
 
 		//with tags assembled, we send out the request 
 		try {
@@ -593,7 +589,6 @@ export class TwitchAPI {
 	//gets the current, most recent creator goal and sends it out to the stream
 	//TODO when bigger: make this work for multiple goals 
 	//(I doubt I will have > 1 active at a time, but it'd be interesting to handle anyway)
-	//@param   target   The chatroom the goal(s) will be sent into
 	async getCreatorGoals() {
 		const goals_url = 'https://api.twitch.tv/helix/goals?broadcaster_id=71631229';
 
@@ -617,7 +612,6 @@ export class TwitchAPI {
 
 	//deletes the last vod on the channel. Useful if something against Twitch's TOS happens accidentally and I 
 	//need to try to prevent my own ban from it
-	//@param   target   the chat room the messgae will be posted into
 	async deleteLastVOD() {
 		//Part 1: We get the id of the last vod
 
@@ -709,7 +703,6 @@ export class TwitchAPI {
 
 	//gathers the list of tags that Twitch provides
 	//definitly gonna be worked on better later in time tho
-	//@param   target   the chatroom we post the error message to if getting the tag list fails
 	async #getAndUpdateTagsList() {
 		//get the first 100 tags of the total list of tags
 		let tags_url =  "https://api.twitch.tv/helix/tags/streams?first=100";
@@ -739,15 +732,12 @@ export class TwitchAPI {
 					//update the url with the pagination cursor for repeated calls to the API
 					tags_url = `https://api.twitch.tv/helix/tags/streams?first=100&after=${pagination_target}`;
 	
-					//this.#iterateAndGetTags(tags_url, data, tags_list, pagination_target, target);
-	
 				}).catch(err => { return this.#generateAPIErrorResponse(err) });
 			}
 
 			//with all relevant tags got, write the list of them to file
 			fs.writeFile('./data/tags_list.json', JSON.stringify(tags_list), 'utf8', err => {
 				if (err) console.error(err);
-				console.log('* Tags list updated and written to file!');
 			});
 
 		} catch (err) { console.error(err); }
@@ -834,7 +824,6 @@ export class TwitchAPI {
 
     //simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated
-	//@param   target   The name of the chatroom we are posting to
 	#generateAPIErrorResponse(err) {
 		console.error(err);
 		return 'Error: Twitch API currently not responding';

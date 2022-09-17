@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import SerialPort from 'serialport';
+import OBSWebSocket from 'obs-websocket-js';
 import pkg from '@serialport/parser-readline';
 import UberAPI from './ubertts.js';
 const { Readline } = pkg;
@@ -21,23 +22,25 @@ export class PubSubHandler {
     #parser;             //what we will use for processing communications between the arduino and the rpi
     #twitch_api;         //object for handling all API requests to Twitch
     #tts_api;            //object for handling Uberduck API requests/playing
+    #obs;                //for handling OBS related functions
 
     //@param   c     The Twitch Chat IRC client we need to send messages through
     //@param   t_a   The twitch_api object
     //@param   c_h   The database for the UberDuck API
-    constructor(c, t_a, c_h) {
+    //@param   o     The websocket connection for the turret cam
+    constructor(c, t_a, c_h, o) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
 
-        this.#twitch_chat_client = c;
-        this.#topics_list = [];
-        /* Uncomment when moved to rpi with arduino port written to it 
-        this.#port = new SerialPort('/dev/ttyACM0', {baudRate: 9600});
-        this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
+        this.#obs = o;
 
-        this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
-        this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
-        */
+        this.#twitch_chat_client = c;
+        this.#topics_list = []; 
+        //this.#port = new SerialPort('COM4', {baudRate: 9600});
+        //this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
+
+        //this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
+        //this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
         this.#twitch_api = t_a;
         this.#tts_api = new UberAPI(c_h);
         //with the pubsub made, we can now get it working handling msgs
@@ -77,7 +80,7 @@ export class PubSubHandler {
 
     //handler for all specially made, redeemed channel points rewards
     //@param   parsed_data   The bulk of the data received from the WebSocket
-    #rewardHandler(parsed_data) {
+    async #rewardHandler(parsed_data) {
         switch (parsed_data.data.redemption.reward.title) {
             case 'VIP Me'://user redeemed reward to become a VIP
                 const new_vip = parsed_data.data.redemption.user.display_name;
@@ -86,10 +89,13 @@ export class PubSubHandler {
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
-                this.#port.write("f", (err) => {
-                    if (err) return console.error(err);
-                    console.log("* Fire command sent out!");
-                });
+                /*try {
+                    await this.#obs.call('SetCurrentProgramScene', {sceneName: 'Turret Cam'});
+                    this.#port.write("f", (err) => {
+                        if (err) return console.error(err);
+                        console.log("* Fire command sent out!");
+                    });
+                } catch(err) { console.error(err); }*/
                 break;
             case 'Change Chat Settings'://user redeemed to change some chatroom settings
                 const user_inputs = (parsed_data.data.redemption.user_input).split(" ");

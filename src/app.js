@@ -5,6 +5,7 @@ import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
 import {PythonShell} from 'python-shell';
+import OBSWebSocket from 'obs-websocket-js';
 import Calculator from './calculator.js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -16,6 +17,8 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
+import { exec } from 'child_process';
+import { exit } from 'process';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -33,6 +36,19 @@ const opts = {
 };
 
 const client = new _client(opts);
+const obs = new OBSWebSocket();
+
+try {
+	const {
+	  obsWebSocketVersion,
+	  negotiatedRpcVersion
+	} = await obs.connect('ws://127.0.0.1:4444', 'password', {
+	  rpcVersion: 1
+	});
+	console.log(`Connected to server ${obsWebSocketVersion} (using RPC ${negotiatedRpcVersion})`)
+} catch (error) {
+	console.error('Failed to connect', error.code, error.message);
+}
 
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 const commands_holder = new CommandArray();
@@ -45,7 +61,7 @@ const dice = new Dice();
 const calculator = new Calculator();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
-const pubsubs = new PubSubHandler(client, twitch_api, commands_holder);
+const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs);
 
 const the_streamer = opts.channels[0];
 
@@ -349,10 +365,10 @@ const func_obj = {
 		//play bonk sound effect when bonking commences
 		PythonShell.run('./src/audio/audio.py', {
 			pythonPath: 'C:/Program Files/Python310/python.exe',
-			args: ["bonk.mp3"]
+			args: ["bonk.wav"]
 		}, err => {
 			if (err) console.error(err);
-		})
+		});
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
@@ -360,6 +376,11 @@ const func_obj = {
 	//--------------------------------------------------------------------------------------------------------------------------
 	'!cake': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
+	},
+	'!skip': async (_input_msg, user, _target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			exit(0);
+		}
 	},
 	'!kill': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {

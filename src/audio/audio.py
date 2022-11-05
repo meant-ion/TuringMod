@@ -8,7 +8,7 @@ class Audio:
         self._stop_event = threading.Event()
         for root, dirs, files in os.walk(sys.path[0]):
             for file in files:
-                if (file.endswith(".mp3")):
+                if (file.endswith(".mp3") and file != "audio.wav" and file != "audio.py"):
                     self.sound_list.append(file)
     def _play_sound(self, i):
         playsound(os.path.join(sys.path[0], i))

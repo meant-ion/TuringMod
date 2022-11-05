@@ -17,7 +17,7 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
-import { exec } from 'child_process';
+import audio from './audio/audio.js';
 import { exit } from 'process';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -85,9 +85,6 @@ let call_this_function_number = 0;
 
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
-
-//holds when the last time a post from GPT-3 was generated
-let last_post_gen_time = undefined;
 
 function execTheBot() {
 	const token = process.env.DISCORD_CLIENT_TOKEN;
@@ -374,9 +371,6 @@ const func_obj = {
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
-	'!cake': async (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) await misc_api.getCakes();
-	},
 	'!skip': async (_input_msg, user, _target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			exit(0);
@@ -390,6 +384,11 @@ const func_obj = {
 			}, err => {
 				if (err) console.error(err);
 			});
+		}
+	},
+	'!audio': async (_input_msg, user, _target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			await audio();
 		}
 	}
 	//--------------------------------------------------------------------------------------------------------------------------
@@ -485,8 +484,6 @@ async function generatePost(target) {
 	try {
 		const key = await commands_holder.getAPIKeys(0);
 		post.generatePost(prompt, lines_count, target, key);
-		//const d = new Date()
-		last_post_gen_time = Date.now();
 		//add the prompt to the training data set for the channel
 		resetPrompt();
 	

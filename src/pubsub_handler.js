@@ -3,9 +3,14 @@ import SerialPort from 'serialport';
 import OBSWebSocket from 'obs-websocket-js';
 import pkg from '@serialport/parser-readline';
 import UberAPI from './ubertts.js';
+import fs from "fs";
 const { Readline } = pkg;
 //importing otherwise literally does not work for me, forgive me coding gods
 import {PythonShell} from 'python-shell';
+import Audic from 'audic';
+
+
+import path from 'path';
 
 
 
@@ -40,9 +45,9 @@ export class PubSubHandler {
         //this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
 
         //this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
-        //this.#parser.on("datra", data => console.log(`* Data get from arduino: ${data}`));
         this.#twitch_api = t_a;
         this.#tts_api = new UberAPI(c_h);
+
         //with the pubsub made, we can now get it working handling msgs
         this.start();
     }
@@ -89,22 +94,44 @@ export class PubSubHandler {
                 break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
-                /*try {
-                    await this.#obs.call('SetCurrentProgramScene', {sceneName: 'Turret Cam'});
-                    this.#port.write("f", (err) => {
-                        if (err) return console.error(err);
-                        console.log("* Fire command sent out!");
-                    });
-                } catch(err) { console.error(err); }*/
+                try {
+                    // await this.#obs.call('SetCurrentProgramScene', {sceneName: 'Turret Cam'});
+                    // this.#port.write("f", (err) => {
+                    //     if (err) return console.error(err);
+                    //     console.log("* Fire command sent out!");
+                    // });
+                } catch(err) { console.error(err); }
                 break;
             case 'Change Chat Settings'://user redeemed to change some chatroom settings
                 const user_inputs = (parsed_data.data.redemption.user_input).split(" ");
                 this.#twitch_api.editChatroomSettings(user_inputs, parsed_data.data.redemption.user.display_name);
                 break;
             case 'Random Sound Effect':
-                PythonShell.run('./src/audio/audio.py', 
-                                {pythonPath: 'C:/Program Files/Python310/python.exe'}, 
-                                (err) => {if (err) console.error(err)})
+                let the_path = path.join(path.resolve(path.dirname('')),'/src/audio/drugsandalkohol.mp3');
+                console.log(the_path);
+                // let files_arr = [];
+                // fs.readdirSync(the_path).forEach((file) => {
+                //     if (file != "audio.wav" && file != "audio.py") files_arr.push(file);
+                // });
+                // let audio_file_name = files_arr[Math.floor(Math.random() * files_arr.length)];
+                // console.log(audio_file_name);
+                const audic = new Audic('./drugsandalkohol.mp3');
+                audic.volume = 1;
+                console.log(audic.src);
+                audic.play();
+                audic.addEventListener('playing', () => {
+                    console.log("Playing audio (allegedly)");
+                });
+                //await audic.play();
+                audic.addEventListener('ended', () => {
+                    console.log("Audio done playing");
+                    audic.destroy();
+                });
+                //await audio();
+                //this.#audio_player.makeNewPage(the_path + audio_file_name);
+                // PythonShell.run('./src/audio/audio.py', 
+                //                 {pythonPath: 'C:/Program Files/Python310/python.exe'}, 
+                //                 (err) => {if (err) console.error(err)})
                 break;
             case 'AI Speech': 
                 const user_str = parsed_data.data.redemption.user_input;

@@ -278,7 +278,6 @@ export class Calculator {
         for (let i = 0; i < math_problem.length; ++i) {
             //just a number, so push to result stack until we have an operator
             if (this.helper.isNumeric(math_problem[i])) {
-                //console.log(math_problem[i].indexOf('.'));
                 if (math_problem[i].indexOf('.') != -1) {
                     result_stack.push(parseFloat(math_problem[i]));
                 } else result_stack.push(parseInt(math_problem[i]));

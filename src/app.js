@@ -228,7 +228,7 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, await twitch_api.deleteLastVOD());
 	},
-	'!restoremods': async (_input_msg, user, _target) => {
+	'!restoremods': async (_input_msg, user, _target) => { // POSSIBLE TARGET FOR REMOVAL
 		if (user.username == 'pope_pontius') 
 			twitch_api.fixModBanGoofs();
 	},

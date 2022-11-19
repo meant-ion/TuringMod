@@ -6,6 +6,8 @@ using OpenAI's GPT3 API to mimic the members in the chatroom, along with a large
 A fork of this bot containing only the chat mimicking functions (meant more for multiple channels at once) can be
 found here: https://github.com/meant-ion/TuringModLite
 
+The fork of the bot that has all the old functions that are no longer here is under the 'heavy' branch
+
 COMMANDS: 
 
 	- !title: returns the current title of the current stream to the chatroom
@@ -33,23 +35,6 @@ COMMANDS:
 	- !flip: simple command that flips a coin and returns either heads or tails. Not much else really
 
 	- !uptime: gets the uptime of the streamer since they have been live
-
-	- !calc: a twitch chat calculator. Users can put in somewhat complex calculations and get answers. Currently supports:
-				* Basic operators (+, -, *, /)
-				* More complex operators (!(factorial), %(modulo/remainder), ^(exponents))
-				* Equality operators (<, >, <=, >=)
-				* Parentheses in the problems (i.e. 4 + (3-1))
-				* Values for Euler's Number (e) and Pi
-				* Negative numbers and decimals
-				* Trigonometric functions (sine, cosine, tangent, secant, cosecant, cotangent)
-				* Hyperbolic trigonometric functions (sinh, cosh, tanh, sech, cosech, coth)
-				* Bitwise operators (&(AND), |(OR), ~(NOT), x|(XOR))
-				* Greatest Common Denominators/Factors and LEast Common Multiples
-				* Logarithms
-			 Further features may be added in the future
-
-	- !convert: Converts an amount of one currency to its equivalent value in another one
-				* Format: !convert ${currency converting from} ${currency converting to} ${amount in first currency type}
 
 	- !time: gets the time currently where I am located (Chicagoland Metro Area) in Central Standard Time (CST)
 			 * format: HH:MM A.M. or P.M.
@@ -92,31 +77,16 @@ COMMANDS:
 
 	- !suggestionlist: gets the list of all ideas for the bot not yet implemented but suggested
 
-	- !dictrand: get a random word from the Merriam-Webster dictionary along with its function 
-				 and definition and sends it to chat
-
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one 
 				   and posts them in chat as a message
-
-	- !pokerand: gets the data from a randomly found Pokémon; Tried to keep the message sent as close to 
-				 the anime format as I could (as best I remember it really)
-
-	- !numrand: gets a fact about a randomly generated number and posts it to chat
-
 	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
 	- !spacepic: gets the NASA Space Picture of the Day and sends it out to chat
 
-	- !randlang: gets a random esoteric programming language (esolang) from the esolang wiki
-
 	- !freegame: gets a list of all games discounted to free on the Epic Store
 				* Does not return games that were always free, free expansions/item packs, or games on sale for more than free
 
-	- !reverse: flips the message sent by the chatter upside down
-
 	- !bonk: bonks the user specified by the chat member
-
-	- !color: gives a randomly generated hex code representing a color
 
 
 MOD/STREAMER ONLY COMMANDS:

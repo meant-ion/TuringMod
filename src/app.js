@@ -6,7 +6,6 @@ import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
 import {PythonShell} from 'python-shell';
 import OBSWebSocket from 'obs-websocket-js';
-import Calculator from './calculator.js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
 import LurkList from './lurker_list.js';
@@ -17,7 +16,6 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
-import audio from './audio/audio.js';
 import { exit } from 'process';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -58,7 +56,6 @@ const twitch_api = new TwitchAPI(commands_holder);
 const spotify_api = new SpotifyAPI(commands_holder);
 const misc_api = new MiscAPI(commands_holder);
 const dice = new Dice();
-const calculator = new Calculator();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs);
@@ -128,6 +125,7 @@ const func_obj = {
 	//mods/streamer wish to give a shoutout to a chat member/streamer
 	'!so': (input_msg, user, target) => {
 		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+			client.say(target, `/shoutout ${input_msg[1]}`);
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
 	}, 
 	//mod/streamer wants to have the bot listen in on a PubSub topic
@@ -182,24 +180,6 @@ const func_obj = {
 			client.say(target, msg);
 		}
 	},   
-	//moderator/streamer wants to have the "banhammer" hit randomly
-	/*'!shotgun': async (input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			//note to self, if there is ever more than 100 people watching, uncomment this for the stream lol
-			//as if that will ever happen of course
-			//twitch_api.shotgunTheChat(client_id);
-			let client_list = await twitch_api.shotgunTheChat();
-			client.say(target, client_list[0]);
-			for (const victim in client_list[1]) {
-				client.say(target, `@${victim} has been hit by the blast!`);
-				client.timeout(target, victim, 10);
-			}
-	},  }*/
-	//mod/streamer wants to see chances channel is being viewbotted
-	'!testviewers': async (_input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer))
-			client.say(target, await twitch_api.getChancesStreamIsViewbotted());
-	},  
 	//mod/streamer toggles quiet mode
 	'!quiet': (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -227,10 +207,6 @@ const func_obj = {
 	'!delvod': async (_input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, await twitch_api.deleteLastVOD());
-	},
-	'!restoremods': async (_input_msg, user, _target) => { // POSSIBLE TARGET FOR REMOVAL
-		if (user.username == 'pope_pontius') 
-			twitch_api.fixModBanGoofs();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF MOD/STREAMER ONLY COMMANDS
@@ -315,44 +291,18 @@ const func_obj = {
 	'!roll': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await dice.getDiceRoll(input_msg[1])}`),
 	//flips a coin and returns the result to chat
 	'!flip': (_input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
-	//allows chat member to take a chance at being timed out. Doesn't work on the streamer
-	'!roulette': (_input_msg, user, target) => {
-		if (helper.isStreamer(user.username, the_streamer)) //make sure it isnt the streamer trying to play russian roulette
-			client.say(target, "You are the streamer, I couldn't time you out if I wanted to");
-		else {
-			const msg = dice.takeAChanceAtBeingBanned();
-			client.say(target, msg);
-			if (msg == 'How very unfortunate') client.timeout(target, user.username, 10);
-		}
-	},
-	//randomly generates and sends out a hex color code
-	'!color': (_input_msg, _user, target) => client.say(target, `Color found: ${dice.generateHexColorCode()}`),
-	//chat member wants to do basic math with the bot
-	'!calc': (input_msg, user, target) => client.say(target, `@${user.username}: ${ calculator.calculate(helper.combineInput(input_msg, false))}`),
 	//gets the current time in Central Standard Time (CST)
 	'!time': (_input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
-	//user wants their message flipped upside down
-	'!reverse': (input_msg, _user, target) => client.say(target, helper.flipText(helper.combineInput(input_msg, true))),
 	//user wants to see what has been suggested but not yet implemented currently
 	'!suggestionlist': async (_input_msg, user, target) => client.say(target, await misc_api.getAllCurrentSuggestions()),
-	//user wants to get a random word from the Merriam-Webster Dictionary
-	'!dictrand': async (_input_msg, user, target) =>  client.say(target, `@${user.username}: ${await misc_api.getRandomWordFromDictionary()}`),
 	//user wants to see how much changed from the last two commits
 	'!gitchanges': async (_input_msg, _user, target) => client.say(target, await misc_api.getGithubRepoInfo()),
-	//user wants to convert an amount of one currency to another
-	'!convert': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await misc_api.getCurrencyExchangeRate(input_msg.slice(1, 4))}`),
-	//user wants a random pokemon's pokedex entry (just name, genus, and flavor text)
-	'!pokerand': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandomPokemon()),
-	//user wants a fact about a random number
-	'!numrand': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandomNumberFact()),
 	//chat member wants to know about something random off wikipedia
 	'!wikirand': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await misc_api.getRandWikipediaArticle()}`);
 	},
 	//user wants to see the NASA Space Pic of the Day
 	'!spacepic': async (_input_msg, _user, target) => client.say(target, await misc_api.getNASAPicOfTheDay()),
-	//user wants to look at a random esolang
-	'!randlang': async (_input_msg, _user, target) => client.say(target, await misc_api.getRandEsoLang()),
 	//user wants a list of currently free games on the Epic Store
 	'!freegame': async (_input_msg, _user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
@@ -386,11 +336,6 @@ const func_obj = {
 			});
 		}
 	},
-	'!audio': async (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			await audio();
-		}
-	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
 };

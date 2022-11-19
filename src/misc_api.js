@@ -40,34 +40,6 @@ export class MiscAPI {
 		}
 	}
 
-	//Using the free ExchangeRatesAPI, we can get the conversion rates from one currrency to another
-	//most likely to staple this into a conversion calculator
-	//@param   data   An array of three items: the starting currency, the target currency, and the amount in the starting currency
-	//@return         A message showing the conversion of the starting currency amount to the target currency
-	async getCurrencyExchangeRate(data) {
-
-		try {
-			const start_abbrev = data[0].toUpperCase();
-			const target_abbrev = data[1].toUpperCase();
-			const amt = Number(data[2]);
-			const key = await this.#data_base.getAPIKeys(2);
-			const currency_url = `https://v6.exchangerate-api.com/v6/${key}/latest/${start_abbrev}`;
-			let msg = '';
-
-			await fetch(currency_url).then(result => result.json()).then(body => {
-				const rate = Number(body.conversion_rates[target_abbrev]);
-				msg = `${amt} ${start_abbrev} is equivalent to ${this.helper.roundToTwoDecimals(amt * rate, false)} ${target_abbrev}`;
-			}).catch(err => {
-				return this.#generateAPIErrorResponse(err);
-			});
-
-			return msg;
-
-		} catch (err) { 
-			return 'Error in converting currency values';
-		}
-	}
-
 	//gets and returns the list of games on the Epic Store that have been marked down as completely free
 	//@param   target   The chat room we are posting the list into
 	async getFreeGamesOnEpicStore() {
@@ -145,36 +117,6 @@ export class MiscAPI {
 
 	}
 
-	//gets a random esoteric programming language (esolang) from the esolang wiki and sends the link to chat
-	//@param   user     The chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
-	async getRandEsoLang() {
-
-		const eso_url = `https://esolangs.org/wiki/Special:RandomInCategory/Languages`;
-
-		let url = '';
-
-		await fetch(eso_url).then(result => result.text()).then(body => {
-			//split up the body (literally an HTML page), grab the title (4th line), slice off the <title> start tag,
-			//and then split the rest of the string into an array based on spaces
-			const l = body.split('\n')[4].slice(7).split(' ');
-			let str = "";
-			//we want only the name of the language, everything else is unwanted
-			for (let word of l) {
-				//when we get this char, we have gotten the whole name and break out
-				if (word == '-') break;
-				str += word + '_';
-			}
-			str = str.slice(0, -1);//remove the extra '_' from the string so we can get the correct title
-			url = `https://esolangs.org/wiki/${str}`;
-		}).catch(err => {
-			return this.#generateAPIErrorResponse(err);
-		});
-
-		return `Here is a link to a random esolang! Enjoy! ${url}`;
-
-	}
-
 	//Function that gathers data about the changes from this bot's GitHub repo and sends it to chat
 	//@param   target   The chatroom that the message will be sent in to
 	async getGithubRepoInfo() {
@@ -240,186 +182,6 @@ export class MiscAPI {
 				+ `(${percentages_array[2]}% difference))`;
 	}
 
-	//gets a random pokemon from the list of all pokemon and returns its flavor text
-	//@param   target   The name of the chatroom that the message will be posted in
-	async getRandomPokemon() {
-		//get our requesting URL and its headers in a row and go from there
-		//As of 8/22/2021, according to Bulbapedia, there are 898 separate entries for pokemon for the "National Pokedex"
-		const pokemon_id = Math.floor(Math.random() * 898) + 1;
-		const pokemon_url = `https://pokeapi.co/api/v2/pokemon-species/${pokemon_id}/`;
-		let en_array = ["", "", ""];
-		let msg = '';
-
-		await fetch(pokemon_url).then(result => result.json()).then(body => {
-			//arrays of all the entries in various languages for the pokemon's data
-			const pokemon_name_array = body.names;
-			const flavor_text_array = body.flavor_text_entries;
-			const genus_array = body.genera;
-
-			//now, we search through the entries for the correct (read: in english) versions of them
-			flavor_text_array.forEach(item => {
-				if (this.#isLangEn(item)) en_array[2] = item.flavor_text;
-			});
-			genus_array.forEach(item => {
-				if (this.#isLangEn(item)) en_array[1] = item.genus;
-			});
-			pokemon_name_array.forEach(item => {
-				if (this.#isLangEn(item)) en_array[0] = item.name;
-			});
-			msg = "Entry #" + pokemon_id + ": " + en_array[0] + ", The " + en_array[1] + "; " + en_array[2];
-		}).catch(err => {
-			return this.#generateAPIErrorResponse(err);
-		});
-
-		return msg;
-
-	}
-
-	//gets a fact about a random number, either of trivia, math, a date, or a year
-	//@param   target   The name of the chatroom that the message will be posted in
-	async getRandomNumberFact() {
-
-		//from the list below, get a random type for us to get info on and paste it to url
-		const types_array = ["trivia", "math", "date", "year"];
-
-		const number_url = `http://numbersapi.com/random/${types_array[Math.floor(Math.random() * types_array.length)]}?notfound=floor`;
-
-		let msg = ''
-
-		//now just get the data and post it, this API isn't terribly complex
-		await fetch(number_url).then(result => result.text()).then(body => {
-			msg = body;
-		}).catch(err => {
-			return this.#generateAPIErrorResponse(err);
-		});
-
-		return msg;
-
-	}
-
-	//gets a random word, what the word is grammatically, and its definition and sends that to the chatroom
-	//@param   user     The chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
-	async getRandomWordFromDictionary() {
-
-		//we can't get a random word through the dictionary API, so we get it through a different, free API
-		const random_word_URL = `https://random-words-api.herokuapp.com/w?n=1`;
-		let dictionary_url;
-		let word = "";
-		let gr_abbrev = "";//the abbreviation of the grammatical function of the word
-		let definition = '';
-
-		try {
-			let key = await this.#data_base.getAPIKeys(1);
-			//get the random word first for us to get access to the definition of it
-			await fetch(random_word_URL).then(result => result.json()).then(body => {
-				word = body[0];
-				dictionary_url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${key}`;
-			}).catch(err => {
-				return this.#generateAPIErrorResponse(err);
-			});
-	
-			//now we get the data on the word
-			await fetch(dictionary_url).then(result => result.json()).then(body => {
-	
-				definition = body[0].shortdef[0];
-				const grammar_function = body[0].fl;
-	
-			//now we get the abbreviation of the grammar function to shorten the chat message
-				 switch (grammar_function) {
-					case "verb":
-						gr_abbrev = "v";
-						break;
-					case "transitive verb":
-						gr_abbrev = "trans. v";
-						break;
-					case "intransitive verb":
-						gr_abbrev = "intr. v";
-						break;
-					case "noun":
-						gr_abbrev = "n";
-						break;
-					case "noun phrase":
-						gr_abbrev = "n&p";
-						break;
-					case "adjective":
-						gr_abbrev = "adj";
-						break;
-					case "adverb":
-						gr_abbrev = "adv";
-						break;
-					case "pronoun":
-						gr_abbrev = "prn";
-						break;
-					case "trademark":
-						gr_abbrev = "tm";
-						break;
-					case "abbreviation":
-						gr_abbrev = "abbrev";
-						break;
-					case "combining form":
-						gr_abbrev = "comb. form";
-						break;
-					case "noun combining form":
-						gr_abbrev = "n. comb. form";
-						break;
-					case "adjective combining form":
-						gr_abbrev = "adj. comb. form";
-						break;
-					case "prefix":
-						gr_abbrev = "pre";
-						break;
-					case "service mark":
-						gr_abbrev = "serv. m";
-						break;
-					case "symbol":
-						gr_abbrev = "sym";
-						break;
-					case "certification mark":
-						gr_abbrev = "cert. m";
-						break;
-					case "preposition":
-						gr_abbrev = "prep";
-						break;
-					case "conjunction":
-						gr_abbrev = "conj";
-						break;
-					case "interjection":
-						gr_abbrev = "intj";
-						break;
-					case "adjective suffix":
-						gr_abbrev = "adj. suf";
-						break;
-					case "adverb suffix":
-						gr_abbrev = "adv. suf";
-						break;
-					case "noun suffix":
-						gr_abbrev = "n. suf";
-						break;
-					case "verb suffix":
-						gr_abbrev = "v. suf";
-						break;
-					case "verbal auxillary":
-						gr_abbrev = "v. aux";
-						break;
-					case "verbal imperative":
-						gr_abbrev = "v. imp";
-						break;
-					case "verb impersonal":
-						gr_abbrev = "v. imper";
-						break;
-					default://need to see what pops out through here to get the abbreviaiton correct for this
-						gr_abbrev == grammar_function;
-						break;
-				 }
-			}).catch(err => {
-				return this.#generateAPIErrorResponse(err);
-			});
-		} catch (err) { return 'Error in parsing definition'; }
-
-		return `${word}: ${gr_abbrev}; ${definition}`;
-    }
-
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
 	//@param   target    The name of the chatroom we are posting the photo into
 	async getNASAPicOfTheDay() {
@@ -451,11 +213,6 @@ export class MiscAPI {
 		} catch (err) { console.error(err); }
 		
 	}
-
-	//simple function that returns if the language of item is english
-	//@param   item   The object we are looking at to determine its language
-	//@return         True/False
-	#isLangEn(item) { return item.language.name == "en" }
 
     //simple helper for generating an error so I don't have to type as much
 	//@param   err      The error that has been generated

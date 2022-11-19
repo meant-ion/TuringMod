@@ -305,85 +305,6 @@ export class TwitchAPI {
 		}
 	}
 
-	//grabs a list of all members in the chatroom currently and times random ones out for a short time
-	//to be seriously used when there is enough people to actually use it on
-	//@param   target         The chatroom that the message will be sent into
-	async shotgunTheChat() {
-
-		try {
-			this.#hasTokenExpired();
-			const url = `https://tmi.twitch.tv/group/user/pope_pontius/chatters`;
-
-			const data = await this.#createTwitchDataHeader();
-
-			let client_msg = [];
-			client_msg.push("Uh oh, someone fired the banhammer off again!");
-	
-			//get the number of people hit by the shotgun "pellets"
-			const victims = Math.floor(Math.random() * 5) + 1;
-
-			let victim_list;
-	
-			//now get the list of "victims" and choose, at random, who gets hit
-			await fetch(url, data).then(result => result.json()).then(body => {
-				const list = body.chatters.viewers;
-				console.log(body.chatters.viewers);
-	
-				//with the list gathered, loop through each time and time out the member all at once
-				for (i = 0; i < victims; ++i) {
-					let victim_index = Math.floor(Math.random() * list.length);
-
-					victim_list.push(list[victim_index]);
-				}
-				client_msg.push(victim_list);
-			}).catch(err => { return this.#generateAPIErrorResponse(err); });
-			return client_msg;
-		} catch (err) { console.error(err); }
-	}
-
-	//simple little function that will get a rough guess of whether or not the channel is a victim of view botting
-	async getChancesStreamIsViewbotted() {
-		//get our URLs and counts set up here
-		const chatroom_url = `https://tmi.twitch.tv/group/user/pope_pontius/chatters`;
-		const helix_url = 'https://api.twitch.tv/helix/users?id=71631229';
-		let chatroom_member_count, viewer_count;
-
-		try {
-			this.#hasTokenExpired();
-
-			//get the necessary headers, and send out the fetch requests
-			const chatroom_data = await this.#createTwitchDataHeader();
-			const helix_data = await this.#createTwitchDataHeader();
-
-			//get # of viewers watching the stream
-			await fetch(helix_url, helix_data).then(result => result.data()).then(body => {
-				viewer_count = body[0].viewer_count;
-			}).catch(err => { return this.#generateAPIErrorResponse(err); });
-
-			//get # of poeple in the chatroom currently
-			await fetch(chatroom_url, chatroom_data).then(result => result.json()).then(body => {
-				chatroom_member_count = body.chatters.viewers.length;
-			}).catch(err => { return this.#generateAPIErrorResponse(err); });
-
-			//if any one of the gathered values is zero, we send a msg and exit this function
-			if (chatroom_member_count <= 0 || viewer_count <= 0) 
-				//this.client.say(target, "Cannot get that statistic due to divide by zero error");
-				return "Cannot get that statistic due to divide by zero error";
-
-			//get the ratio and then tell the chatroom what the verdict is
-			const viewers_to_chat_ratio = (chatroom_member_count / viewer_count) * 100.0;
-
-			//arbitrarily chose 35% as the cutoff ratio to tell if there's viewbotting
-			//no real reason behind this being the cutoff, just seemed like a good place to leave it at
-			const msg = `Ratio of viewers to chatroom members is ${viewers_to_chat_ratio}` + 
-				`${(viewers_to_chat_ratio < 35.0) ? `; This looks like a viewbotting issue to me :(` : `; This doesn't look like viewbotting to me at all :)`}`;
-
-			//this.client.say(target, msg);
-			return msg;
-
-		} catch (err) { console.error(err); }
-	}
-
 	//returns stream uptime for use in ad warning system
 	//@return    The uptime of the stream in seconds
 	async getUneditedStreamUptime() {
@@ -410,73 +331,6 @@ export class TwitchAPI {
 	async makePubSubscription(topic, pubsubs) {
 		const tkn = await this.#data_base.getTwitchInfo(0);
 		pubsubs.requestToListen(topic, tkn);
-	}
-
-	//edits the channel's chatroom settings as requested by a user. This is used within pubsub_handler.js
-	//@param   settings   array of settings the user wants to change
-	async editChatroomSettings(settings) {
-		//need to get the bot's user id so we can make the request go through
-
-		this.#hasTokenExpired();
-		const data = await this.#createTwitchDataHeader();
-
-		//with the id in hand, we get the current settings for the chatroom and see what needs to change
-		const settings_url = `https://api.twitch.tv/helix/chat/settings?broadcaster_id=71631229&moderator_id=71631229`;
-
-		let cur_chat_settings;
-
-		await fetch(settings_url, data).then(result => result.json()).then(body => {
-			cur_chat_settings = body.data[0];
-		}).catch(err => {
-			return this.#generateAPIErrorResponse(err);
-		});
-
-		//now we get to check each of the 5 categories we want chat to be able to change,
-
-		let body_obj = {};
-
-		for(let i = 0; i < settings.length; ++i) {
-			switch (settings[i].toLowerCase()) {
-				case "slow-mode":
-					body_obj["slow_mode"] = !cur_chat_settings["slow_mode"];
-					body_obj["slow_mode_wait_time"] = cur_chat_settings["slow_mode"] ? null : 10;
-					break;
-				case "follower-only":
-					body_obj["follower_mode"] = !cur_chat_settings["follower_mode"];
-					body_obj["follow_mode_duration"] = cur_chat_settings["follower_mode"] ? null : 1;
-					break; 
-				case "subscriber-only":
-					body_obj["subscriber_mode"] = !cur_chat_settings["subscriber_mode"];
-					break;
-				case "emote-only":
-					body_obj["emote_mode"] = !cur_chat_settings["emote_mode"];
-					break;
-				case "unique":
-					body_obj["unique_chat_mode"] = !cur_chat_settings["unique_chat_mode"];
-					break;
-			}
-		}
-
-		//with body made, we will now put through the request
-		let cc_id = await this.#data_base.getTwitchSessionInfo();
-
-		const edit_data = {
-			'method': 'PATCH',
-			'headers': {
-				'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
-				'Client-Id': `${cc_id[0]}`,
-				'Content-Type': 'application/json'
-			},
-			'body': JSON.stringify(body_obj),
-		};
-
-		let msg = '';
-
-		await fetch(settings_url, edit_data).then(result => result.json()).then(body => {
-			msg = body.data[0] != undefined ? "Settings Updated!" : "Error in updating settings";
-		}).catch(err => { return this.#generateAPIErrorResponse(err); });
-		return msg;
-		
 	}
 
 	//gets and returns the list of tags currently applied to the stream
@@ -653,49 +507,6 @@ export class TwitchAPI {
 			return msg;
 
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
-
-	}
-
-	//If I ever go on a moderator hunting spree, this function will restore the moderators their priveliges
-	async fixModBanGoofs() {
-
-		let mod_arr = [];
-		fs.readFile('./data/modlist.txt', (err, data) => {
-			if(err) console.error(err);
-			mod_arr = data.toString().split('\r\n');
-		});
-
-		const get_mods_url = 'https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=71631229';
-
-		const data = await this.#createTwitchDataHeader();
-
-		let curr_mod_arr = [];
-
-		await fetch(get_mods_url, data).then(result => result.json()).then(body => {
-			for (let i = 0; i < body.data.length; ++i) curr_mod_arr.push(body.data[i].user_id);
-		});
-
-		console.log(curr_mod_arr);
-
-		let add_data = await this.#createTwitchDataHeader();
-		const b_id = add_data.headers['client-id'];
-		add_data.method = 'POST';
-
-		console.log(mod_arr);
-
-		for (let i = 0; i < mod_arr; ++i) {
-			console.log(mod_arr[i]);
-			if (!curr_mod_arr.includes(mod_arr[i])) {
-				console.log(mod_arr[i]);
-				let mod_add_url = `https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${b_id}&user_id=${mod_arr[i]}`;
-				await fetch(mod_add_url, add_data).then((res) => {
-					if (!res.ok) {
-						console.log(res.status);
-						console.log('Error adding in moderator ' + mod);
-					}
-				});
-			}
-		}
 
 	}
 

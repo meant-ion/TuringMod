@@ -389,12 +389,6 @@ export class CommandArray {
 			case 0:
 				key = 'open_ai';
 				break;
-			case 1:
-				key = 'dictionary';
-				break;
-			case 2:
-				key = 'exchange_rates';
-				break;
 			case 3:
 				key = 'nasa';
 				break;

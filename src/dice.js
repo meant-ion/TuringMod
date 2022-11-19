@@ -63,19 +63,6 @@ export class Dice {
 	//@param   target    The specific chat room that the command came from
 	flipCoin() { return (this.#rollDice(1, 2, '') > 1) ? "Heads" : "Tails"; }
 
-	//like Russian Roulette, but with timeouts instead of actual bullets
-	//@param   user      The user who sent the command in the first place
-	//@param   target    The specific chat room that the command came from
-	takeAChanceAtBeingBanned() { return ((Math.random() * (1000 - 1) + 1) >= 999) ? 'How very unfortunate' : 'Lucky you!'; }
-
-	generateHexColorCode() {
-		//0123456789abcdef
-		//#000000 -> BLACK
-		let color_code = '#';
-		for (let i = 0; i < 6; ++i) color_code += (Math.floor(Math.random() * 16)).toString(16);
-		return color_code;
-	}
-
 	//function that rolls the dice after all error checking and getting the right amount of rolls needed
 	//@param   num_dice   The number of dice we need to roll
 	//@param   sides      The number of sides the dice have

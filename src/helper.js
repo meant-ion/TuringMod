@@ -165,7 +165,7 @@ export class Helper {
             is_AM = true;
         }
 
-        const cur_mins = cur_time.getMinutes();
+        let cur_mins = cur_time.getMinutes();
         if (cur_mins < 10) cur_mins = String("0" + cur_mins);
 
         //calculate the minutes, craft the message, and then send to chat

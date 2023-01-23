@@ -16,6 +16,7 @@ import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
+import OBSAnimations from './obs_anims.js';
 import { exit } from 'process';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -58,7 +59,9 @@ const misc_api = new MiscAPI(commands_holder);
 const dice = new Dice();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
-const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs);
+const obs_anims = new OBSAnimations(obs);
+const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims);
+
 
 const the_streamer = opts.channels[0];
 
@@ -336,6 +339,12 @@ const func_obj = {
 			});
 		}
 	},
+	'!test': async () => {
+		await obs_anims.DVD_Screensaver();
+	},
+	'!color': async () => {
+		await obs_anims.filter();
+	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
 };

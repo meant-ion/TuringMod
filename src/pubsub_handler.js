@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import SerialPort from 'serialport';
-import OBSWebSocket from 'obs-websocket-js';
+import OBSAnimations from './obs_anims.js';
 import pkg from '@serialport/parser-readline';
 import UberAPI from './ubertts.js';
 import fs from "fs";
@@ -87,11 +87,6 @@ export class PubSubHandler {
     //@param   parsed_data   The bulk of the data received from the WebSocket
     async #rewardHandler(parsed_data) {
         switch (parsed_data.data.redemption.reward.title) {
-            case 'VIP Me'://user redeemed reward to become a VIP
-                const new_vip = parsed_data.data.redemption.user.display_name;
-                this.#twitch_chat_client.say('#pope_pontius', `@${new_vip} has become a new VIP!`);
-                this.#twitch_chat_client.say('#pope_pontius', `/vip ${new_vip}`);
-                break;
             case 'FIRE!'://user redeemed firing off the nerf turret. Need to completely implement turret functionality first
                 //when command from chat received, write the command to the arduino via serial connection
                 try {
@@ -105,6 +100,10 @@ export class PubSubHandler {
             case 'AI Speech': 
                 const user_str = parsed_data.data.redemption.user_input;
                 this.#tts_api.generate_tts_speech(user_str);
+                break;
+            case 'Screen Saver Camera':
+                this.#obs.DVD_Screensaver();
+                break;
         }
     }
 

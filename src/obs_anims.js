@@ -84,8 +84,37 @@ export class OBSAnimations {
         await this.#filter_kill();
     }
 
-    async filter() {
-        console.log(await this.#obs.call('GetSourceFilter', {sourceName: 'Facecam', filterName: 'DVD Screensaver Edge Color Change'}));
+    async bonk_squish() {
+        await this.#sleep(750);
+        const scene = await this.#obs.call('GetCurrentProgramScene');
+        const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
+        let facecam_id;
+        for (let i in source_list.sceneItems) {
+            if (source_list.sceneItems[i].sourceName == "Facecam") {
+                facecam_id = source_list.sceneItems[i].sceneItemId;
+            }
+        }
+        let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        console.log(facecam_info);
+        facecam_info = facecam_info.sceneItemTransform;
+        let original_scale = facecam_info.scaleY;
+        let original_height = facecam_info.height;
+        facecam_info.scaleY = original_scale / 2;
+        facecam_info.positionY = original_height / 2;
+        facecam_info.boundsWidth = 1;
+        facecam_info.boundsHeight = 1;
+        console.log(facecam_info);
+        await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
+        facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        console.log(facecam_info);
+        facecam_info.scaleY = original_scale;
+        facecam_info.positionY = 0;
+        await this.#sleep(10000);
+        await this.#obs.call('SetSceneItemTransform', {
+            sceneName: scene.currentProgramSceneName,
+            sceneItemId: facecam_id,
+            sceneItemTransform: facecam_info,
+        });
     }
 
     #sleep(ms) {

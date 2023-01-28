@@ -340,11 +340,8 @@ const func_obj = {
 		}
 	},
 	'!test': async () => {
-		await obs_anims.DVD_Screensaver();
+		
 	},
-	'!color': async () => {
-		await obs_anims.filter();
-	}
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
 };

@@ -104,6 +104,15 @@ export class PubSubHandler {
             case 'Screen Saver Camera':
                 this.#obs.DVD_Screensaver();
                 break;
+            case 'Bonk':
+                PythonShell.run('./src/audio/audio.py', {
+                    pythonPath: 'C:/Program Files/Python310/python.exe',
+                    args: ["bonk.wav"]
+                }, err => {
+                    if (err) console.error(err);
+                });
+                this.#obs.bonk_squish();
+                break;
         }
     }
 

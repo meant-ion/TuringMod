@@ -95,7 +95,6 @@ export class OBSAnimations {
             }
         }
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
-        console.log(facecam_info);
         facecam_info = facecam_info.sceneItemTransform;
         let original_scale = facecam_info.scaleY;
         let original_height = facecam_info.height;
@@ -103,10 +102,8 @@ export class OBSAnimations {
         facecam_info.positionY = original_height / 2;
         facecam_info.boundsWidth = 1;
         facecam_info.boundsHeight = 1;
-        console.log(facecam_info);
         await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
         facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
-        console.log(facecam_info);
         facecam_info.scaleY = original_scale;
         facecam_info.positionY = 0;
         await this.#sleep(10000);

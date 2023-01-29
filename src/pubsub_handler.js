@@ -1,17 +1,9 @@
 import WebSocket from 'ws';
 import SerialPort from 'serialport';
-import OBSAnimations from './obs_anims.js';
 import pkg from '@serialport/parser-readline';
 import UberAPI from './ubertts.js';
-import fs from "fs";
 const { Readline } = pkg;
 //importing otherwise literally does not work for me, forgive me coding gods
-import {PythonShell} from 'python-shell';
-import Audic from 'audic';
-
-
-import path from 'path';
-
 
 
 //a little class that will manage and handle our PubSubs and notifications coming from them
@@ -28,12 +20,14 @@ export class PubSubHandler {
     #twitch_api;         //object for handling all API requests to Twitch
     #tts_api;            //object for handling Uberduck API requests/playing
     #obs;                //for handling OBS related functions
+    #vlc;                //for playing audio with controls
 
     //@param   c     The Twitch Chat IRC client we need to send messages through
     //@param   t_a   The twitch_api object
     //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
-    constructor(c, t_a, c_h, o) {
+    //@param   v     The web controller for playing audio through VLC
+    constructor(c, t_a, c_h, o, v) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
 
@@ -46,7 +40,9 @@ export class PubSubHandler {
 
         //this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
         this.#twitch_api = t_a;
-        this.#tts_api = new UberAPI(c_h);
+        this.#vlc = v;
+        this.#tts_api = new UberAPI(c_h, v);
+        
 
         //with the pubsub made, we can now get it working handling msgs
         this.start();
@@ -99,19 +95,16 @@ export class PubSubHandler {
                 break;
             case 'AI Speech': 
                 const user_str = parsed_data.data.redemption.user_input;
-                this.#tts_api.generate_tts_speech(user_str);
+                await this.#tts_api.generate_tts_speech(user_str);
+                await this.#vlc.empty_playlist();
                 break;
             case 'Screen Saver Camera':
-                this.#obs.DVD_Screensaver();
+                await this.#obs.DVD_Screensaver();
                 break;
             case 'Bonk':
-                PythonShell.run('./src/audio/audio.py', {
-                    pythonPath: 'C:/Program Files/Python310/python.exe',
-                    args: ["bonk.wav"]
-                }, err => {
-                    if (err) console.error(err);
-                });
-                this.#obs.bonk_squish();
+                await this.#vlc.play_audio('bonk.wav');
+                await this.#obs.bonk_squish();
+                await this.#vlc.empty_playlist();
                 break;
         }
     }

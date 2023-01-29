@@ -4,7 +4,6 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
-import {PythonShell} from 'python-shell';
 import OBSWebSocket from 'obs-websocket-js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -17,7 +16,7 @@ import ClipCollector from './clipcollector.js';
 import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
 import OBSAnimations from './obs_anims.js';
-import { exit } from 'process';
+import AudioPlayer from './audio.js';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -60,7 +59,8 @@ const dice = new Dice();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
 const obs_anims = new OBSAnimations(obs);
-const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims);
+const vlc = new AudioPlayer();
+const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc);
 
 
 const the_streamer = opts.channels[0];
@@ -211,6 +211,12 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, await twitch_api.deleteLastVOD());
 	},
+	'!skip': async (_input_msg, user, _target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			await vlc.kill_audio();
+			await vlc.empty_playlist();
+		}
+	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF MOD/STREAMER ONLY COMMANDS
 	//START OF UNIVERSALLY AVAILABLE COMMANDS
@@ -309,36 +315,18 @@ const func_obj = {
 	//user wants a list of currently free games on the Epic Store
 	'!freegame': async (_input_msg, _user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
-	'!bonk': (input_msg, _user, target) => {
+	'!bonk': async  (input_msg, _user, target) => {
 		client.say(target, `${input_msg[1]} has been bonked! BOP`);
 
 		//play bonk sound effect when bonking commences
-		PythonShell.run('./src/audio/audio.py', {
-			pythonPath: 'C:/Program Files/Python310/python.exe',
-			args: ["bonk.wav"]
-		}, err => {
-			if (err) console.error(err);
-		});
+		await vlc.play_audio('bonk.wav');
+		//await vlc.empty_playlist();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
-	'!skip': async (_input_msg, user, _target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			exit(0);
-		}
-	},
-	'!kill': (_input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			PythonShell.run('./src/audio/audio.py', {
-				pythonPath: 'C:/Program Files/Python310/python.exe',
-				args: ["stop"]
-			}, err => {
-				if (err) console.error(err);
-			});
-		}
-	},
+
 	'!test': async () => {
 		
 	},

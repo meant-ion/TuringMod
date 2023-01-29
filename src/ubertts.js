@@ -1,17 +1,19 @@
 import fs from 'fs';
 import https from 'https';
-import {PythonShell} from 'python-shell';
 import fetch from 'node-fetch';
 
 //Generates an audio file of an AI TTS model from Uberduck AI saying chat-defined messages
 export class UberAPI {
 
     #db
+    #vlc //for playing audio
 
     //@param   c_h   The database containing the key and secret for the UberDuck API
-    constructor(c_h) {
+    //@param   v     For playing the TTS audio through VLC
+    constructor(c_h, v) {
 
         this.#db = c_h;
+        this.#vlc = v;
 
     }
 
@@ -134,13 +136,7 @@ export class UberAPI {
                 //file finished downloading, now we send it to python script to play
                 file.on('finish', () => {
                     file.close();
-
-                    PythonShell.run('./src/audio/audio.py', {
-                        pythonPath: 'C:/Program Files/Python310/python.exe',
-                        args: ["audio.wav"]
-                    }, err => {
-                        if (err) console.error(err);
-                    });
+                    this.#vlc.play_audio('audio.wav');
                 });
 
             }).on("error", (err) => console.error(err));

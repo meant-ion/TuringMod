@@ -1,5 +1,7 @@
 # TuringMod
 
+REQUIRES VLC TO HANDLE AUDIO FUNCTIONALITY
+
 This wonderful pile of feature bloat and strangeness is my own interpretation of a twitch.tv chat bot, spceifically 
 using OpenAI's GPT3 API to mimic the members in the chatroom, along with a large handful of other functions.
 
@@ -132,6 +134,8 @@ MOD/STREAMER ONLY COMMANDS:
 	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution
 
 	- !delvod: deletes the last vod on the channel. Good for handling issues with dox/TOS
+
+	- !skip: skips a TTS channel points redemption
 
 FUNCTIONS HANDLED BY THE BOT AUTOMATICALLY:
 

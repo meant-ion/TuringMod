@@ -17,6 +17,7 @@
     "serialport": "^9.2.8",
     "sqlite3": "^4.2.0",
     "tmi.js": "^1.8.3",
+    "twocket": "github:ScottMellors/twocket",
     "vlc-client": "^1.1.1",
     "ws": "^7.5.5"
   },

@@ -86,6 +86,13 @@ let call_this_function_number = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
+await helper.is_running("firefox.exe", async (truth) => {
+	if (!truth) await helper.open_program("firefox.exe");
+});
+await helper.is_running("vlc.exe", async  (truth) => {
+	if (!truth) helper.open_program("vlc.exe");
+});
+
 function execTheBot() {
 	const token = process.env.DISCORD_CLIENT_TOKEN;
 
@@ -317,10 +324,8 @@ const func_obj = {
 	//user wants to bonk someone
 	'!bonk': async  (input_msg, _user, target) => {
 		client.say(target, `${input_msg[1]} has been bonked! BOP`);
-
 		//play bonk sound effect when bonking commences
 		await vlc.play_audio('bonk.wav');
-		//await vlc.empty_playlist();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
@@ -328,7 +333,7 @@ const func_obj = {
 	//--------------------------------------------------------------------------------------------------------------------------
 
 	'!test': async () => {
-		
+		await obs_anims.dunce_cap();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -499,7 +504,7 @@ async function adsIntervalHandler() {
 				60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
-			const msg = "Midrolls are starting now! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
+			const msg = "Midrolls are starting within one minute! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
 				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
 			client.say('#pope_pontius', msg);
 			intervalTime = 360000;

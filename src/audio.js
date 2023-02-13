@@ -22,15 +22,12 @@ export class AudioPlayer {
     }
 
     async kill_audio() {
-        if (await this.#vlc.isPlaying()) {
-            await this.#vlc.stop();
-        }
+        if (await this.#vlc.isPlaying()) await this.#vlc.stop();
     }
 
     async empty_playlist() {
         await this.#vlc.emptyPlaylist();
     }
-
 
 }
 

@@ -16,7 +16,7 @@ export class PubSubHandler {
     #twitch_chat_client; //handles posting of messages automatically/activating turret
     #topics_list;        //an array holding the topics we are listening to with the bot
     #port;               //the serial port we will use to communicate with the rpi's turret
-    #parser;             //what we will use for processing communications between the arduino and the rpi
+    #parser;             //what we will use for processing communications between the arduino and the computer
     #twitch_api;         //object for handling all API requests to Twitch
     #tts_api;            //object for handling Uberduck API requests/playing
     #obs;                //for handling OBS related functions

@@ -85,7 +85,7 @@ export class OBSAnimations {
     }
 
     async bonk_squish() {
-        await this.#sleep(750);
+        await this.#sleep(750); //give VLC enough time to play the bonk sound effect
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
         let facecam_id;
@@ -112,6 +112,18 @@ export class OBSAnimations {
             sceneItemId: facecam_id,
             sceneItemTransform: facecam_info,
         });
+    }
+
+    async dunce_cap() {
+        const scene = await this.#obs.call('GetCurrentProgramScene');
+        const dunce_id = await this.#obs.call('CreateSceneItem', {sceneName: scene.currentProgramSceneName, sourceName: "Dunce Cap"});
+        const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
+        let facecam_id;
+        for (let i in source_list.sceneItems) 
+            if (source_list.sceneItems[i].sourceName == "Facecam") facecam_id = source_list.sceneItems[i].sceneItemId; 
+        let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        facecam_info = facecam_info.sceneItemTransform;
+        console.log(dunce_id);
     }
 
     #sleep(ms) {

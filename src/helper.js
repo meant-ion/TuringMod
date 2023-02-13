@@ -1,10 +1,19 @@
 //file to hold our helper functions so that we can use them across files in the project
 
 import {URL as url} from 'url';
+import { execSync, exec } from 'child_process';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export class Helper {
 
-    constructor() { }
+    #dir_separator;
+
+    constructor() {
+        this.#dir_separator = "\/\/\/\/";
+    }
 
     //combines the input into a single string
     //@param   input_msg          The message that needs to be combined into one string
@@ -136,6 +145,40 @@ export class Helper {
         const r = [];
         keys.forEach(item => r.push(obj[item]));
         return r;
+    }
+
+    detect_platform(run) {
+        let cmd = '';
+        switch (process.platform) {
+            case 'win32': cmd = (run) ? `tasklist` : `start `; this.#dir_separator = "\\\\"; break;
+            case 'darwin': cmd = (run) ? `ps -ax | grep ${query}` : `open `; break;
+            case 'linux': cmd = (run) ? `ps -A` : `xdg-open `; break;
+            default: break;
+        }
+        return cmd;
+    }
+
+    async is_running(query, cb) {
+        let cmd = this.detect_platform(true);
+        exec(cmd, (err, stdout, stderr) => {
+            cb(stdout.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        });
+    }
+
+    async open_program(program) {
+        const dot_count = (resolve(__dirname).match(new RegExp(this.#dir_separator, "g")) || []).length;
+        const slash_count = dot_count - 1;
+
+        let exec_str = "c: && cd ";
+        for (let i = 0; i < dot_count; ++i) {
+            exec_str += "..";
+            if (i < slash_count) exec_str += "/";
+        }
+
+        exec_str += (program.toLowerCase() == 'firefox.exe') ? " && cd Program Files && cd Mozilla Firefox && firefox.exe"
+            : " && cd Program Files && cd VideoLAN && cd VLC && vlc.exe";
+
+        exec(exec_str);
     }
 }
 

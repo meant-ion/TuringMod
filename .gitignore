@@ -12,3 +12,4 @@ cert.pem
 /data/training.jsonl
 *.mp3
 *.wav
+*.png

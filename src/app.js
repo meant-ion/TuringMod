@@ -4,6 +4,7 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
+import { Twocket } from 'twocket';
 import OBSWebSocket from 'obs-websocket-js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -62,6 +63,11 @@ const obs_anims = new OBSAnimations(obs);
 const vlc = new AudioPlayer();
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc);
 
+const client_data = await commands_holder.getTwitchSessionInfo();
+const tok = await commands_holder.getTwitchInfo(0);
+// const twok = new Twocket('71631229',client_data[0], tok, ['channel.raid', 'channel.channel_points_custom_reward_redemption.add']);
+// twok.start();
+
 
 const the_streamer = opts.channels[0];
 
@@ -101,6 +107,16 @@ function execTheBot() {
 	client.connect();
 	client.on('message', onMessageHandler);
 	client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
+
+	// twok.setOnRaidEvent((data) => {
+	// 	client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
+	// 	client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${data.event.from_broadcaster_user_login}`);
+	// });
+
+	// twok.setOnChannelPointRewardRedeem((data) => {
+	// 	console.log(data.event.reward.title);
+	// 	console.log(data.event.reward.prompt);
+	// })
 
 	//setting up the interval for giving people info about the streams every 15-20 mins
 	setInterval(intervalMessages, 600000);
@@ -332,8 +348,10 @@ const func_obj = {
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 
-	'!test': async () => {
-		await obs_anims.dunce_cap();
+	'!test': async (_input_msg, _user, target) => {
+		await twitch_api.sendAnnouncement(0);
+		console.log(target);
+		client.say('#pope_pontius', '/announce Test message');
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS

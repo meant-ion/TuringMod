@@ -14,6 +14,7 @@ export class AudioPlayer {
     }
 
     async play_audio(filename) {
+        await this.check_playlist();
         let filepath = path.resolve('./src/audio/' + filename);
 
         await this.#vlc.setVolume(30);
@@ -27,6 +28,10 @@ export class AudioPlayer {
 
     async empty_playlist() {
         await this.#vlc.emptyPlaylist();
+    }
+
+    async check_playlist() {
+        if ((await this.#vlc.getPlaylist()).length > 0) await this.empty_playlist();
     }
 
 }

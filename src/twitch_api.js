@@ -335,7 +335,7 @@ export class TwitchAPI {
 
 	//gets and returns the list of tags currently applied to the stream
 	async getStreamTags() {
-		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
+		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 		let msg = "Tags for this stream are ";
 
 		try {
@@ -346,13 +346,11 @@ export class TwitchAPI {
 
 			//get the list of tags from the stream
 			await fetch(tags_url, data).then(result => result.json()).then(body => {
-				for (let i = 0; i < body.data.length; ++i) {
-					let tag = body.data[i];
-					//add each tag in grammatically correct to the response msg
-					if (i + 1 >= body.data.length) 
-						msg += ` and ${tag.localization_names['en-us']}`;
+				for (let i = 0; i < body.data[0].tags.length; ++i) {
+					if (i + 1 >= body.data[0].tags.length)
+						msg += ` and ${body.data[0].tags[i]}`;
 					else 
-						msg += `${tag.localization_names['en-us']}, `;
+						msg += `${body.data[0].tags[i]}, `
 				}
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 			return msg;
@@ -363,69 +361,32 @@ export class TwitchAPI {
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(list_of_tags) {
 
-		this.#getAndUpdateTagsList("#pope_pontius");
+		//this.#getAndUpdateTagsList("#pope_pontius");
 		const tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
 
-		const tags_url = `https://api.twitch.tv/helix/streams/tags?broadcaster_id=71631229`;
+		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 		//first, read in the contents of the tags list file to memory so we can search it easier
 
-		//list of tags to add to the channel must be an array
-		let tags_array = [];
-
-		//using the list of available tags, we search for them 
-		for (let i = 0; i < list_of_tags.length; ++i) {
-			let tag = list_of_tags[i];
-			//multi-word tags exist, so if we cannot find the tag first, we go through the list and see if combos
-			//of tags in the list fit together
-			if (tags_list[tag] == undefined) {
-				let orig_tag = tag;
-				let tag_found = false;
-				//go through the rest of the tag list and see if the words combined with each other make a valid tag
-				for (let j = i + 1; j < list_of_tags.length; ++j) {
-					tag += ` ${list_of_tags[j]}`;
-					if (tags_list[tag] != undefined) {
-						tags_array.push(tags_list[tag]);
-						i = j;
-						tag_found = true;
-						j = list_of_tags.length;
-					}
-				}
-				tag = orig_tag;
-				// tag is not found, so we make a custom tag. 
-				// main rule for custom tags: no more than 25 characters in size
-				if (!tag_found) {
-					//combine the list of tags until we reach the 25 char limit
-					for (let j = i + 1; j < list_of_tags.length; ++j) {
-						const wombo_combo = tag + list_of_tags[j];
-						if (wombo_combo.length > 25) {
-							tags_array.push(wombo_combo);
-							j = list_of_tags.length;
-						}
-						tag = wombo_combo;
-					}
-				}
-				// if (!tag_found) return `Error with unsupported tag ${orig_tag}`;
-			} else {
-				tags_array.push(tags_list[tag]);
-			}
+		for (let tag in list_of_tags) {
+			if (list_of_tags[tag].length > 25)
+				return `Tag "${list_of_tags[tag]}" too long, all tags must be under 25 characters`;
 		}
-		//Twitch only allows for 5 tags to be input by the streamer at a time. Any more and it wont go through
-		//if more than 5 tags, reject them and put out message saying so
-		if (tags_array.length > 10)
-			return 'Too many tags provided. Max 10';
+
+		if (list_of_tags.length > 10)
+			return "Too many tags, make sure to remove spaces as necessary";
 
 		//with tags assembled, we send out the request 
 		try {
 			const s = await this.#data_base.getIdAndSecret();
 			const data = {
-				'method': 'PUT',
+				'method': 'PATCH',
 				'headers': {
 					'client-id': `${s[0]}`,
 					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
 					'Content-Type': 'application/json'
 				},
 				'body': JSON.stringify({
-					'tag_ids': tags_array
+					'tags': list_of_tags
 				})
 			};
 
@@ -510,50 +471,34 @@ export class TwitchAPI {
 
 	}
 
-    //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
+	async sendAnnouncement(func_num) {
+		const s = await this.#data_base.getIdAndSecret();
+		const announcement_url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=${s[0]}`;
 
-	//gathers the list of tags that Twitch provides
-	//definitly gonna be worked on better later in time tho
-	async #getAndUpdateTagsList() {
-		//get the first 100 tags of the total list of tags
-		let tags_url =  "https://api.twitch.tv/helix/tags/streams?first=100";
-		let pagination_target = '';
-		let tags_list = {};//object that we will write to file with all the wanted tags in
+		const data = {
+			'method': 'POST',
+			'headers': {
+				'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+				'client-id': `${s[0]}`,
+				'Content-Type': 'application/json'
+			},
+			'body': JSON.stringify({
+				'message': "This is a test announcement",
+			})
+		};
 
-		try {
+		console.log(data);
 
-			const data = await this.#createTwitchDataHeader();
-			
-			//we repeatedly call the API to get all relevant tags
-			while(pagination_target != undefined) {
-				await fetch(tags_url, data).then(result => result.json()).then(body => {
-
-					//get the pagination object first, as we need that to get the rest of the tags
-					pagination_target = body.pagination.cursor;
-	
-					//with the cursor got, we iterate through the list of tags
-					//getting the name and the id where the tags are not automatically applied
-					for (let i = 0; i < body.data.length; ++i) {
-						let tag = body.data[i];
-						if (tag.is_auto == false) {
-							tags_list[tag.localization_names['en-us']] = tag.tag_id;
-						}
-					}
-
-					//update the url with the pagination cursor for repeated calls to the API
-					tags_url = `https://api.twitch.tv/helix/tags/streams?first=100&after=${pagination_target}`;
-	
-				}).catch(err => { return this.#generateAPIErrorResponse(err) });
-			}
-
-			//with all relevant tags got, write the list of them to file
-			fs.writeFile('./data/tags_list.json', JSON.stringify(tags_list), 'utf8', err => {
-				if (err) console.error(err);
-			});
-
-		} catch (err) { console.error(err); }
-
+		await fetch(announcement_url, data).then(result => result.json()).then(l => {
+			console.log(l);
+		})
+			// console.log(result);
+			// let status = result.status;
+			// if (status != '201') {console.error(`Bad request, code ${status}`)}
+		// })
 	}
+
+    //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
 
     //gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)
 	async #getTwitchToken() {

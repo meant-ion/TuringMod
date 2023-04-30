@@ -3,12 +3,14 @@ export class OBSAnimations {
 
     #obs; // the websocket to connect and manipulate OBS
     #last_color;
+    #helper;
     
     color_list = [16777215, 16711680, 16753920, 16776960, 32768, 255, 15631086, 8388736];
 
-    constructor(o) {
+    constructor(o, h) {
         this.#obs = o;
         this.#last_color = 0;
+        this.#helper = h;
     }
 
     async DVD_Screensaver() {
@@ -74,7 +76,7 @@ export class OBSAnimations {
                 await this.#filter_kill();
                 await this.#filter_spawn();
             }
-            await this.#sleep(0);
+            await this.#helper.sleep(0);
         }
 
         facecam_info.positionX = init_pos.x;
@@ -85,7 +87,7 @@ export class OBSAnimations {
     }
 
     async bonk_squish() {
-        await this.#sleep(750); //give VLC enough time to play the bonk sound effect
+        await this.#helper.sleep(750); //give VLC enough time to play the bonk sound effect
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
         let facecam_id;
@@ -106,7 +108,7 @@ export class OBSAnimations {
         facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
         facecam_info.scaleY = original_scale;
         facecam_info.positionY = 0;
-        await this.#sleep(10000);
+        await this.#helper.sleep(10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene.currentProgramSceneName,
             sceneItemId: facecam_id,
@@ -124,10 +126,6 @@ export class OBSAnimations {
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
         facecam_info = facecam_info.sceneItemTransform;
         console.log(dunce_id);
-    }
-
-    #sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     async #filter_spawn() {

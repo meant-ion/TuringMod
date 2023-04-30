@@ -7,13 +7,15 @@ export class UberAPI {
 
     #db
     #vlc //for playing audio
+    #helper
 
     //@param   c_h   The database containing the key and secret for the UberDuck API
     //@param   v     For playing the TTS audio through VLC
-    constructor(c_h, v) {
+    constructor(c_h, v, h) {
 
         this.#db = c_h;
         this.#vlc = v;
+        this.#helper = h;
 
     }
 
@@ -136,6 +138,7 @@ export class UberAPI {
                 //file finished downloading, now we send it to python script to play
                 file.on('finish', () => {
                     file.close();
+                    this.#helper.sleep(5000);// grace period in case someone tries to redeem some cringe/racist shit
                     this.#vlc.play_audio('audio.wav');
                 });
 

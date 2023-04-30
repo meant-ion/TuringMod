@@ -27,7 +27,8 @@ export class PubSubHandler {
     //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
     //@param   v     The web controller for playing audio through VLC
-    constructor(c, t_a, c_h, o, v) {
+    //@param   h     For the sleep function
+    constructor(c, t_a, c_h, o, v, h) {
         this.#pubsub = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.#ping = new Ping(this.#pubsub);
 
@@ -41,7 +42,7 @@ export class PubSubHandler {
         //this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
         this.#twitch_api = t_a;
         this.#vlc = v;
-        this.#tts_api = new UberAPI(c_h, v);
+        this.#tts_api = new UberAPI(c_h, v, h);
         
 
         //with the pubsub made, we can now get it working handling msgs

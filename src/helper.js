@@ -180,6 +180,10 @@ export class Helper {
 
         exec(exec_str);
     }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 }
 
 export default Helper;

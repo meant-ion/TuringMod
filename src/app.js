@@ -59,9 +59,9 @@ const misc_api = new MiscAPI(commands_holder);
 const dice = new Dice();
 const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
-const obs_anims = new OBSAnimations(obs);
+const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
-const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc);
+const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
 
 const client_data = await commands_holder.getTwitchSessionInfo();
 const tok = await commands_holder.getTwitchInfo(0);
@@ -93,7 +93,10 @@ let call_this_function_number = 0;
 let skip_list = [];
 
 await helper.is_running("firefox.exe", async (truth) => {
-	if (!truth) await helper.open_program("firefox.exe");
+	if (!truth) {
+		await helper.sleep(2000); // to prevent issues with getting tokens
+		await helper.open_program("firefox.exe");
+	}
 });
 await helper.is_running("vlc.exe", async  (truth) => {
 	if (!truth) helper.open_program("vlc.exe");
@@ -348,10 +351,9 @@ const func_obj = {
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 
-	'!test': async (_input_msg, _user, target) => {
+	'!test': async () => {
 		await twitch_api.sendAnnouncement(0);
-		console.log(target);
-		client.say('#pope_pontius', '/announce Test message');
+		client.say('#pope_pontius', )
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -408,7 +410,7 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	client.say('#pope_pontius', `/announce ${await commands_holder.getIntervalCommand(call_this_function_number)}`);
+	client.say('#pope_pontius', `${await commands_holder.getIntervalCommand(call_this_function_number)}`);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 
@@ -522,7 +524,7 @@ async function adsIntervalHandler() {
 				60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
-			const msg = "Midrolls are starting within one minute! I will be running 90 seconds of ads to keep prerolls off for as long as possible." + 
+			const msg = "Midrolls are starting within one minute! I will be running 90 seconds of ads to keep prerolls off for as long as possible. " + 
 				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
 			client.say('#pope_pontius', msg);
 			intervalTime = 360000;
@@ -539,7 +541,7 @@ async function adsIntervalHandler() {
 	} else if (1 - mins != NaN) {
 
 		const _mins = 1 - mins;
-		client.say('#pope_pontius', `Midrolls will be starting within ${_mins} minutes. You have been warned`);
+		client.say('#pope_pontius', `Midrolls will be starting within the next few minutes. You have been warned`);
 		//we set a timer callback to this function so we can check again 
 		intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
 

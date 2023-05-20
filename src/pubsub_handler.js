@@ -107,6 +107,9 @@ export class PubSubHandler {
                 await this.#obs.bonk_squish();
                 await this.#vlc.empty_playlist();
                 break;
+            case 'Australia':
+                await this.#obs.australia();
+                break;
         }
     }
 

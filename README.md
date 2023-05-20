@@ -90,6 +90,8 @@ COMMANDS:
 
 	- !bonk: bonks the user specified by the chat member
 
+	- !adbreak: gives the user the (approximate) time left before an adbreak happens
+
 
 MOD/STREAMER ONLY COMMANDS:
 

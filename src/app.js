@@ -92,6 +92,8 @@ let call_this_function_number = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
+let ad_timer;
+
 await helper.is_running("firefox.exe", async (truth) => {
 	if (!truth) {
 		await helper.sleep(2000); // to prevent issues with getting tokens
@@ -341,19 +343,25 @@ const func_obj = {
 	//user wants a list of currently free games on the Epic Store
 	'!freegame': async (_input_msg, _user, target) => client.say(target, await misc_api.getFreeGamesOnEpicStore()),
 	//user wants to bonk someone
-	'!bonk': async  (input_msg, _user, target) => {
-		client.say(target, `${input_msg[1]} has been bonked! BOP`);
-		//play bonk sound effect when bonking commences
-		await vlc.play_audio('bonk.wav');
+	'!bonk': async  (input_msg, user, target) => {
+		if (input_msg[1] != undefined) {
+			client.say(target, bonk(input_msg, user));
+			//play bonk sound effect when bonking commences
+			await vlc.play_audio('bonk.wav');
+		}
+	},
+	//tells user how much time left before an adbreak runs
+	'!adbreak': async (_input_msg, user, target) => {
+		client.say(target, `${user.username}: ads will run roughly within ${getTimeLeftBeforeAds()} minutes`);
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 
-	'!test': async () => {
-		await twitch_api.sendAnnouncement(0);
-		client.say('#pope_pontius', )
+	'!test': async (_input_msg, user, target) => {
+		// await twitch_api.sendAnnouncement(0);
+		// client.say('#pope_pontius', )
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -428,6 +436,14 @@ async function thresholdCalc(target, user) {
 		client.say(target, await spotify_api.skipToNextSong());
 		skip_threshold = 0;
 		skip_list = [];
+	}
+}
+
+function bonk(input_msg, user) {
+	if (input_msg[1] != undefined) {
+		const revolt_chance = Math.floor(Math.random() * 10);
+		return revolt_chance == 1 ? `The bot got tired of doing whatever the meatbags want and bonked ${user.username} instead`
+						: `${input_msg[1]} has been bonked! BOP`;
 	}
 }
 
@@ -506,19 +522,25 @@ function getClipsInOrder(target) {
 	client.say(target, "All collected clips are written to file!");
 }
 
+function getTimeLeftBeforeAds() {
+	const time_since_last_ads = Math.round(ad_timer / 60);
+	return time_since_last_ads > 60 ? 60 - (time_since_last_ads % 60) : 60 - time_since_last_ads;
+}
+
 //handles automatically posting that ads will be coming soon
 async function adsIntervalHandler() {
 	const curr_time = await twitch_api.getUneditedStreamUptime();
+	ad_timer = curr_time;
 	const mins = Math.round(curr_time / 60);
 	let intervalTime = 0;
-	//the mid-roll ads start 30 mins after stream start (at least for me)
-	//so we start the interval command after 30 mins
-	if (mins == 1) {//the function is called 30 mins after stream start (tolerance for seconds between 30 and 31 mins)
+	//the mid-roll ads start very quickly after stream start (at least for me)
+	//so we start the interval command as soon as the bot boots
+	if (mins == 1) {//the function is called when the bot boots
 
 		client.say('#pope_pontius', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
 		intervalTime = 360000;//call this function again in 1 hour
 
-	} else if (mins > 1) {//we called it after the 30 min mark is passed
+	} else if (mins > 1) {//we called it after the ads have gone out from start of stream
 		const time_since_midrolls_started = mins - 1;
 		const remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
 				60 - time_since_midrolls_started;

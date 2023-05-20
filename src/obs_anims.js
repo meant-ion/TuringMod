@@ -4,6 +4,10 @@ export class OBSAnimations {
     #obs; // the websocket to connect and manipulate OBS
     #last_color;
     #helper;
+    #facecam_scale_y;
+    #facecam_height;
+    #facecam_width;
+    #facecam_y;
     
     color_list = [16777215, 16711680, 16753920, 16776960, 32768, 255, 15631086, 8388736];
 
@@ -11,6 +15,7 @@ export class OBSAnimations {
         this.#obs = o;
         this.#last_color = 0;
         this.#helper = h;
+        this.#capture_facecam_dimensions();
     }
 
     async DVD_Screensaver() {
@@ -42,11 +47,11 @@ export class OBSAnimations {
             y: Math.round(Math.random() * (5 + 5 + 1) - 5) + 3,
         };
 
-        //in case one of the speed values ends up as zero
-        while (speed.x == 0) {
-            speed.x = Math.round(Math.random());
-        } while (speed.y == 0) {
-            speed.y = Math.round(Math.random());
+        //in case one of the speed values ends up as less than or equal to 3 3
+        while (speed.x >= 3) {
+            speed.x = speed.x + 1;
+        } while (speed.y >= 3) {
+            speed.y = speed.y + 1;
         }
 
         let bounced = false;
@@ -90,24 +95,65 @@ export class OBSAnimations {
         await this.#helper.sleep(750); //give VLC enough time to play the bonk sound effect
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
-        let facecam_id;
+        let facecam_id, main_screen_id;
         for (let i in source_list.sceneItems) {
             if (source_list.sceneItems[i].sourceName == "Facecam") {
                 facecam_id = source_list.sceneItems[i].sceneItemId;
             }
+            if (source_list.sceneItems[i].inputKind == "monitor_capture" || 
+            source_list.sceneItems[i].inputKind == "game_capture") {
+                main_screen_id = source_list.sceneItems[i].sceneItemId;
+            }
         }
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        let source_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: main_screen_id});        
         facecam_info = facecam_info.sceneItemTransform;
+        source_info = source_info.sceneItemTransform;
+        let source_height = source_info.sourceHeight;
         let original_scale = facecam_info.scaleY;
         let original_height = facecam_info.height;
         facecam_info.scaleY = original_scale / 2;
-        facecam_info.positionY = original_height / 2;
+        facecam_info.positionY = source_height - (original_height / 2);
         facecam_info.boundsWidth = 1;
         facecam_info.boundsHeight = 1;
         await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
         facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
-        facecam_info.scaleY = original_scale;
-        facecam_info.positionY = 0;
+        facecam_info.scaleY = this.#facecam_scale_y;
+        facecam_info.height = this.#facecam_y;
+        facecam_info.positionY = source_height - this.#facecam_height;
+        await this.#helper.sleep(10000);
+        await this.#obs.call('SetSceneItemTransform', {
+            sceneName: scene.currentProgramSceneName,
+            sceneItemId: facecam_id,
+            sceneItemTransform: facecam_info,
+        });
+    }
+
+    // makes it look like my facecam is from a land down under
+    async australia() {
+        const scene = await this.#obs.call('GetCurrentProgramScene');
+        const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
+        let facecam_id, main_screen_id;
+        for (let i in source_list.sceneItems) {
+            if (source_list.sceneItems[i].sourceName == "Facecam") {
+                facecam_id = source_list.sceneItems[i].sceneItemId;
+            }
+            if (source_list.sceneItems[i].inputKind == "monitor_capture" || 
+                source_list.sceneItems[i].inputKind == "game_capture") {
+                    main_screen_id = source_list.sceneItems[i].sceneItemId;
+            }
+        }
+        let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        let source_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: main_screen_id});
+        facecam_info = facecam_info.sceneItemTransform;
+        source_info = source_info.sceneItemTransform;
+        facecam_info.rotation = 180;
+        facecam_info.positionX += this.#facecam_width;
+        facecam_info.positionY += this.#facecam_height;
+        await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
+        facecam_info.rotation = 0;
+        facecam_info.positionX -= this.#facecam_width;
+        facecam_info.positionY -= this.#facecam_height;
         await this.#helper.sleep(10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene.currentProgramSceneName,
@@ -147,6 +193,23 @@ export class OBSAnimations {
             sourceName: 'Facecam',
             filterName: 'DVD Screensaver Edge Color Change',
         });
+    }
+
+    async #capture_facecam_dimensions() {
+        const scene = await this.#obs.call('GetCurrentProgramScene');
+        const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
+        let facecam_id;
+        for (let i in source_list.sceneItems) {
+            if (source_list.sceneItems[i].sourceName == "Facecam") {
+                facecam_id = source_list.sceneItems[i].sceneItemId;
+            }
+        }
+        let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        facecam_info = facecam_info.sceneItemTransform;
+        this.#facecam_y = facecam_info.positionY;
+        this.#facecam_height = facecam_info.height;
+        this.#facecam_scale_y = facecam_info.scaleY;
+        this.#facecam_width = facecam_info.width;
     }
 
 }

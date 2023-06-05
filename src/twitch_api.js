@@ -305,6 +305,52 @@ export class TwitchAPI {
 		}
 	}
 
+	async sendShoutout(user, mod) {
+		try {
+
+			this.#hasTokenExpired();
+			const data = await this.#createTwitchDataHeader();
+
+			// getting Id of channel to be shouted out
+			const user_url = `https://api.twitch.tv/helix/users?login=${user}`;
+
+			const mod_url = `https://api.twitch.tv/helix/users?login=${mod.username}`;
+
+			let channel_id, mod_id;
+
+			//get id of channel to shout out
+			await fetch(user_url, data).then(result => result.json()).then(body => {
+				channel_id = body.data[0].broadcaster_id;
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			//get id of mod/streamer
+			await fetch(mod_url, data).then(result => result.json()).then(body => {
+				mod_id = body.data[0].broadcaster_id;
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			const shoutout_url = `https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=71631229&to_broadcaster_id=${channel_id}&moderator_id=${mod_id}`;
+
+			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
+			const c_id = await this.#data_base.getIdAndSecret();
+			const cc_id = c_id[0];
+
+			const shoutout_data = {
+				'method': 'POST',
+				'headers': {
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'Client-Id': `${cc_id}`,
+					'Content-Type': 'application/json'
+				}
+			};
+
+			//make shoutout request to API
+			await fetch(shoutout_url, shoutout_data).then(result => {
+				if (result.status != 204) console.log('Failed to send out shoutout: Code ' + result.status);
+			}).catch(err => { return this.#generateAPIErrorResponse(err); })
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+	}
+
 	//returns stream uptime for use in ad warning system
 	//@return    The uptime of the stream in seconds
 	async getUneditedStreamUptime() {
@@ -505,7 +551,7 @@ export class TwitchAPI {
 
 		try {
 			//get all necessary data from the DB and go from there
-			const session_info = await this.#data_base.getTwitchSessionInfo();
+			const session_info = await this.#data_base.getTwitchInfo(3);
 
 			//all necessary vars needed to get the auth token so we can get the request token
 			const post_data = {

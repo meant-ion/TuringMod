@@ -168,7 +168,7 @@ export class SpotifyAPI {
 			'headers': {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${await this.#data_base.getSpotifyInfo(false)}`
+				'Authorization': `Bearer ${await this.#data_base.getSpotifyInfo(0)}`
 			}
 		};
 	}
@@ -178,7 +178,7 @@ export class SpotifyAPI {
 
 		try {
 			//get our data from the DB
-			const session_data = await this.#data_base.getSpotifySessionInfo();
+			const session_data = await this.#data_base.getSpotifyInfo(2);
 			//build the URLS that we need to access for the requests
 			const url = `https://accounts.spotify.com/authorize?client_id=${session_data[0]}&response_type=code&redirect_uri=${session_data[2]}&scope=${session_data[3]}&state=${session_data[4]}`;
 	
@@ -232,7 +232,7 @@ export class SpotifyAPI {
 			'Authorization': `Basic ${b.toString('base64')}`,
 			'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
 		};
-		const refresh_token = await this.#data_base.getSpotifyInfo(true)[1];
+		const refresh_token = await this.#data_base.getSpotifyInfo(1);
 		const params = {
 			'code': refresh_token,
 			'grant_type': "refresh_token",

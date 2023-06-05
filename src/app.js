@@ -63,7 +63,6 @@ const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
 
-const client_data = await commands_holder.getTwitchSessionInfo();
 const tok = await commands_holder.getTwitchInfo(0);
 // const twok = new Twocket('71631229',client_data[0], tok, ['channel.raid', 'channel.channel_points_custom_reward_redemption.add']);
 // twok.start();
@@ -119,8 +118,8 @@ function execTheBot() {
 	// });
 
 	// twok.setOnChannelPointRewardRedeem((data) => {
-	// 	console.log(data.event.reward.title);
-	// 	console.log(data.event.reward.prompt);
+	// 	console.log(data);
+	// 	//console.log(data.event.reward.prompt);
 	// })
 
 	//setting up the interval for giving people info about the streams every 15-20 mins
@@ -263,10 +262,6 @@ const func_obj = {
 	'!voice': async (_input_msg, _user, target) => {
 		client.say(target, `Streamer's voice has cracked ${await commands_holder.getAndUpdateVoiceCracks(client, target)} times`);
 	} ,
-	//user wants a magic 8 ball fortune
-	'!8ball': async (_input_msg, user, target) => {
-		client.say(target, `@${user.username}: ${await commands_holder.magic8Ball()}`);
-	},
 	//user wants to know how long they've followed the stream
 	'!followage': async (_input_msg, user, target) => {
 		if (user.username == the_streamer) //make sure the streamer isn't the one trying to get a follow age lol
@@ -362,6 +357,7 @@ const func_obj = {
 	'!test': async (_input_msg, user, target) => {
 		// await twitch_api.sendAnnouncement(0);
 		// client.say('#pope_pontius', )
+		await twitch_api.sendShoutout('saint_isidore_bot', user);
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS

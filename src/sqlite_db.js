@@ -234,26 +234,6 @@ export class CommandArray {
 		});
     }
 
-	//gets a phrase from the "magic 8 ball" and sends it to the asking user in chat
-	//here in the commands array class since it uses the sqlite db just like the rest of this
-	//means that I dont have to have 2 connections to the db open at a time
-	//@param   user      The user who sent the command in the first place
-	//@param   target    The specific chat room that the command came from
-	magic8Ball() {
-		return new Promise((resolve, _reject) => {
-			this.#db.serialize(() => {
-				this.#db.each(`SELECT saying FROM sayings WHERE id = ${Math.floor(Math.random() * 20) + 1};`, [], (err, row) => {
-					if (err) {
-						console.error(err);
-						resolve('Error in getting 8-Ball to respond');
-					} else {
-						resolve(row.saying)
-					}
-				});
-			});
-		});
-	}
-
 	//refreshing function, gets a specific item from the DB as we need it
 	//@param   index   Tells us what item we are needing from the DB specifically
 	//@return          Our requested item, packaged into a Promise
@@ -269,6 +249,9 @@ export class CommandArray {
 			case 2:
 				item = "scopes";
 				break;
+			case 3:
+				item = "client_id, client_secret, scopes, redirect_url, state";
+				break;
 		}
 
 		const twitch_sql = `SELECT ${item} FROM twitch_auth;`;
@@ -276,37 +259,41 @@ export class CommandArray {
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
-				if(err) reject(err); else resolve(row[item]);
+				if(err) reject(err); else{
+					if (index == 3) {
+						let arr = ["","","","",""];
+						arr[0] = row["client_id"];
+						arr[1] = row["client_secret"];
+						arr[2] = row["scopes"];
+						arr[3] = row["redirect_url"];
+						arr[4] = row["state"];
+						resolve(arr);
+					} else {
+						resolve(row[item]);
+					}
+				} 
 			});
 		});
 		
 	}
 
-	//gets all the info needed to get a key from Twitch's OAuth via the DB
-	//returns     An array with all the necessary items stuffed inside it
-	getTwitchSessionInfo() {
-		const twitch_sql = `SELECT client_id, client_secret, scope, redirect_url, session_secret FROM twitch_session_stuff;`;
-
-		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
-		return new Promise((resolve, reject) => {
-			this.#db.get(twitch_sql, (err, row) => {
-				if (err) reject(err); else {
-					let arr = ["","","","",""];
-					arr[0] = row["client_id"];
-					arr[1] = row["client_secret"];
-					arr[2] = row["scope"];
-					arr[3] = row["redirect_url"];
-					arr[4] = row["session_secret"];
-					resolve(arr);
-				}
-			});
-		});
-	}
-
 	//gets all the info needed to get a key from Spotify's OAuth via the DB
 	//returns     An array with all the necessary items stuffed inside it
-	getSpotifySessionInfo() {
-		const spotify_sql = `SELECT client_id, client_secret, redirect_url, scope, state FROM spotify_session_stuff;`;
+	getSpotifyInfo(index) {
+		let item;
+		switch(index) {
+			case 0:
+				item = "access_token";
+				break;
+			case 1:
+				item = "refresh_token";
+				break;
+			case 2:
+				item = "client_id, client_secret, redirect_url, scope, state";
+				break;
+		}
+
+		const spotify_sql = `SELECT ${item} FROM spotify_auth;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
@@ -352,31 +339,6 @@ export class CommandArray {
 
 		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
 			if (err) console.error(err); else console.log("* New Twitch Tokens written to DB successfully!");
-		});
-	}
-
-	//gets the Spotify Web API Token(s) from the DB so we can work with them in the app
-	//@param   needBoth   Boolean to tell us if we need just the access token or both it and the refresh token
-	//@return             Either just the access token outright, or a 2 element array with the access and refresh tokens
-	async getSpotifyInfo(need_both) {
-		const spotify_sql = !need_both ? `SELECT access_token FROM spotify_auth;` : `SELECT access_token, refresh_token FROM spotify_auth`;
-
-		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
-		return new Promise((resolve, reject) => {
-
-			this.#db.get(spotify_sql, (err, row) => {
-				if (err) reject(err); else {
-					//we need only the access token
-					if (!need_both) resolve(row.access_token); else {
-						//we need both tokens, so send them into an array and go from there
-						let arr = ['', ''];
-						arr[0] = row.access_token;
-						arr[1] = row.refresh_token;
-						resolve(arr);
-
-					}
-				}
-			});
 		});
 	}
 

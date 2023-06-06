@@ -1,6 +1,6 @@
 {
   "name": "twocket",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A handy wrapper for the Twitch EventSub Websocket API.",
   "main": "lib/Twocket.js",
   "types": "lib/Twocket.d.ts",

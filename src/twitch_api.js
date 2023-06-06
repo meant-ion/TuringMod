@@ -320,15 +320,15 @@ export class TwitchAPI {
 
 			//get id of channel to shout out
 			await fetch(user_url, data).then(result => result.json()).then(body => {
-				channel_id = body.data[0].broadcaster_id;
+				channel_id = body.data[0].id;
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			//get id of mod/streamer
 			await fetch(mod_url, data).then(result => result.json()).then(body => {
-				mod_id = body.data[0].broadcaster_id;
+				mod_id = body.data[0].id;
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
-			const shoutout_url = `https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=71631229&to_broadcaster_id=${channel_id}&moderator_id=${mod_id}`;
+			const shoutout_url = `https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=71631229&to_broadcaster_id=${channel_id}&moderator_id=71631229`;
 
 			//do it this way otherwise it runs too fast and just gives 401 errors b/c the client id becomes 'undefined'
 			const c_id = await this.#data_base.getIdAndSecret();

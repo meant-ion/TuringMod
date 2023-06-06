@@ -13,17 +13,15 @@ export class EventSubs {
     #parser;             //what we will use for processing communications between the arduino and the computer
     #twok;               //library for communicating with EventSub API
     #twitch_api;         //for API functionality not a part of the EventSub API
-
+    #client;
     topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add'];
 
     //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
     //@param   v     The web controller for playing audio through VLC
     //@param   h     For the sleep function
-    //@param   c_d   client data for making a twocket object
-    //@param   tok   API token for EventSub API
     //@param   t     Twitch API handler object
-    constructor(c_h, o, v, h, c_d, tok, t) {
+    constructor(c_h, o, v, h, t) {
 
         //this.#port = new SerialPort('COM4', {baudRate: 9600});
         //this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
@@ -34,16 +32,53 @@ export class EventSubs {
         this.#tts_api = new UberAPI(c_h, v, h);
         this.#twitch_api = t;
 
-        this.#twok = new Twocket('71631229',c_d[0],tok,this.topics_list);
+    }
+
+    start(user_id, client_id, access_token) {
+
+        this.#twok = new Twocket(user_id,client_id, access_token, this.topics_list);
         this.#twok.start();
 
         this.#twok.setOnRaidEvent((data) => {
-            client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
-            client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${data.event.from_broadcaster_user_login}`);
+            // this.#client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
+            this.#twitch_api.sendShoutout(data.from_broadcaster_user_login, 'pope_pontius');
+            this.#client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
+        });
+    
+        this.#twok.setOnChannelPointRewardRedeem((data) => {
+            console.log(data);
+            this.#reward_handler(data);
         });
 
     }
-    
+
+    set_chat_client(c) {
+        this.#client = c;
+    }
+
+    async #reward_handler(parsed_data) {
+
+        switch(parsed_data.reward.title) {
+            case 'AI Speech': 
+                const user_str = parsed_data.user_input;
+                await this.#tts_api.generate_tts_speech(user_str);
+                await this.#vlc.empty_playlist();
+                break;
+            case 'Screen Saver Camera':
+                await this.#obs.DVD_Screensaver();
+                break;
+            case 'Bonk':
+                await this.#vlc.play_audio('bonk.wav');
+                await this.#obs.bonk_squish();
+                await this.#vlc.empty_playlist();
+                break;
+            case 'Australia':
+                await this.#obs.australia();
+                break;
+        }
+
+    }
+
 }
 
 export default EventSubs;

@@ -94,7 +94,7 @@ class Twocket {
 
     start() {
         //Do websocket things
-        this.connect("wss://eventsub-beta.wss.twitch.tv/ws");
+        this.connect("wss://eventsub.wss.twitch.tv/ws");
     }
 
     stop() {

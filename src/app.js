@@ -4,7 +4,6 @@ dotenv.config({ path: './.env'});
 import { client as _client } from 'tmi.js';
 import { appendFile } from 'fs';
 import { Client, Intents } from 'discord.js';
-import { Twocket } from 'twocket';
 import OBSWebSocket from 'obs-websocket-js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -18,6 +17,7 @@ import Post from './post.js';
 import PubSubHandler from './pubsub_handler.js';
 import OBSAnimations from './obs_anims.js';
 import AudioPlayer from './audio.js';
+import EventSubs from './eventsubs.js';
 
 const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -62,11 +62,7 @@ const post = new Post(discord_client, client);
 const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
-
-const tok = await commands_holder.getTwitchInfo(0);
-// const twok = new Twocket('71631229',client_data[0], tok, ['channel.raid', 'channel.channel_points_custom_reward_redemption.add']);
-// twok.start();
-
+const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
 
 const the_streamer = opts.channels[0];
 
@@ -112,16 +108,6 @@ function execTheBot() {
 	client.on('message', onMessageHandler);
 	client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
 
-	// twok.setOnRaidEvent((data) => {
-	// 	client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
-	// 	client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${data.event.from_broadcaster_user_login}`);
-	// });
-
-	// twok.setOnChannelPointRewardRedeem((data) => {
-	// 	console.log(data);
-	// 	//console.log(data.event.reward.prompt);
-	// })
-
 	//setting up the interval for giving people info about the streams every 15-20 mins
 	setInterval(intervalMessages, 600000);
 
@@ -142,7 +128,9 @@ function execTheBot() {
 	setTimeout(adsIntervalHandler, 15000);
 
 	//set timer to make the pubsub subscription so I dont have to type a command for it
-	setTimeout(makeSub, 15000);
+	// setTimeout(makeSub, 15000);
+
+	setTimeout(makeEventSub, 5000);
 
 	//this goes last to prevent any issues on discord's end
 	discord_client.login(token);
@@ -508,6 +496,15 @@ async function shutDownBot(target) {
 //for setting up the pubsub for the channel points redemptions; twitch_api function returns a promise, so 
 //setTimeout freaks out over it. Have to do it this way for it to function properly
 function makeSub() {twitch_api.makePubSubscription('channel-points-channel-v1.71631229', pubsubs)}
+
+async function makeEventSub() {
+	const tok = await commands_holder.getTwitchInfo(0);
+	const client_data = await commands_holder.getTwitchInfo(3);
+
+	eventsubs.start('71631229', client_data[0], tok);
+	eventsubs.set_chat_client(client);
+
+}
 
 //writes all collected Twitch clips onto an HTML file and stops collecting them
 //@param   target   The chat room we are getting clips from 

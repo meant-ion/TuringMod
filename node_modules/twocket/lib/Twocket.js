@@ -79,7 +79,7 @@ var Twocket = /** @class */ (function () {
     };
     Twocket.prototype.start = function () {
         //Do websocket things
-        this.connect("wss://eventsub-beta.wss.twitch.tv/ws");
+        this.connect("wss://eventsub.wss.twitch.tv/ws");
     };
     Twocket.prototype.stop = function () {
         var _a;

@@ -5,9 +5,11 @@ export class OBSAnimations {
     #last_color;
     #helper;
     #facecam_scale_y;
+    #facecam_scale_x;
     #facecam_height;
     #facecam_width;
     #facecam_y;
+    #facecam_x;
     
     color_list = [16777215, 16711680, 16753920, 16776960, 32768, 255, 15631086, 8388736];
 
@@ -182,14 +184,18 @@ export class OBSAnimations {
         let original_width = facecam_info.width;
         let original_scale = facecam_info.scaleX;
         facecam_info.width = facecam_info.sourceWidth;
-        facecam_info.cropLeft = original_width / 1.29;
-        facecam_info.cropRight = original_width / 1.29;
-        facecam_info.scaleX = original_scale * 8;
+        if (facecam_info.cropLeft < 500) {
+            facecam_info.cropLeft = original_width / 1.29;
+            facecam_info.cropRight = original_width / 1.29;
+        }
+        facecam_info.scaleX = facecam_info.scaleX < 4 ? original_scale * 8 : facecam_info.scaleX;
+        facecam_info.boundsWidth = 1;
+        facecam_info.boundsHeight = 1;
         await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
         facecam_info.cropLeft = 0;
         facecam_info.cropRight = 0;
-        facecam_info.width = original_width;
-        facecam_info.scaleX = original_scale;
+        facecam_info.width = this.#facecam_width;
+        facecam_info.scaleX = this.#facecam_scale_x;
         await this.#helper.sleep(10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene.currentProgramSceneName,
@@ -234,6 +240,8 @@ export class OBSAnimations {
         this.#facecam_height = facecam_info.height;
         this.#facecam_scale_y = facecam_info.scaleY;
         this.#facecam_width = facecam_info.width;
+        this.#facecam_scale_x = facecam_info.scaleX;
+        this.#facecam_x = facecam_info.positionX;
     }
 
 }

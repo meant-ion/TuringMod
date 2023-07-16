@@ -517,8 +517,8 @@ export class TwitchAPI {
 
 	}
 
-	async sendAnnouncement(func_num) {
-		const s = await this.#data_base.getIdAndSecret();
+	async sendAnnouncement() {
+		const s = await this.#data_base.getTwitchInfo(3);
 		const announcement_url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=${s[0]}`;
 
 		const data = {

@@ -162,16 +162,40 @@ export class OBSAnimations {
         });
     }
 
-    async dunce_cap() {
+    async wide_pope() {
         const scene = await this.#obs.call('GetCurrentProgramScene');
-        const dunce_id = await this.#obs.call('CreateSceneItem', {sceneName: scene.currentProgramSceneName, sourceName: "Dunce Cap"});
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
-        let facecam_id;
-        for (let i in source_list.sceneItems) 
-            if (source_list.sceneItems[i].sourceName == "Facecam") facecam_id = source_list.sceneItems[i].sceneItemId; 
+        let facecam_id, main_screen_id;
+        for (let i in source_list.sceneItems) {
+            if (source_list.sceneItems[i].sourceName == "Facecam") {
+                facecam_id = source_list.sceneItems[i].sceneItemId;
+            }
+            if (source_list.sceneItems[i].inputKind == "monitor_capture" || 
+                source_list.sceneItems[i].inputKind == "game_capture") {
+                    main_screen_id = source_list.sceneItems[i].sceneItemId;
+            }
+        }
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: facecam_id});
+        let source_info = await this.#obs.call('GetSceneItemTransform', {sceneName: scene.currentProgramSceneName, sceneItemId: main_screen_id});
         facecam_info = facecam_info.sceneItemTransform;
-        console.log(dunce_id);
+        source_info = source_info.sceneItemTransform;
+        let original_width = facecam_info.width;
+        let original_scale = facecam_info.scaleX;
+        facecam_info.width = facecam_info.sourceWidth;
+        facecam_info.cropLeft = original_width / 1.29;
+        facecam_info.cropRight = original_width / 1.29;
+        facecam_info.scaleX = original_scale * 8;
+        await this.#obs.call('SetSceneItemTransform', {sceneName: scene.currentProgramSceneName,sceneItemId: facecam_id,sceneItemTransform: facecam_info});
+        facecam_info.cropLeft = 0;
+        facecam_info.cropRight = 0;
+        facecam_info.width = original_width;
+        facecam_info.scaleX = original_scale;
+        await this.#helper.sleep(10000);
+        await this.#obs.call('SetSceneItemTransform', {
+            sceneName: scene.currentProgramSceneName,
+            sceneItemId: facecam_id,
+            sceneItemTransform: facecam_info,
+        });
     }
 
     async #filter_spawn() {

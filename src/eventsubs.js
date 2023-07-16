@@ -42,11 +42,10 @@ export class EventSubs {
         this.#twok.setOnRaidEvent((data) => {
             // this.#client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
             this.#twitch_api.sendShoutout(data.from_broadcaster_user_login, 'pope_pontius');
-            this.#client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
+            this.#client.say('#pope_pontius', `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
         });
     
         this.#twok.setOnChannelPointRewardRedeem((data) => {
-            console.log(data);
             this.#reward_handler(data);
         });
 
@@ -75,6 +74,8 @@ export class EventSubs {
             case 'Australia':
                 await this.#obs.australia();
                 break;
+            case 'Wide Pope':
+                await this.#obs.wide_pope();
         }
 
     }

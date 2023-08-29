@@ -345,7 +345,7 @@ const func_obj = {
 	'!test': async (_input_msg, user, target) => {
 		// await twitch_api.sendAnnouncement(0);
 		// client.say('#pope_pontius', )
-		// await obs_anims.wide_pope();
+		await obs_anims.barrel_roll();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS

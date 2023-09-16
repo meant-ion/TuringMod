@@ -75,7 +75,11 @@ export class EventSubs {
                 await this.#obs.australia();
                 break;
             case 'Wide Pope':
-                await this.#obs.wide_pope();
+                await this.#obs.warp_facecam(true);
+                break;
+            case 'Long Pope':
+                await this.#obs.warp_facecam(false);
+                break;
         }
 
     }

@@ -34,7 +34,7 @@ export class OBSAnimations {
 
         let bounced = false;
 
-        await this.#filter_spawn();
+        await this.#filter_spawn('DVD Screensaver Edge Color Change');
 
         let start = Date.now();
 
@@ -60,8 +60,8 @@ export class OBSAnimations {
                 sceneItemTransform: scene_info[1]
             });
             if (bounced) {
-                await this.#filter_kill();
-                await this.#filter_spawn();
+                await this.#filter_kill('DVD Screensaver Edge Color Change');
+                await this.#filter_spawn('DVD Screensaver Edge Color Change');
             }
             await this.#helper.sleep(0);
         }
@@ -74,7 +74,7 @@ export class OBSAnimations {
             sceneItemId: scene_info[3], 
             sceneItemTransform: scene_info[1]
         });
-        await this.#filter_kill();
+        await this.#filter_kill('DVD Screensaver Edge Color Change');
         await this.#check_and_fix_facecam();
     }
 
@@ -132,7 +132,6 @@ export class OBSAnimations {
 
     async barrel_roll() {
         let scene_info = await this.#gather_scene_and_source_info();
-        console.log(scene_info);
         scene_info[1].boundsWidth = 1;
         scene_info[1].boundsHeight = 1;
         scene_info[1].alignment = 0; // sets the alignment position to center instead of top left corner
@@ -152,7 +151,7 @@ export class OBSAnimations {
     }
 
     //@param   transform_axis   boolean for if wide pope (true) is called or long pope (false)
-    async warp_facecam(transform_axis) {
+    async warp_facecam(transform_axis, _in_separate_anim = false) {
         let scene_info = await this.#gather_scene_and_source_info();
         if (transform_axis) {
             if (scene_info[1].cropLeft < 500) {
@@ -179,7 +178,7 @@ export class OBSAnimations {
             sceneItemId: scene_info[3],
             sceneItemTransform: scene_info[1]
         });
-        await this.#helper.sleep(10000);
+        await this.#helper.sleep( _in_separate_anim ? 4000 : 10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene_info[0],
             sceneItemId: scene_info[3],
@@ -239,27 +238,44 @@ export class OBSAnimations {
             });
 
             switch (i) {
+                case 0:
+                case 1:
+                case 2:
+                    await this.#helper.sleep(4000);
+                    break;
                 case 3:
                     await this.#obs.call('SetInputVolume', {
                         inputName: inputs_list.inputs[0].inputName, 
                         inputVolumeDb: -1.5
                     });
+                    await this.#helper.sleep(4000);
                     break;
                 case 4:
                     await this.#obs.call('SetInputVolume', {
                         inputName: inputs_list.inputs[0].inputName, 
                         inputVolumeDb: -40
                     });
+                    await this.#helper.sleep(4000);
                     break;
                 case 5:
-                    await this.warp_facecam();
+                    await this.warp_facecam(true, true);
+                    break;
+                case 6:
+                    await this.warp_facecam(false, true);
+                    break;
+                case 7:
+                    await this.barrel_roll();
+                    await this.#helper.sleep(2000);
                     break;
                 case 8:
-                    await this.#add_and_remove_blur();
+                    await this.#blur_and_sharpen_facecam();
+                    await this.#helper.sleep(4000);
+                    break;
+                case 9:
+                    await this.#helper.sleep(4000);
                     break;
             }
 
-            await this.#helper.sleep(4000);
             await this.#obs.call('RemoveInput', {inputName: `Line ${i}`});
             await this.#obs.call('SetInputVolume', {
                 inputName: inputs_list.inputs[0].inputName, 
@@ -293,28 +309,45 @@ export class OBSAnimations {
         return [scene.currentProgramSceneName, facecam_info.sceneItemTransform, source_info.sceneItemTransform, facecam_id, main_screen_id];
     }
 
-    async #filter_spawn() {
+    async #filter_spawn(filter_name) {
         let color_index = Math.floor(Math.random() * (this.color_list.length - 1) + 1);
         while (this.#last_color == this.color_list[color_index]) {
             color_index = Math.floor(Math.random() * (this.color_list.length - 1) + 1);
         }
         this.#last_color = this.color_list[color_index];
+
+        let filter_kind, filter_settings;
+        switch (filter_name) {
+            case 'DVD Screensaver Edge Color Change':
+                filter_kind = 'color_filter_v2';
+                filter_settings = {
+                    color_add: this.color_list[color_index]
+                };
+                break;
+            case 'Blur':
+                filter_kind = 'streamfx-filter-blur';
+                filter_settings = {
+                    'Filter.Blur.Size': 1
+                };
+                break;
+        }
+
         await this.#obs.call('CreateSourceFilter', {
             sourceName: 'Facecam', 
-            filterName: 'DVD Screensaver Edge Color Change',
-            filterKind: 'color_filter_v2',
-            filterSettings: {color_add: this.color_list[color_index] },
+            filterName: filter_name,
+            filterKind: filter_kind,
+            filterSettings: filter_settings,
         });
     }
 
-    async #filter_kill() {
+    async #filter_kill(filter_name) {
         await this.#obs.call('RemoveSourceFilter', {
             sourceName: 'Facecam',
-            filterName: 'DVD Screensaver Edge Color Change',
+            filterName: filter_name,
         });
     }
 
-    async #add_and_remove_blur() {
+    async #blur_and_sharpen_facecam() {
         let blur;
         try {
             blur = await this.#obs.call('GetSourceFilter', {
@@ -322,14 +355,7 @@ export class OBSAnimations {
                 filterName: 'Blur'
             });
         } catch {
-            await this.#obs.call('CreateSourceFilter', {
-                sourceName: 'Facecam',
-                filterName: 'Blur',
-                filterKind: 'streamfx-filter-blur',
-                filterSettings: {
-                    'Filter.Blur.Size': 1
-                }
-            });
+            await this.#filter_spawn('Blur');
             blur = await this.#obs.call('GetSourceFilter', {
                 sourceName: 'Facecam',
                 filterName: 'Blur'
@@ -346,11 +372,16 @@ export class OBSAnimations {
             });
             await this.#helper.sleep(25);
         }
-        await this.#helper.sleep(5000);
-        await this.#obs.call('RemoveSourceFilter', {
-            sourceName: 'Facecam',
-            filterName: 'Blur'
-        });
+        for (let i = 128; i > 0; --i) {
+            --blur_settings['Filter.Blur.Size'];
+            await this.#obs.call('SetSourceFilterSettings', {
+                sourceName: 'Facecam',
+                filterName: 'Blur',
+                filterSettings: blur_settings
+            });
+            await this.#helper.sleep(25);
+        }
+        await this.#filter_kill('Blur');
     }
 
     async #capture_facecam_dimensions() {
@@ -384,7 +415,6 @@ export class OBSAnimations {
             });
         }
     }
-
 }
 
 export default OBSAnimations;

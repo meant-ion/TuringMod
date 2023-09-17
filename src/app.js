@@ -346,7 +346,8 @@ const func_obj = {
 		// await twitch_api.sendAnnouncement(0);
 		// client.say('#pope_pontius', )
 		// await obs_anims.barrel_roll();
-		await obs_anims.barrel_roll();
+		// await obs_anims.copypasta_animation();
+		await twitch_api.sendShoutout('saint_isidore_bot', user);
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS

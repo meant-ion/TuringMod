@@ -40,9 +40,9 @@ export class EventSubs {
         this.#twok.start();
 
         this.#twok.setOnRaidEvent((data) => {
-            // this.#client.say(target, `/shoutout ${data.event.from_broadcaster_user_login}`);
             this.#twitch_api.sendShoutout(data.from_broadcaster_user_login, 'pope_pontius');
             this.#client.say('#pope_pontius', `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
+            this.#obs.copypasta_animation();
         });
     
         this.#twok.setOnChannelPointRewardRedeem((data) => {
@@ -79,6 +79,9 @@ export class EventSubs {
                 break;
             case 'Long Pope':
                 await this.#obs.warp_facecam(false);
+                break;
+            case 'Barrel Roll':
+                await this.#obs.barrel_roll();
                 break;
         }
 

@@ -13,3 +13,4 @@ cert.pem
 *.mp3
 *.wav
 *.png
+node_modules/*

@@ -285,6 +285,11 @@ export class OBSAnimations {
 
     }
 
+    async getStreamTimestamp() {
+        const stream_status = await this.#obs.call('GetStreamStatus');
+        return stream_status.outputTimecode;
+    }
+
     async #gather_scene_and_source_info() {
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});

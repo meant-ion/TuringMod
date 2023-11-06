@@ -86,10 +86,7 @@ export class Helper {
     }
 
     //gets the current time in Central Standard Time in AM/PM configuration
-    //@param   client   The bot's client for accessing the chat room
-    //@param   target   The chatroom that the message will be sent into
-    //@param   user     The name of the chat member that typed in the command
-    getCurrentTime(client, target, user) {
+    getCurrentTime() {
         const cur_time = new Date();
         let is_AM = false;
 
@@ -117,7 +114,15 @@ export class Helper {
         if (cur_mins < 10) cur_mins = String("0" + cur_mins);
 
         //calculate the minutes, craft the message, and then send to chat
-        return `Currently ${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."} CST for the streamer`;
+        return `${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."}`;
+    }
+
+    getCurrentDate() {
+        const cur_date = new Date();
+        const day = String(cur_date.getDate()).padStart(2, '0');
+        const month = String(cur_date.getMonth() + 1).padStart(2, '0');
+        const year = cur_date.getFullYear();
+        return month + '/' + day + '/' + year;
     }
 
     //takes a number and rounds it out to two decimal points (for use as percentages)
@@ -179,6 +184,12 @@ export class Helper {
             : " && cd Program Files && cd VideoLAN && cd VLC && vlc.exe";
 
         exec(exec_str);
+    }
+
+    writeToFile(input, filename) {
+        appendFile(filename, this.combineInput(input, true) + '\n', (err) => {
+            if (err) { console.error(err); }
+        });
     }
 
     sleep(ms) {

@@ -1,34 +1,37 @@
 import SerialPort from 'serialport';
 import pkg from '@serialport/parser-readline';
+const { ReadlineParser } = pkg;
 import UberAPI from './ubertts.js';
 import { Twocket } from 'twocket';
-const { Readline } = pkg;
 
 export class EventSubs {
 
     #tts_api;            //object for handling Uberduck API requests/playing
     #obs;                //for handling OBS related functions
     #vlc;                //for playing audio with controls
-    #port;               //the serial port we will use to communicate with the rpi's turret
+    #port;               //the serial port we will use to communicate with the rpi
     #parser;             //what we will use for processing communications between the arduino and the computer
     #twok;               //library for communicating with EventSub API
     #twitch_api;         //for API functionality not a part of the EventSub API
+    #helper;
     #client;
     topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add'];
 
     //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
     //@param   v     The web controller for playing audio through VLC
-    //@param   h     For the sleep function
+    //@param   h     For the sleep and writeToFile functions
     //@param   t     Twitch API handler object
     constructor(c_h, o, v, h, t) {
+        // arduino communications
+        this.#port = new SerialPort('COM7', {baudRate:9600});
+        this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
+        this.#parser.on('data', (data) => console.log(data));
+        this.#port.on("open", () => console.log("* Serial Port to Arduino Open!"));
 
-        //this.#port = new SerialPort('COM4', {baudRate: 9600});
-        //this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
-
-        //this.#port.on("open", () => console.log("* Serial Port to Turret Open"));
         this.#obs = o;
         this.#vlc = v;
+        this.#helper = h;
         this.#tts_api = new UberAPI(c_h, v, h);
         this.#twitch_api = t;
 
@@ -53,6 +56,11 @@ export class EventSubs {
 
     set_chat_client(c) {
         this.#client = c;
+    }
+
+    async writeTimestampToFile() {
+        const timecode = await this.#obs.getStreamTimestamp();
+        this.#helper.writeToFile(`${this.#helper.getCurrentDate}: ${timecode}`, './data/vod_timestamps.txt')
     }
 
     async #reward_handler(parsed_data) {

@@ -312,7 +312,7 @@ const func_obj = {
 	//flips a coin and returns the result to chat
 	'!flip': (_input_msg, user, target) => client.say(target, `@${user.username}: ${dice.flipCoin()}`),
 	//gets the current time in Central Standard Time (CST)
-	'!time': (_input_msg, user, target) => client.say(target, `@${user.username}: ${helper.getCurrentTime(client, target, user)}`),
+	'!time': (_input_msg, user, target) => client.say(target, `@${user.username}: Currently ${helper.getCurrentTime()} CST for the streamer`),
 	//user wants to see what has been suggested but not yet implemented currently
 	'!suggestionlist': async (_input_msg, user, target) => client.say(target, await misc_api.getAllCurrentSuggestions()),
 	//user wants to see how much changed from the last two commits
@@ -343,11 +343,8 @@ const func_obj = {
 	//--------------------------------------------------------------------------------------------------------------------------
 
 	'!test': async (_input_msg, user, target) => {
-		// await twitch_api.sendAnnouncement(0);
-		// client.say('#pope_pontius', )
-		// await obs_anims.barrel_roll();
-		// await obs_anims.copypasta_animation();
-		await twitch_api.sendShoutout('saint_isidore_bot', user);
+		// await twitch_api.sendShoutout('saint_isidore_bot', user);
+		await obs_anims.writeTimestampToFile();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -473,9 +470,7 @@ function writeSuggestionToFile(input_msg) {
 
 	if (input_msg.length == 1 && input_msg[0] == '!sg') return false;
 
-	appendFile('./data/suggestions.txt', helper.combineInput(input_msg, true) + '\n', (err) => {
-		if (err) { console.error(err); }
-	});
+	helper.writeToFile(input_msg, './data/suggestions.txt');
 
 	return true;
 }

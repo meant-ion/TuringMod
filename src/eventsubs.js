@@ -1,6 +1,3 @@
-import SerialPort from 'serialport';
-import pkg from '@serialport/parser-readline';
-const { ReadlineParser } = pkg;
 import UberAPI from './ubertts.js';
 import { Twocket } from 'twocket';
 
@@ -9,8 +6,6 @@ export class EventSubs {
     #tts_api;            //object for handling Uberduck API requests/playing
     #obs;                //for handling OBS related functions
     #vlc;                //for playing audio with controls
-    #port;               //the serial port we will use to communicate with the rpi
-    #parser;             //what we will use for processing communications between the arduino and the computer
     #twok;               //library for communicating with EventSub API
     #twitch_api;         //for API functionality not a part of the EventSub API
     #helper;
@@ -23,11 +18,6 @@ export class EventSubs {
     //@param   h     For the sleep and writeToFile functions
     //@param   t     Twitch API handler object
     constructor(c_h, o, v, h, t) {
-        // arduino communications
-        this.#port = new SerialPort('COM7', {baudRate:9600});
-        this.#parser = this.#port.pipe(new pkg({ delimeter: '\n'}));
-        this.#parser.on('data', (data) => console.log(data));
-        this.#port.on("open", () => console.log("* Serial Port to Arduino Open!"));
 
         this.#obs = o;
         this.#vlc = v;

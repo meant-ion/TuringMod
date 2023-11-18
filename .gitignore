@@ -14,3 +14,5 @@ cert.pem
 *.wav
 *.png
 node_modules/*
+.vscode/
+.vs/

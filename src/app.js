@@ -2,8 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env'});
 
 import { client as _client } from 'tmi.js';
-import { appendFile } from 'fs';
-import { Client, Intents } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import OBSWebSocket from 'obs-websocket-js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
@@ -18,8 +17,9 @@ import PubSubHandler from './pubsub_handler.js';
 import OBSAnimations from './obs_anims.js';
 import AudioPlayer from './audio.js';
 import EventSubs from './eventsubs.js';
+import ArduinoController from './arduino_cntrlr.js';
 
-const discord_client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const discord_client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages,] });
 
 const opts = {
 	identity: {
@@ -63,6 +63,7 @@ const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
 const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
+const arduino_cntrlr = new ArduinoController(obs_anims, helper);
 
 const the_streamer = opts.channels[0];
 

@@ -1,9 +1,10 @@
 //file to hold our helper functions so that we can use them across files in the project
 
 import {URL as url} from 'url';
-import { execSync, exec } from 'child_process';
+import { exec } from 'child_process';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { appendFile } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

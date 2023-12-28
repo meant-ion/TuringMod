@@ -63,7 +63,7 @@ const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
 const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
-const arduino_cntrlr = new ArduinoController(obs_anims, helper);
+const arduino_cntrlr = new ArduinoController(obs_anims, helper, twitch_api, client, discord_client);
 
 const the_streamer = opts.channels[0];
 
@@ -126,7 +126,7 @@ function execTheBot() {
 	});
 
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
-	setTimeout(adsIntervalHandler, 15000);
+	// setTimeout(adsIntervalHandler, 15000);
 
 	//set timer to make the pubsub subscription so I dont have to type a command for it
 	// setTimeout(makeSub, 15000);
@@ -471,7 +471,7 @@ function writeSuggestionToFile(input_msg) {
 
 	if (input_msg.length == 1 && input_msg[0] == '!sg') return false;
 
-	helper.writeToFile(input_msg, './data/suggestions.txt');
+	helper.writeToFile(input_msg, './data/suggestions.txt', true);
 
 	return true;
 }

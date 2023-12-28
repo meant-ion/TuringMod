@@ -187,8 +187,8 @@ export class Helper {
         exec(exec_str);
     }
 
-    writeToFile(input, filename) {
-        appendFile(filename, this.combineInput(input, true) + '\n', (err) => {
+    writeToFile(input, filename, need_combination) {
+        appendFile(filename, (need_combination ? this.combineInput(input, true) : input) + '\n', (err) => {
             if (err) { console.error(err); }
         });
     }

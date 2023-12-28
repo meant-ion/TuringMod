@@ -29,17 +29,16 @@ export class TwitchAPI {
 			let msg = '';
 
 			let acct_found = false;
-			let follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229';
+			let follow_url = 'https://api.twitch.tv/helix/channels/followers?broadcaster_id=71631229';
 
 			//go through the list of accounts, paging forward every 20 if we don't find what we want immediately
 			while (!acct_found) {
 				await fetch(follow_url, data).then(result => result.json())
 				.then(body => {
-
 					//loop through the list of followers to find the one that requested their follow age
 					if (body.data != undefined) {
 						for (let i = 0; i < body.data.length; ++i) 
-							if (body.data[i].from_login == user.username) {//finally found the user following
+							if (body.data[i].user_login == user.username) {//finally found the user following
 								acct_found = true;
 								let followedDate = new Date(body.data[i].followed_at);
 								msg = `has been following for: ${this.helper.getTimePassed(followedDate, true)}`;
@@ -47,7 +46,7 @@ export class TwitchAPI {
 							}
 	
 						//not found yet, so set the cursor forward and remake request
-						follow_url = 'https://api.twitch.tv/helix/users/follows?to_id=71631229' + 
+						follow_url = 'https://api.twitch.tv/helix/channels/followers?broadcaster_id=71631229' + 
 							`&after=${body.pagination.cursor}`;
 					} else {
 						msg = 'You are currently not following this channel';
@@ -515,6 +514,36 @@ export class TwitchAPI {
 
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 
+	}
+
+	async createClip() {
+		const clip_url = 'https://api.twitch.tv/helix/clips?'
+
+		const data = await this.#createTwitchDataHeader();
+
+		data.method = 'POST';
+
+		let clipping_started = false;
+		let clip_id;
+		let finished_clip_url = "";
+
+		// clipping is ansync process, so we just grab the Id it sends and confirm its started the clipping process
+		await fetch(clip_url + 'broadcaster_id=71631229', data).then(result => result.json().then(clipping_started = result.status)
+		).then(body => {
+			clip_id = body.data[0].id;
+		}).catch(err => console.error(err));
+
+		await this.helper.sleep(15000);
+
+		data.method = 'GET';
+		// poll the clip api after 15 seconds of calling it. If no response after 15 seconds, clipping failed
+		if (clipping_started) {
+			await fetch(clip_url + 'id=' + clip_id, data).then(result => result.json()).then(body => {
+				finished_clip_url = body.data[0].url;
+			}).catch(err => console.error(err));
+		}
+
+		return finished_clip_url;
 	}
 
 	async sendAnnouncement() {

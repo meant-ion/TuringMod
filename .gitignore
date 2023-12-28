@@ -4,6 +4,7 @@ TuringMod.njsproj.*
 TuringMod.sln
 Microsoft.NodejsTools.WebRole.dll
 /data/suggestions.txt
+/data/vod_timestamps.txt
 /data/clip_links.html
 /data/modlist.txt
 key.pem

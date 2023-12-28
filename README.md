@@ -81,7 +81,6 @@ COMMANDS:
 
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one 
 				   and posts them in chat as a message
-	- !8ball: gets a random magic 8ball fortune and delivers it to chat
 
 	- !spacepic: gets the NASA Space Picture of the Day and sends it out to chat
 

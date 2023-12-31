@@ -89,7 +89,9 @@ COMMANDS:
 
 	- !bonk: bonks the user specified by the chat member
 
-	- !adbreak: gives the user the (approximate) time left before an adbreak happens
+	- !adbreak: gives the user the (approximate) time left before an adbreak happens - DEPRECIATED SINCE I NO LONGER RUN ADS ON A SCHEDULE
+
+	- !cw: shows the user Twitch's content warning labels applied to the stream
 
 
 MOD/STREAMER ONLY COMMANDS:

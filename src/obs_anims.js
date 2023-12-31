@@ -139,7 +139,10 @@ export class OBSAnimations {
         scene_info[1].positionX += scene_info[1].width / 2;
         scene_info[1].positionY += scene_info[1].height / 2;
         for (let i = 0; i < 360; ++i) {
-            scene_info[1].rotation += 1;
+            if (scene_info[1].rotation >= 359)
+                scene_info[1].rotation = 0;
+            else 
+                scene_info[1].rotation += 1;
             await this.#obs.call('SetSceneItemTransform', {
                 sceneName: scene_info[0],
                 sceneItemId: scene_info[3],

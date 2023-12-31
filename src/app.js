@@ -334,10 +334,13 @@ const func_obj = {
 			await vlc.play_audio('bonk.wav');
 		}
 	},
-	//tells user how much time left before an adbreak runs
-	'!adbreak': async (_input_msg, user, target) => {
-		client.say(target, `${user.username}: ads will run roughly within ${getTimeLeftBeforeAds()} minutes`);
+	'!cw': async (_input_msg, user, target) => {
+		client.say(target, `@${user.username}: ${await twitch_api.getContentLabels()}`);
 	},
+	//tells user how much time left before an adbreak runs
+	// '!adbreak': async (_input_msg, user, target) => {
+	// 	client.say(target, `${user.username}: ads will run roughly within ${getTimeLeftBeforeAds()} minutes`);
+	// },
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
@@ -345,7 +348,7 @@ const func_obj = {
 
 	'!test': async (_input_msg, user, target) => {
 		// await twitch_api.sendShoutout('saint_isidore_bot', user);
-		await obs_anims.writeTimestampToFile();
+		await twitch_api.sendAnnouncement();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -402,7 +405,9 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	client.say('#pope_pontius', `${await commands_holder.getIntervalCommand(call_this_function_number)}`);
+	//client.say('#pope_pontius', `${await commands_holder.getIntervalCommand(call_this_function_number)}`);
+	let announcement = await commands_holder.getIntervalCommand(call_this_function_number);
+	await twitch_api.sendAnnouncement(announcement);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
 }
 

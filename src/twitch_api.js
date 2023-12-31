@@ -406,9 +406,6 @@ export class TwitchAPI {
 	//@param   list_of_tags   The list of tags we want to have be present in the stream 
 	async replaceStreamTags(list_of_tags) {
 
-		//this.#getAndUpdateTagsList("#pope_pontius");
-		const tags_list = JSON.parse(fs.readFileSync('./data/tags_list.json', {encoding: 'utf8'}));
-
 		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 		//first, read in the contents of the tags list file to memory so we can search it easier
 
@@ -546,9 +543,37 @@ export class TwitchAPI {
 		return finished_clip_url;
 	}
 
-	async sendAnnouncement() {
+	async getContentLabels() {
+		const label_url= `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
+		let msg = "Twitch's content warnings for this stream are: ";
+
+		try {
+
+			this.#hasTokenExpired();
+
+			const data = await this.#createTwitchDataHeader();
+
+			await fetch(label_url, data).then(result => result.json()).then(body => {
+				if (body.data[0].content_classification_labels.length == 0) msg = "There are no content warnings on this stream";
+				else {
+					for (let i = 0; i < body.data[0].content_classification_labels.length; ++i) {
+						if (i + 1 >= body.data[0].content_classification_labels.length) {
+							msg += `and ${body.data[0].content_classification_labels[i]}`;
+						} else {
+							msg += `${body.data[0].content_classification_labels[i]}, `;
+						}
+					}
+				}
+			}).catch(err => console.error(err));
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+
+		return msg;
+	}
+//693520155
+	async sendAnnouncement(announcement) {
 		const s = await this.#data_base.getTwitchInfo(3);
-		const announcement_url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=${s[0]}`;
+		const announcement_url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=71631229`;
 
 		const data = {
 			'method': 'POST',
@@ -558,19 +583,11 @@ export class TwitchAPI {
 				'Content-Type': 'application/json'
 			},
 			'body': JSON.stringify({
-				'message': "This is a test announcement",
+				'message': announcement,
 			})
 		};
 
-		console.log(data);
-
-		await fetch(announcement_url, data).then(result => result.json()).then(l => {
-			console.log(l);
-		})
-			// console.log(result);
-			// let status = result.status;
-			// if (status != '201') {console.error(`Bad request, code ${status}`)}
-		// })
+		await fetch(announcement_url, data);
 	}
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------

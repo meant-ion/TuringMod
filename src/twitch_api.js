@@ -370,14 +370,6 @@ export class TwitchAPI {
 		} catch (err) { console.error(err); }
 	}
 
-    //creates a PubSub subscription of the topic deigned by the user
-	//@param   topic             The topic we wish to listen to
-	//@param   pubsubs           The PubSub object
-	async makePubSubscription(topic, pubsubs) {
-		const tkn = await this.#data_base.getTwitchInfo(0);
-		pubsubs.requestToListen(topic, tkn);
-	}
-
 	//gets and returns the list of tags currently applied to the stream
 	async getStreamTags() {
 		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;

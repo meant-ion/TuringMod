@@ -134,7 +134,7 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !testviewers: tests the stream and chatroom's viewer counts to see if there's a good chance of a view botting issue
 
-	- !shutdown: writes everything necessary to file/ends all PubSub subscriptions and ends the bot's execution
+	- !shutdown: writes everything necessary to file and ends the bot's execution
 
 	- !delvod: deletes the last vod on the channel. Good for handling issues with dox/TOS
 
@@ -175,11 +175,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 		- yodaposting: same idea as !post, but response is said like yoda would
 				* API not free, need to actually be making money to use (lol)
 
-		- !tr command: automatically translates a command from the detected language to english
-				* Same as yodaposting, API not free (Google Cloud Translate API), need to be making money on it first
-
 	------------------------------------------------------------
 
 	- whatever is suggested by viewers during my livestreams, so long as the suggestions are not against TOS (Twitch or OpenAI)
-
-	- get further testing for the calculator, specifically for negative numbers

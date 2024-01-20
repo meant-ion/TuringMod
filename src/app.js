@@ -13,7 +13,6 @@ import MiscAPI from './misc_api.js';
 import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
 import Post from './post.js';
-import PubSubHandler from './pubsub_handler.js';
 import OBSAnimations from './obs_anims.js';
 import AudioPlayer from './audio.js';
 import EventSubs from './eventsubs.js';
@@ -61,7 +60,6 @@ const clip_collector = new ClipCollector(twitch_api);
 const post = new Post(discord_client, client);
 const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
-const pubsubs = new PubSubHandler(client, twitch_api, commands_holder, obs_anims, vlc, helper);
 const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
 const arduino_cntrlr = new ArduinoController(obs_anims, helper, twitch_api, client, discord_client);
 
@@ -128,8 +126,6 @@ function execTheBot() {
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
 	// setTimeout(adsIntervalHandler, 15000);
 
-	//set timer to make the pubsub subscription so I dont have to type a command for it
-	// setTimeout(makeSub, 15000);
 
 	setTimeout(makeEventSub, 5000);
 
@@ -146,10 +142,6 @@ const func_obj = {
 		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
 			client.say(target, `/shoutout ${input_msg[1]}`);
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
-	}, 
-	//mod/streamer wants to have the bot listen in on a PubSub topic
-	'!makesub': (input_msg, user) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) twitch_api.makePubSubscription(input_msg[1], pubsubs);
 	}, 
 	//a moderator or the streamer wishes to flush the bot's posting prompt
 	'!flush': (_input_msg, user) => {
@@ -487,18 +479,12 @@ async function shutDownBot(target) {
 
 	//if we have the clip collection turned on, write everything to file and shut down
 	if (collect_clips) getClipsInOrder(target);
-	//now, shut off the PubSub WebSocket and stop all subscriptions through it
 	const auth_key = await commands_holder.getTwitchInfo(0);
-	pubsubs.killAllSubs(auth_key);
 	client.say(target, "Shutting Down");
 	//now, we just kill execution of the program
 	process.exit(0);
 
 }
-
-//for setting up the pubsub for the channel points redemptions; twitch_api function returns a promise, so 
-//setTimeout freaks out over it. Have to do it this way for it to function properly
-function makeSub() {twitch_api.makePubSubscription('channel-points-channel-v1.71631229', pubsubs)}
 
 async function makeEventSub() {
 	const tok = await commands_holder.getTwitchInfo(0);

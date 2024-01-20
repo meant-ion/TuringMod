@@ -41,7 +41,7 @@ export class ArduinoController {
         let clip_url = await this.#twitch_api.createClip();
         this.#client.say('#pope_pontius', clip_url);
 
-        // this.#discord_client.channels.cache.get(process.env.CHANNEL_ID).send(clip_url);
+        this.#discord_client.channels.cache.get(process.env.CHANNEL_ID).send(clip_url);
     }
 
 }

@@ -11,7 +11,7 @@
 #define LSS_SERIAL  (Serial)
 
 // clip/timestamp button vars
-const int clipButtonPin = 51;
+const int clipButtonPin = 53;
 int clipButtonState = 0;
 
 // LSS Objects
@@ -27,16 +27,20 @@ void setup()
   pinMode(clipButtonPin, INPUT);
   Serial.begin(9600);
   
-  // Initialize the LSS bus
-  LSS::initBus(LSS_SERIAL, LSS_BAUD);
-
-  // Initialize LSS to position 0.0 °
-  setAllToZero();
-
-  // Wait for it to get there
-  delay(2000);
-
-  twistAndBend();
+//  // Initialize the LSS bus
+//  LSS::initBus(LSS_SERIAL, LSS_BAUD);
+//
+//  delay(5000);
+//
+//  // Initialize LSS to position 0.0 °
+//  setServoSpeeds();
+//
+//  // Wait for it to get there
+//  delay(2000);
+//
+//  setAllPosToZero();
+//
+//  delay(2000);
 }
 
 void loop()
@@ -49,27 +53,72 @@ void loop()
   }
   
 //  delay(2000);
-//  twistAndBend();
+    twistAndBend();
 //  delay(2000);
 //  setAllToZero();
 }
 
+
 // test function, need to make sure that it can move as directed
 void twistAndBend() {
-
-  baseLSS.move(200);
-  delay(1000);
-  shoulderLSS.move(125);
-  delay(1000);
-  elbowLSS.move(50);
+  delay(2000);
   
+  shoulderLSS.move(-600);
+
+  delay(2000);
+
+  elbowLSS.move(900);
+
+  delay(2000);
+
+  wristLSS.move(-950);
+
+  delay(2000);
+
+  wave();
+
+  delay(2000);
+
+  shoulderLSS.move(0);
+
+  delay(2000);
+
+  elbowLSS.move(0);
+
+  delay(2000);
+
+  wristLSS.move(0);
+
+  delay(2000);
+
+  clawLSS.move(0);
+
+  delay(2000);
 }
 
-void setAllToZero() {
+void wave() {
+  clawLSS.setMaxSpeed(50);
+  delay(2000);
+  clawLSS.move(500);
+  delay(2000);
+  clawLSS.move(-500);
+  clawLSS.setMaxSpeed(30);
+}
+
+void setAllPosToZero() {
   baseLSS.move(0);
   shoulderLSS.move(0);
   elbowLSS.move(0);
   wristLSS.move(0);
   rotatorLSS.move(0);
   clawLSS.move(0);
+}
+
+void setServoSpeeds() {
+  baseLSS.setMaxSpeed(30);
+  shoulderLSS.setMaxSpeed(30);
+  elbowLSS.setMaxSpeed(30);
+  wristLSS.setMaxSpeed(30);
+  rotatorLSS.setMaxSpeed(30);
+  clawLSS.setMaxSpeed(30);
 }

@@ -1,5 +1,7 @@
 import UberAPI from './ubertts.js';
 import { Twocket } from 'twocket';
+import { writeFile, readFile } from 'fs'
+// import banned_words from './../data/banned_words.json' assert { type: "json" };
 
 export class EventSubs {
 
@@ -10,6 +12,7 @@ export class EventSubs {
     #twitch_api;         //for API functionality not a part of the EventSub API
     #helper;
     #client;
+    #banned_words;
     topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add'];
 
     //@param   c_h   The database for the UberDuck API
@@ -24,7 +27,7 @@ export class EventSubs {
         this.#helper = h;
         this.#tts_api = new UberAPI(c_h, v, h);
         this.#twitch_api = t;
-
+        this.#readBannedWords();
     }
 
     start(user_id, client_id, access_token) {
@@ -48,9 +51,35 @@ export class EventSubs {
         this.#client = c;
     }
 
+    get_banned_words() { 
+        return Object.keys(this.#banned_words); 
+    }
+
     async writeTimestampToFile() {
         const timecode = await this.#obs.getStreamTimestamp();
         this.#helper.writeToFile(`${this.#helper.getCurrentDate}: ${timecode}`, './data/vod_timestamps.txt')
+    }
+
+    async #readBannedWords() {
+        readFile('./data/banned_words.json', (err, data) => {
+            if (err) console.error(err); 
+            else this.#banned_words = JSON.parse(data);
+        });
+    }
+
+    async #addBannedWord(word, user_name) {
+        let validation = word.split(" ");
+        if (validation.length <= 1) {
+            let today = new Date();
+            let banned_date = String(String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getDate()).padStart(2, '0') + '/' + today.getFullYear();
+            this.#banned_words[word] = banned_date;
+            writeFile('./data/banned_words.json', JSON.stringify(this.#banned_words, null, 4), (err) => {
+                if (err) { console.error(err); }
+                else console.log("* Banned word added!");
+            });
+        } else {
+            this.#client.say("#pope_pontius", `@${user_name} only one word can be banned! Ask a mod to refund you`);
+        }
     }
 
     async #reward_handler(parsed_data) {
@@ -80,6 +109,9 @@ export class EventSubs {
                 break;
             case 'Barrel Roll':
                 await this.#obs.barrel_roll();
+                break;
+            case 'Ban A Word':
+                await this.#addBannedWord(parsed_data.user_input, parsed_data.user_name);
                 break;
         }
 

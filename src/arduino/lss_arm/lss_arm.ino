@@ -26,6 +26,7 @@ void setup()
 {
   pinMode(clipButtonPin, INPUT);
   Serial.begin(9600);
+  Serial.write("Booting Robo Arm And Clip Button\n");
   
 //  // Initialize the LSS bus
 //  LSS::initBus(LSS_SERIAL, LSS_BAUD);
@@ -53,7 +54,7 @@ void loop()
   }
   
 //  delay(2000);
-    twistAndBend();
+//    twistAndBend();
 //  delay(2000);
 //  setAllToZero();
 }

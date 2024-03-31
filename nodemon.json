@@ -1,3 +1,3 @@
 {
-    "ignore": ["./data/tags_list.json"]
+    "ignore": ["./data/**"]
 }

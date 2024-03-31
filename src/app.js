@@ -108,7 +108,7 @@ function execTheBot() {
 	client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
 
 	//setting up the interval for giving people info about the streams every 15-20 mins
-	setInterval(intervalMessages, 600000);
+	setInterval(intervalMessages, 1800000);
 
 	//when a message is sent out, we will take it and push it out to the Twitch chat
 	discord_client.on('messageCreate', message => {
@@ -356,11 +356,22 @@ async function onMessageHandler(target, user, msg, self) {
 	//get the command name from the array as the first word in the message array
 	const cmd_name = input_msg[0].toLowerCase();
 
+	const banned_words = eventsubs.get_banned_words();
+
+	const found_banned_word = input_msg.some(value => banned_words.includes(value));
+	const first_banned_word = input_msg.filter(value => banned_words.includes(value));
+
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {	
 
+		//check if the user typed a banned word, ignoring any commands attached to it
+		if (found_banned_word && !helper.isStreamer(user.username, "pope_pontius")) {
+
+			client.say(target, `@${user.username}: OOPS! You said the banned word "${first_banned_word}!" To the penal colony with you!`);
+			await twitch_api.timeoutUser(user.username);
+
 		//check our function dictionary to see if it's a known, non-custom command
-		if (typeof func_obj[cmd_name] === 'function') {
+		} else if (typeof func_obj[cmd_name] === 'function') {
 
 			//calling it this way executes the command
 			func_obj[cmd_name](input_msg, user, target);
@@ -384,7 +395,7 @@ async function onMessageHandler(target, user, msg, self) {
 			//check if quiet mode has been enabled and if the user has mentioned the streamer if so
 			//if both are true, remove the msg via a 1-second timeout
 			if (quiet_mode_enabled && helper.isStreamerMentioned(input_msg) && 
-				!helper.isStreamer(user.username, the_streamer)) {
+				!helper.isStreamer(user.username, "pope_pontius")) {
 				client.timeout(target, user.username, 1, "Quiet Mode Enabled, please do not @ the streamer");
 			} else {//if it isn't, we send the message through the prompt and check for other fun things
 				prompt += cmd_name + helper.combineInput(input_msg, true) + '\n';

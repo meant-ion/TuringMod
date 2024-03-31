@@ -582,6 +582,43 @@ export class TwitchAPI {
 		await fetch(announcement_url, data);
 	}
 
+	async timeoutUser(user) {
+		const s = await this.#data_base.getTwitchInfo(3);
+		const timeout_url = "https://api.twitch.tv/helix/moderation/bans?broadcaster_id=71631229&moderator_id=71631229";
+		const userid_url = `https://api.twitch.tv/helix/users?login=${user}`;
+
+		try {
+			this.#hasTokenExpired();
+			const user_data = await this.#createTwitchDataHeader();
+	
+			let user_id = "";
+	
+			await fetch(userid_url, user_data).then(result => result.json()).then(body => {
+				console.log(body);
+				user_id = body.data[0].id;
+			});
+	
+			const data = {
+				'method': 'POST',
+				'headers': {
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'client-id': `${s[0]}`,
+					'Content-Type': 'application/json'
+				},
+				'body': JSON.stringify({
+					"data": {
+						"user_id": user_id,
+						"duration": 10,
+						"reason": "Said a chat member defined banned word"
+					}
+				})
+			};
+	
+			await fetch(timeout_url, data);
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+
+	}
+
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
 
     //gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)

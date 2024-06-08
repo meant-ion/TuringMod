@@ -5,6 +5,7 @@ export class OBSAnimations {
     #last_color;
     #helper;
     #original_facecam_info;
+    #bonk_calls;
     
     color_list = [16777215, 16711680, 16753920, 16776960, 32768, 255, 15631086, 8388736];
 
@@ -12,6 +13,7 @@ export class OBSAnimations {
         this.#obs = o;
         this.#last_color = 0;
         this.#helper = h;
+        this.#bonk_calls = 0;
         this.#capture_facecam_dimensions();
     }
 
@@ -42,11 +44,11 @@ export class OBSAnimations {
             if (bounced) bounced = !bounced;
             scene_info[1].positionX += speed.x;
             scene_info[1].positionY += speed.y;
-            if (scene_info[1].positionX > source_width - (source_width - (source_width - scene_info[1].width)) || scene_info[1].positionX < 0) {
+            if (scene_info[1].positionX > source_width - (source_width - (source_width - scene_info[1].width + scene_info[1].cropLeft - scene_info[1].cropRight)) || scene_info[1].positionX < 0) {
                 speed.x *= -1;
                 bounced = !bounced;
             }
-            if (scene_info[1].positionY > source_height - (source_height - (source_height - scene_info[1].height)) || scene_info[1].positionY < 0) {
+            if (scene_info[1].positionY > (source_height + scene_info[1].cropBottom + scene_info[1].cropTop) - (source_height - (source_height - scene_info[1].height)) || scene_info[1].positionY < 0) {
                 speed.y *= -1;
                 bounced = !bounced;
             }
@@ -79,11 +81,16 @@ export class OBSAnimations {
     }
 
     async bonk_squish() {
+        ++this.#bonk_calls;
         await this.#helper.sleep(750); //give VLC enough time to play the bonk sound effect
         let scene_info = await this.#gather_scene_and_source_info();
         let source_height = scene_info[2].sourceHeight;
-        scene_info[1].scaleY = this.#original_facecam_info.scaleY / 2;
-        scene_info[1].positionY = source_height - (this.#original_facecam_info.height / 2);
+        if (this.#bonk_calls % 2 != 0) {
+            scene_info[1].scaleY = this.#original_facecam_info.scaleY / 2;
+            scene_info[1].positionY = source_height - (this.#original_facecam_info.height / 2);
+        } else {
+            scene_info[1].scaleX = this.#original_facecam_info.scaleX / 2;
+        }
         scene_info[1].boundsWidth = 1;
         scene_info[1].boundsHeight = 1;
         await this.#obs.call('SetSceneItemTransform', {
@@ -91,18 +98,11 @@ export class OBSAnimations {
             sceneItemId: scene_info[3], 
             sceneItemTransform: scene_info[1]
         });
-        let facecam_info = await this.#obs.call('GetSceneItemTransform', {
-            sceneName: scene_info[0], 
-            sceneItemId: scene_info[3]
-        });
-        facecam_info.scaleY = this.#original_facecam_info.scaleY;
-        facecam_info.height = this.#original_facecam_info.height;
-        facecam_info.positionY = source_height - this.#original_facecam_info.height;
         await this.#helper.sleep(10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene_info[0],
             sceneItemId: scene_info[3],
-            sceneItemTransform: facecam_info,
+            sceneItemTransform: this.#original_facecam_info,
         });
         await this.#check_and_fix_facecam();
     }
@@ -118,14 +118,11 @@ export class OBSAnimations {
             sceneItemId: scene_info[3], 
             sceneItemTransform: scene_info[1]
         });
-        scene_info[1].rotation = this.#original_facecam_info.rotation;
-        scene_info[1].positionX -= this.#original_facecam_info.width;
-        scene_info[1].positionY -= this.#original_facecam_info.height;
         await this.#helper.sleep(10000);
         await this.#obs.call('SetSceneItemTransform', {
             sceneName: scene_info[0],
             sceneItemId: scene_info[3],
-            sceneItemTransform: scene_info[1],
+            sceneItemTransform: this.#original_facecam_info,
         });
         await this.#check_and_fix_facecam();
     }

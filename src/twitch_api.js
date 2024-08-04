@@ -619,6 +619,59 @@ export class TwitchAPI {
 
 	}
 
+	// Due to fuckery on Twitch's part, the bot can't actually touch the redemptions since it didn't create them
+	// This command is being let in as reference in case Twitch decides to unscuff this part of their API
+	async setRedemptionStatus(reward_name) {
+		const s = await this.#data_base.getTwitchInfo(3);
+		console.log(reward_name);
+		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
+		let redemption_id = '';
+		let is_enabled = true;
+
+		// Step 1: Get specific ID of reward from list of rewards
+		try {
+			this.#hasTokenExpired();
+			const redemption_data = await this.#createTwitchDataHeader();
+
+			await fetch(redemption_url, redemption_data).then(result => result.json()).then(body => {
+				for (const reward in body.data) {
+					if (body.data[reward].title == reward_name) {
+						redemption_id = body.data[reward].id;
+						is_enabled = body.data[reward].is_enabled;
+					}
+				}
+					
+			});
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+
+		// Step 2: Flip enabled/disabled status of reward using id
+		let msg = '';
+		try {
+			const update_data = {
+				'method': 'PATCH',
+				'headers': {
+					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`,
+					'client-id': `${s[0]}`,
+					'Content-Type': 'application/json'
+				},
+				'body': JSON.stringify({
+					"is_enabled": !is_enabled,
+				})
+			};
+			await fetch(`${redemption_url}&id=${redemption_id}`, update_data).then(result => result.json()).then(body => {
+				for (const reward in body.data) {
+					if (body.data[reward].is_enabled == (!is_enabled) && body.data != undefined) {
+						msg = `${reward_name} is set to ${body.data[reward].is_enabled ? "enabled" : "disabled"}`;
+					} else {
+						msg = `Unable to change status of ${reward_name}`;
+					}
+				}
+			});
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+		return msg;
+	}
+
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
 
     //gets a token for the Helix API that will let me edit my own channel's info (title, tags, category, etc.)

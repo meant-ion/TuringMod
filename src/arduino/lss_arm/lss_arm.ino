@@ -1,14 +1,15 @@
 #include <LSS.h>
+#include <SoftwareSerial.h>
 
 // LSS IDs and other important constants
+// Note: when sending arm commands, 10 = 1 Degree
 #define LSS_ID_BASE    (1)
 #define LSS_ID_SHLDR   (2)
 #define LSS_ID_ELBOW   (3)
 #define LSS_ID_WRIST   (4)
 #define LSS_ID_ROTATOR (5)
 #define LSS_ID_CLAW    (6)
-#define LSS_BAUD  (LSS_DefaultBaud)
-#define LSS_SERIAL  (Serial)
+#define LSS_BAUD       (LSS_DefaultBaud)
 
 // clip/timestamp button vars
 const int clipButtonPin = 53;
@@ -22,88 +23,58 @@ LSS wristLSS = LSS(LSS_ID_WRIST);
 LSS rotatorLSS = LSS(LSS_ID_ROTATOR);
 LSS clawLSS = LSS(LSS_ID_CLAW);
 
+// Create a software serial port (LSS Adapter board used in XBee mode)
+// This is used so I can still communicate with the board while the arm is attached
+SoftwareSerial softSerial(8, 9);
+
 void setup()
 {
   pinMode(clipButtonPin, INPUT);
   Serial.begin(9600);
-  Serial.write("Booting Robo Arm And Clip Button\n");
+  Serial.write("Booting Robo Arm\n");
   
-//  // Initialize the LSS bus
-//  LSS::initBus(LSS_SERIAL, LSS_BAUD);
-//
-//  delay(5000);
-//
-//  // Initialize LSS to position 0.0 °
-//  setServoSpeeds();
-//
-//  // Wait for it to get there
-//  delay(2000);
-//
-//  setAllPosToZero();
-//
-//  delay(2000);
+  // Initialize the LSS bus
+  LSS::initBus(softSerial, LSS_BAUD);
+
+  delay(5000);
+
+  // Initialize LSS to position 0.0 °
+  setServoSpeeds();
+
+  setAllPosToZero();
 }
 
 void loop()
-{
-  clipButtonState = digitalRead(clipButtonPin);
+{ 
+  if (Serial.available() > 0) {
+    int num = Serial.parseInt();
+    Serial.write("Got number " + num);
 
-  if (clipButtonState == HIGH) {
-    Serial.write("Clip\n");
-    delay(250);
+    if (num == 1) {
+      wave();     
+    }
   }
-  
-//  delay(2000);
-//    twistAndBend();
-//  delay(2000);
-//  setAllToZero();
 }
 
 
 // test function, need to make sure that it can move as directed
-void twistAndBend() {
-  delay(2000);
-  
-  shoulderLSS.move(-600);
-
-  delay(2000);
-
-  elbowLSS.move(900);
-
-  delay(2000);
-
-  wristLSS.move(-950);
-
-  delay(2000);
-
-  wave();
-
-  delay(2000);
-
-  shoulderLSS.move(0);
-
-  delay(2000);
-
-  elbowLSS.move(0);
-
-  delay(2000);
-
-  wristLSS.move(0);
-
-  delay(2000);
-
-  clawLSS.move(0);
-
-  delay(2000);
-}
-
 void wave() {
-  clawLSS.setMaxSpeed(50);
+  
+  wristLSS.setMaxSpeed(70);
+  int32_t wristPos = wristLSS.getPosition();
+  if (wristPos != -700) {
+    wristLSS.move(wristPos * -1);
+  }
+  wristLSS.move(-700);
   delay(2000);
+  clawLSS.setMaxSpeed(50);
   clawLSS.move(500);
   delay(2000);
   clawLSS.move(-500);
   clawLSS.setMaxSpeed(30);
+  delay(2000);
+  clawLSS.setMaxSpeed(50);
+  clawLSS.move(500);
 }
 
 void setAllPosToZero() {
@@ -116,10 +87,10 @@ void setAllPosToZero() {
 }
 
 void setServoSpeeds() {
-  baseLSS.setMaxSpeed(30);
-  shoulderLSS.setMaxSpeed(30);
-  elbowLSS.setMaxSpeed(30);
-  wristLSS.setMaxSpeed(30);
-  rotatorLSS.setMaxSpeed(30);
-  clawLSS.setMaxSpeed(30);
+  baseLSS.setMaxSpeed(50);
+  shoulderLSS.setMaxSpeed(50);
+  elbowLSS.setMaxSpeed(50);
+  wristLSS.setMaxSpeed(50);
+  rotatorLSS.setMaxSpeed(50);
+  clawLSS.setMaxSpeed(50);
 }

@@ -329,6 +329,11 @@ const func_obj = {
 	'!cw': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await twitch_api.getContentLabels()}`);
 	},
+	'!echo': (input_msg, user, target) => {
+		if (user.username == 'desabotage') {
+			client.say(target, helper.combineInput(input_msg, true));
+		}
+	},
 	//tells user how much time left before an adbreak runs
 	// '!adbreak': async (_input_msg, user, target) => {
 	// 	client.say(target, `${user.username}: ads will run roughly within ${getTimeLeftBeforeAds()} minutes`);

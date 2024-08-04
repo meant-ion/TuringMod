@@ -38,7 +38,6 @@ export class EventSubs {
         this.#twok.setOnRaidEvent((data) => {
             this.#twitch_api.sendShoutout(data.from_broadcaster_user_login, 'pope_pontius');
             this.#client.say('#pope_pontius', `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
-            this.#obs.copypasta_animation();
         });
     
         this.#twok.setOnChannelPointRewardRedeem((data) => {
@@ -112,6 +111,10 @@ export class EventSubs {
                 break;
             case 'Ban A Word':
                 await this.#addBannedWord(parsed_data.user_input, parsed_data.user_name);
+                break;
+            case 'Jumpscare':
+                console.log(`jumpscare_${Math.floor(Math.random() * (5-1+1) + 1)}.mp3`);
+                await this.#vlc.play_audio(`jumpscare_${Math.floor(Math.random() * (5-1+1) + 1)}.mp3`);
                 break;
         }
 

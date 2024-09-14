@@ -2,19 +2,22 @@ import fetch from 'node-fetch';
 import Helper from './helper.js';
 import open from 'open';
 import http from 'http';
-import fs from 'fs';
 
 export class TwitchAPI {
 
     #clip_list;
 	#data_base;
     #twitch_token_get_time;
+	#shoutout_queue;
+	#currently_shouting;
 
 	//@param   d_b   The bot's client for accessing its database
     constructor(d_b) {
         this.helper = new Helper();
         this.#data_base = d_b;
         this.#clip_list = [];
+		this.#shoutout_queue = [];
+		this.#currently_shouting = false;
         this.#getTwitchToken();
     }
 
@@ -304,13 +307,22 @@ export class TwitchAPI {
 		}
 	}
 
+	async sendTimedShoutout(user, mod) {
+		this.#shoutout_queue.push(user);
+		if (this.#shoutout_queue.length == 1 && !this.#currently_shouting) {
+			await this.sendShoutout(this.#shoutout_queue.shift(), mod);
+			this.#currently_shouting = !this.#currently_shouting;
+		} else {
+			setTimeout(this.sendShoutout, this.#shoutout_queue.length*2*60*1000, this.#shoutout_queue.shift(), mod);
+		}
+	}
+
 	async sendShoutout(user, mod) {
 		try {
 
 			this.#hasTokenExpired();
 			const data = await this.#createTwitchDataHeader();
 
-			// getting Id of channel to be shouted out
 			const user_url = `https://api.twitch.tv/helix/users?login=${user}`;
 
 			const mod_url = `https://api.twitch.tv/helix/users?login=${mod.username}`;
@@ -345,7 +357,12 @@ export class TwitchAPI {
 			//make shoutout request to API
 			await fetch(shoutout_url, shoutout_data).then(result => {
 				if (result.status != 204) console.log('Failed to send out shoutout: Code ' + result.status);
-			}).catch(err => { return this.#generateAPIErrorResponse(err); })
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+			if (this.#shoutout_queue > 0) {
+				this.#currently_shouting = !this.#currently_shouting;
+				setTimeout(this.sendShoutout, this.#shoutout_queue.length*2*60*1000, this.#shoutout_queue.shift(), mod);
+			}
 
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}

@@ -12,7 +12,6 @@ import SpotifyAPI from './spotify_api.js';
 import MiscAPI from './misc_api.js';
 import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
-import Post from './post.js';
 import OBSAnimations from './obs_anims.js';
 import AudioPlayer from './audio.js';
 import EventSubs from './eventsubs.js';
@@ -57,7 +56,6 @@ const spotify_api = new SpotifyAPI(commands_holder);
 const misc_api = new MiscAPI(commands_holder);
 const dice = new Dice();
 const clip_collector = new ClipCollector(twitch_api);
-const post = new Post(discord_client, client);
 const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
@@ -110,19 +108,6 @@ function execTheBot() {
 	//setting up the interval for giving people info about the streams every 15-20 mins
 	setInterval(intervalMessages, 1800000);
 
-	//when a message is sent out, we will take it and push it out to the Twitch chat
-	discord_client.on('messageCreate', message => {
-		//take the message and split it up into separate words
-		const input_msg = message.content.split(" ");
-		if (input_msg[0] == '!send') {//the message generated was accepted by admin
-			let response = post.getResponse();
-
-			//search through the list of responses and channels to find the correct one and then post that out
-			client.say(opts.channels[0], `${response != "" ? `MrDestructoid ${response}` : `No response found for this channel`}`);
-
-		} else if (input_msg[0] == '!reject') client.say(opts.channels[0], `Response rejected by bot admin`);
-	});
-
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
 	// setTimeout(adsIntervalHandler, 15000);
 
@@ -143,18 +128,12 @@ const func_obj = {
 			client.say(target, `/shoutout ${input_msg[1]}`);
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
 	}, 
-	//a moderator or the streamer wishes to flush the bot's posting prompt
-	'!flush': (_input_msg, user) => {
-		//make sure we don't waste time flushing a prompt that is just empty
-		if (helper.checkIfModOrStreamer(user, the_streamer)) {
-			if (prompt.length == 0) {
-				client.say(target, "Cannot flush and erase an empty prompt");
-			} else {
-				resetPrompt();
-				client.say(target, `@${user.username}: bot's prompt has been flushed successfully!`);
-			}
-		}
-	}, 
+	//test command for seeing if the wave works as intended; TB migrated to a button press at some point
+	'!wave': async (input_msg, user, _target) => {
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+			obs_anims.changeCurrentScene('Turret Cam');
+			arduino_cntrlr.sendCommand(1);
+	},
 	//starts clip collection services
 	'!startcollect': (_input_msg, user, target) => {
 		if (!collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -166,10 +145,6 @@ const func_obj = {
 	'!endcollect': (_input_msg, user, target) => {
 		if (collect_clips && helper.checkIfModOrStreamer(user, the_streamer)) getClipsInOrder(target);
 	},
-	//activates GPT-3 for a post. Heavily controlled
-	'!post': (_input_msg, user, target) => {
-		if (helper.checkIfModOrStreamer(user, the_streamer)) generatePost(target);
-	}, 
 	//for mods/streamer to add a custom command
 	'!addcommand': async (input_msg, user, target) => {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
@@ -344,8 +319,8 @@ const func_obj = {
 	//--------------------------------------------------------------------------------------------------------------------------
 
 	'!test': async (_input_msg, user, target) => {
-		// await twitch_api.sendShoutout('saint_isidore_bot', user);
-		await twitch_api.sendAnnouncement();
+		// await obs_anims.ads_warning();
+		// await twitch_api.sendAnnouncement();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -442,31 +417,6 @@ function bonk(input_msg, user) {
 		return revolt_chance == 1 ? `The bot got tired of doing whatever the meatbags want and bonked ${user.username} instead`
 						: `${input_msg[1]} has been bonked! BOP`;
 	}
-}
-
-//resets the prompt message and sets the line count down to zero
-function resetPrompt() {
-	lines_count = 0;
-	prompt = "";
-}
-
-//handles the AI posting. If a post was made, we reset the prompt and set linesCount back to 0
-//@param   target   The chatroom that the message will be sent into
-async function generatePost(target) {
-	//we will check the length of the prompt first. If the length is above 2000 characters, we will only
-	//take the last 2000 characters for the prompt and discard all other characters.
-	//An overly-large prompt will cause the API to return a 400 error
-	if (prompt.length > 2000) prompt = prompt.substring(prompt.length - 2000);
-
-	try {
-		const key = await commands_holder.getAPIKeys(0);
-		post.generatePost(prompt, lines_count, target, key);
-		//add the prompt to the training data set for the channel
-		resetPrompt();
-	
-		if (prompt == "") console.log("prompt flushed after response generation successfully!");
-	} catch (err) { console.error(err); }
-
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat

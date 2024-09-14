@@ -29,7 +29,14 @@ export class ArduinoController {
             case "Clip":
                 await this.writeTimestampToFile();
                 break;
+            case "WAVE DONE":
+                await this.#obs.changeCurrentScene('4k Scene');
+                break;
         }
+    }
+
+    sendCommand(cmd) {
+        this.#port.write(cmd);
     }
 
     async writeTimestampToFile() {

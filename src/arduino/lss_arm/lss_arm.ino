@@ -48,7 +48,7 @@ void loop()
 { 
   if (Serial.available() > 0) {
     int num = Serial.parseInt();
-    Serial.write("Got number " + num);
+//    Serial.write("Got number " + num);
 
     if (num == 1) {
       wave();     
@@ -75,6 +75,7 @@ void wave() {
   delay(2000);
   clawLSS.setMaxSpeed(50);
   clawLSS.move(500);
+  Serial.write("WAVE DONE");
 }
 
 void setAllPosToZero() {

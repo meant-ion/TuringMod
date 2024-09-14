@@ -2,13 +2,9 @@
 
 REQUIRES VLC TO HANDLE AUDIO FUNCTIONALITY
 
-This wonderful pile of feature bloat and strangeness is my own interpretation of a twitch.tv chat bot, spceifically 
-using OpenAI's GPT3 API to mimic the members in the chatroom, along with a large handful of other functions.
+This is my own interpretation of a Twitch chat modbot, and performs a of tasks that Twitch's API provides endpoints for.
 
-A fork of this bot containing only the chat mimicking functions (meant more for multiple channels at once) can be
-found here: https://github.com/meant-ion/TuringModLite
-
-The fork of the bot that has all the old functions that are no longer here is under the 'heavy' branch
+NOTE: The AI functionality of the bot (both the chat-mimicking functionality via ChatGPT 3.0 and the VO AI via Uberduck) are no longer functional and have been removed. The "heavy" branch contains these deprecated files that handled the AI stuff and other removed, not AI associated functions
 
 COMMANDS: 
 
@@ -17,6 +13,9 @@ COMMANDS:
 
 	- !game: returns the current category of the stream
 			 * Can edit the game/category if the user is a mod or the streamer
+
+	- !wave: changes scene to show GUPPY (robot arm; physical form of this bot) and makes it wave hello!
+			 * still working on this one, more for the physical aspects
 
 	- !roulette: determines randomly if the asking user will be banned or not on chance
 
@@ -87,11 +86,15 @@ COMMANDS:
 	- !freegame: gets a list of all games discounted to free on the Epic Store
 				* Does not return games that were always free, free expansions/item packs, or games on sale for more than free
 
-	- !bonk: bonks the user specified by the chat member
+	- !bonk: bonks the user specified by the chat member (only plays the audio, compare to channel point redemption)
 
 	- !adbreak: gives the user the (approximate) time left before an adbreak happens - DEPRECIATED SINCE I NO LONGER RUN ADS ON A SCHEDULE
 
 	- !cw: shows the user Twitch's content warning labels applied to the stream
+
+	- !sg: records a chat member's suggestion for what to add to the bot
+
+	- !echo: A @desabotage command only; echos whatever is said after the command
 
 
 MOD/STREAMER ONLY COMMANDS:
@@ -111,19 +114,9 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !so: gives a shoutout to a specified user into the chatroom; attached to an EventSub listener for automatic posting of msg
 
-	- !flush: cleans out the whole of the prompt for the bot's posting function through OpenAI's GPT-3 API 
-	          and the number of lines posted so far.
-
 	- !startcollect: tells the bot to start collecting any and all twitch clip links and store them into file for the streamer
 
 	- !endcollect: tells the bot to stop collecting twitch clip links
-
-	- !post: generates a comment through OpenAI's GPT-3 API with the prompt being the comments in the chat
-			 NOW FULLY ENABLED AS OF AUGUST 10, 2021
-			 * Called either the stream's moderators or the streamer proper. When called, response from API
-			   is filtered through a separate engine to remove the chance of inappropriate/offensive tokens making it through
-			   and into the chat. Afterwards, I must read the response and approve it before it can be posted. 
-			 * Currently implementing OpenAI's Model Fine-Tuning API for this bot. If all goes well, the bot will get better with its mimickry
 
 	- !shotgun: takes 1 - 5 chat members and "bans" (times them out for ~10 seconds) them, like they got hit with a shotgun
 			    * Not currently enabled, no point with how small my stream is
@@ -138,17 +131,29 @@ MOD/STREAMER ONLY COMMANDS:
 
 	- !delvod: deletes the last vod on the channel. Good for handling issues with dox/TOS
 
-	- !skip: skips a TTS channel points redemption
+	- !quiet: enables/disables quiet mode, where chatters cannot @-mention the streamer
+
+	- !shutdown: safely shuts down the bot
+
+Much of the automatically handled functionalities this bot has are powered by Twitch's EventSub API and interfaced with via the twocket package, managed by [GhostlyTuna](https://www.twitch.tv/GhostlyTuna)
 
 FUNCTIONS HANDLED BY THE BOT AUTOMATICALLY:
 
 	- Posting a warning about an incoming midroll ad break to the chatroom
+		* Also brings up text warnings on-screen and plays an audio warning
+	
+	- Automatically sending a shoutout whenever a streamer raids the channel
 
 	- Handling of certain channel point redemptions
-				* Sending out a timeout for a specific user
-				* VIP-ing a user who spends enough channel points
+				* OBS animations and transformations
+					* DVD Screensaver animation for facecam
+					* Barrel Roll animation for facecam
+					* Australia (flipping the facecam upside down)
+					* Long/Wide Pope (stretching/squishing the facecam's dimensions)
+					* Bonk (flattens facecam and plays a bonk sound effect)
+				* The ability to ban a word from chat
+				* Playing a jumpscare sound effect
 				* Firing the nerf turret (WIP)
-				* Changing chatroom settings (sub only, emote only, unique messages only, etc.)
 
 PLANNED FUNCTIONALITIES/FEATURES:
 
@@ -171,9 +176,6 @@ PLANNED FUNCTIONALITIES/FEATURES:
 				* Gets a random quote from a collection of quotes made by me on stream
 				* Would need to have people there to witness and record those quotes as well
 				* Would need a !addq/!addquote and !delq/!delquote commands for this also
-
-		- yodaposting: same idea as !post, but response is said like yoda would
-				* API not free, need to actually be making money to use (lol)
 
 	------------------------------------------------------------
 

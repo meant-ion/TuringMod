@@ -187,6 +187,21 @@ export class OBSAnimations {
         await this.#check_and_fix_facecam();
     }
 
+    async ads_warning() {
+        const scene_info = await this.#gather_scene_and_source_info();
+        await this.#obs.call('SetSceneItemEnabled', {
+            sceneName: scene_info[0],
+            sceneItemId: scene_info[5],
+            sceneItemEnabled: true
+        });
+        await this.#helper.sleep(90000);
+        await this.#obs.call('SetSceneItemEnabled', {
+            sceneName: scene_info[0],
+            sceneItemId: scene_info[5],
+            sceneItemEnabled: false
+        }); 
+    }
+
     async copypasta_animation() {
         const scene_info = await this.#gather_scene_and_source_info();
         const inputs_list = await this.#obs.call('GetInputList');
@@ -290,10 +305,14 @@ export class OBSAnimations {
         return stream_status.outputTimecode;
     }
 
+    async changeCurrentScene(scene_name) {
+        await this.#obs.call('SetCurrentProgramScene', {sceneName: scene_name});
+    }
+
     async #gather_scene_and_source_info() {
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
-        let facecam_id, main_screen_id;
+        let facecam_id, main_screen_id, ads_text_id;
         for (let i in source_list.sceneItems) {
             if (source_list.sceneItems[i].sourceName == "Facecam") {
                 facecam_id = source_list.sceneItems[i].sceneItemId;
@@ -301,6 +320,9 @@ export class OBSAnimations {
             if (source_list.sceneItems[i].inputKind == "monitor_capture" || 
                 source_list.sceneItems[i].inputKind == "game_capture") {
                     main_screen_id = source_list.sceneItems[i].sceneItemId;
+            }
+            if (source_list.sceneItems[i].sourceName == "Ads Text") {
+                ads_text_id = source_list.sceneItems[i].sceneItemId;
             }
         }
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {
@@ -311,7 +333,7 @@ export class OBSAnimations {
             sceneName: scene.currentProgramSceneName, 
             sceneItemId: main_screen_id
         });
-        return [scene.currentProgramSceneName, facecam_info.sceneItemTransform, source_info.sceneItemTransform, facecam_id, main_screen_id];
+        return [scene.currentProgramSceneName, facecam_info.sceneItemTransform, source_info.sceneItemTransform, facecam_id, main_screen_id, ads_text_id];
     }
 
     async #filter_spawn(filter_name) {

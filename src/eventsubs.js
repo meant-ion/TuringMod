@@ -1,11 +1,8 @@
-import UberAPI from './ubertts.js';
 import { Twocket } from 'twocket';
 import { writeFile, readFile } from 'fs'
 // import banned_words from './../data/banned_words.json' assert { type: "json" };
 
 export class EventSubs {
-
-    #tts_api;            //object for handling Uberduck API requests/playing
     #obs;                //for handling OBS related functions
     #vlc;                //for playing audio with controls
     #twok;               //library for communicating with EventSub API
@@ -13,7 +10,7 @@ export class EventSubs {
     #helper;
     #client;
     #banned_words;
-    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add'];
+    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin'];
 
     //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
@@ -25,19 +22,22 @@ export class EventSubs {
         this.#obs = o;
         this.#vlc = v;
         this.#helper = h;
-        this.#tts_api = new UberAPI(c_h, v, h);
         this.#twitch_api = t;
         this.#readBannedWords();
     }
 
     start(user_id, client_id, access_token) {
 
-        this.#twok = new Twocket(user_id,client_id, access_token, this.topics_list);
+        this.#twok = new Twocket(user_id, client_id, access_token, this.topics_list);
         this.#twok.start();
 
         this.#twok.setOnRaidEvent((data) => {
-            this.#twitch_api.sendShoutout(data.from_broadcaster_user_login, 'pope_pontius');
+            this.#twitch_api.sendTimedShoutout(data.from_broadcaster_user_login, 'pope_pontius');
             this.#client.say('#pope_pontius', `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
+        });
+
+        this.#twok.setEventSubHandler("channel.ad_break.begin", (data) => {
+            this.#warnAboutAds(data);
         });
     
         this.#twok.setOnChannelPointRewardRedeem((data) => {
@@ -52,6 +52,12 @@ export class EventSubs {
 
     get_banned_words() { 
         return Object.keys(this.#banned_words); 
+    }
+
+    async #warnAboutAds(data) {
+        await this.#vlc.play_audio('ad warn.wav');
+        await this.#obs.ads_warning();
+        await this.#vlc.play_audio('ad done.wav');
     }
 
     async writeTimestampToFile() {
@@ -84,11 +90,6 @@ export class EventSubs {
     async #reward_handler(parsed_data) {
 
         switch(parsed_data.reward.title) {
-            case 'AI Speech': 
-                const user_str = parsed_data.user_input;
-                await this.#tts_api.generate_tts_speech(user_str);
-                await this.#vlc.empty_playlist();
-                break;
             case 'Screen Saver Camera':
                 await this.#obs.DVD_Screensaver();
                 break;

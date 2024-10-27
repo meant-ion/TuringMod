@@ -58,7 +58,7 @@ const dice = new Dice();
 const clip_collector = new ClipCollector(twitch_api);
 const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
-const eventsubs = new EventSubs(commands_holder, obs_anims, vlc, helper, twitch_api);
+const eventsubs = new EventSubs(obs_anims, vlc, helper, twitch_api);
 const arduino_cntrlr = new ArduinoController(obs_anims, helper, twitch_api, client, discord_client);
 
 const the_streamer = opts.channels[0];
@@ -109,7 +109,7 @@ function execTheBot() {
 	setInterval(intervalMessages, 1800000);
 
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
-	// setTimeout(adsIntervalHandler, 15000);
+	setTimeout(adsIntervalHandler, 15000);
 
 
 	setTimeout(makeEventSub, 5000);

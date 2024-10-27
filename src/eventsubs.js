@@ -10,14 +10,13 @@ export class EventSubs {
     #helper;
     #client;
     #banned_words;
-    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin'];
+    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin', 'channel.chat.message'];
 
-    //@param   c_h   The database for the UberDuck API
     //@param   o     The websocket connection for the turret cam
     //@param   v     The web controller for playing audio through VLC
     //@param   h     For the sleep and writeToFile functions
     //@param   t     Twitch API handler object
-    constructor(c_h, o, v, h, t) {
+    constructor(o, v, h, t) {
 
         this.#obs = o;
         this.#vlc = v;

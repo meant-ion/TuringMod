@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import Helper from './helper.js';
-import open from 'open';
+import open, {apps} from 'open';
 import http from 'http';
 
 export class TwitchAPI {
@@ -20,6 +20,16 @@ export class TwitchAPI {
 		this.#currently_shouting = false;
         this.#getTwitchToken();
     }
+
+	async sendChatMessage(message) {
+		try {
+			this.#hasTokenExpired();
+			let data = await this.#createTwitchDataHeader();
+			data.method = 'POST';
+
+			let chat_url = 'https://api.twitch.tv/helix/chat/messages?broadcaster_id=7163229';
+		} catch (err) { console.error(err); }
+	}
 
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
 	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
@@ -715,7 +725,7 @@ export class TwitchAPI {
 			}).listen(3000);
 
 			//open up the page to get access to the auth code
-			await open(url, {wait:true}).then(console.log("* Twitch API Page opened"));
+			await open(url, {wait:true, /**app:{name:apps.edge}**/}).then(console.log("* Twitch API Page opened"));
 
 			//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
 			await fetch(post_url, post_data).then(result => result.json()).then(body => {

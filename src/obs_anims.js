@@ -194,7 +194,7 @@ export class OBSAnimations {
             sceneItemId: scene_info[5],
             sceneItemEnabled: true
         });
-        await this.#helper.sleep(90000);
+        await this.#helper.sleep(180000);
         await this.#obs.call('SetSceneItemEnabled', {
             sceneName: scene_info[0],
             sceneItemId: scene_info[5],

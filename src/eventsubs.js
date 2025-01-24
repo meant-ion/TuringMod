@@ -10,7 +10,7 @@ export class EventSubs {
     #helper;
     #client;
     #banned_words;
-    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin', 'channel.chat.message'];
+    topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin', /**'channel.chat.message'**/];
 
     //@param   o     The websocket connection for the turret cam
     //@param   v     The web controller for playing audio through VLC
@@ -55,13 +55,23 @@ export class EventSubs {
 
     async #warnAboutAds(data) {
         await this.#vlc.play_audio('ad warn.wav');
+        await this.updateChannelRedemptionStatus();
         await this.#obs.ads_warning();
+        await this.updateChannelRedemptionStatus();
         await this.#vlc.play_audio('ad done.wav');
     }
 
     async writeTimestampToFile() {
         const timecode = await this.#obs.getStreamTimestamp();
-        this.#helper.writeToFile(`${this.#helper.getCurrentDate}: ${timecode}`, './data/vod_timestamps.txt')
+        this.#helper.writeToFile(`${this.#helper.getCurrentDate}: ${timecode}`, './data/vod_timestamps.txt');
+    }
+
+    async updateChannelRedemptionStatus() {
+        const reward_names = ['Australia', 'Barrel Roll', 'Wide Pope', 'Long Pope', 'Bonk', 'Screen Saver Camera'];
+
+        for await (const names of reward_names) {
+            await this.#twitch_api.setRedemptionStatus(names);
+        }
     }
 
     async #readBannedWords() {

@@ -276,6 +276,26 @@ export class TwitchAPI {
 
 	}
 
+	async setStreamMarker() {
+		try {
+
+			this.#hasTokenExpired();
+			const url = 'https://api.twitch.tv/helix/streams/markers';;
+
+			let marker_data = await this.#createTwitchDataHeader();
+			marker_data.method = 'POST';
+			marker_data.body = JSON.stringify({
+				"user_id": 71631229,
+				"description": "Funni moment here streemur :-)"
+			});
+
+			await fetch(url, marker_data).then((res) => {
+				(res.status == 204) ? console.log(`Successfully made stream marker!`) : console.log(`Error, could not change title`);
+			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+	}
+
 	//edits the stream's title to one requested by streamer/moderator
 	//@param   title          The title we wish to now use on the stream
 	async editStreamTitle(title) {
@@ -313,7 +333,7 @@ export class TwitchAPI {
 				}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 				return msg;
-			} catch (err) { console.error(err); }
+			} catch (err) { return this.#generateAPIErrorResponse(err); }
 		}
 	}
 
@@ -646,11 +666,71 @@ export class TwitchAPI {
 
 	}
 
+	async createRewards() {
+		const rewards = [
+			[ 'Australia', 500, '' ],
+			[ 'Ban A Word', 100000, 'Bans a SINGLE word for a single month' ],
+			[ 'Barrel Roll', 500, '' ],
+			[ 'Wide Pope', 500, '' ],
+			[
+			  'Screen Saver Camera',
+			  1000,
+			  'Turn my face cam into a DVD screen saver'
+			],
+			[ 'Long Pope', 500, '' ],
+			[ 'Bonk', 500, '' ],
+			[ 'Jumpscare', 5000, 'Just be funny when you hit this please' ]
+		  ];
+		  const rewards_url = 'https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229';
+		  try {
+			for (const r in rewards) {
+				const reward_exists = await this.getCustomReward(rewards[r][0]);
+				if (!reward_exists) {
+					let new_reward_data = await this.#createTwitchDataHeader();
+					new_reward_data.method = 'POST';
+					new_reward_data.headers['Content-Type'] = 'application/json';
+					let stringified_body = {
+						title: `${rewards[r][0]}`,
+						cost: `${rewards[r][1]}`,
+						is_enabled: true
+					};
+					if (rewards[r][2] != '') stringified_body.prompt = `${rewards[r][2]}`;
+					new_reward_data.body = JSON.stringify(stringified_body);
+					await fetch(rewards_url, new_reward_data).then(result => {
+						if (result.status == 200) console.log("* Successfully created " + stringified_body.title + " reward");
+						else console.log(`* Failed to generate new ${stringified_body.title} reward, response code ${result.status}`);
+					});
+				} else {
+					console.log(`* Reward "${rewards[r][0]}" already exists, skipping recreating it`);
+				}
+				
+			}
+		  } catch (err) { return this.#generateAPIErrorResponse(err); }
+	}
+
+	async getCustomReward(reward_name) {
+		const s = await this.#data_base.getTwitchInfo(3);
+		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
+		let exists = false;
+
+		try {
+			this.#hasTokenExpired();
+			const redemption_data = await this.#createTwitchDataHeader();
+
+			await fetch(redemption_url, redemption_data).then(result => result.json()).then(body => {
+				for (const reward in body.data) {
+					if (body.data[reward].title == reward_name) exists = true;
+				}
+			});
+			return exists;
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+	}
+
 	// Due to fuckery on Twitch's part, the bot can't actually touch the redemptions since it didn't create them
-	// This command is being let in as reference in case Twitch decides to unscuff this part of their API
+	// This command is being left in as reference in case Twitch decides to unscuff this part of their API
 	async setRedemptionStatus(reward_name) {
 		const s = await this.#data_base.getTwitchInfo(3);
-		console.log(reward_name);
 		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
 		let redemption_id = '';
 		let is_enabled = true;
@@ -725,7 +805,7 @@ export class TwitchAPI {
 			}).listen(3000);
 
 			//open up the page to get access to the auth code
-			await open(url, {wait:true, /**app:{name:apps.edge}**/}).then(console.log("* Twitch API Page opened"));
+			await open(url, {wait:true, /*app:{name:apps.edge}*/}).then(console.log("* Twitch API Page opened"));
 
 			//with the auth code now gotten, send a request to Helix to get the JSON object holding the codes we need
 			await fetch(post_url, post_data).then(result => result.json()).then(body => {

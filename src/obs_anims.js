@@ -194,12 +194,32 @@ export class OBSAnimations {
             sceneItemId: scene_info[5],
             sceneItemEnabled: true
         });
+        await this.#obs.call('ToggleInputMute', {
+            inputName: 'Mic/Aux'
+        });
+        if (scene_info[0] != "MY Ugly Fucking Mug Front And Center") {
+            await this.#obs.call('SetSceneItemEnabled', {
+                sceneName: scene_info[0],
+                sceneItemId: scene_info[3],
+                sceneItemEnabled: false
+            });
+        }
         await this.#helper.sleep(180000);
         await this.#obs.call('SetSceneItemEnabled', {
             sceneName: scene_info[0],
             sceneItemId: scene_info[5],
             sceneItemEnabled: false
+        });
+        await this.#obs.call('ToggleInputMute', {
+            inputName: 'Mic/Aux'
         }); 
+        if (scene_info[0] != "MY Ugly Fucking Mug Front And Center") {
+            await this.#obs.call('SetSceneItemEnabled', {
+                sceneName: scene_info[0],
+                sceneItemId: scene_info[3],
+                sceneItemEnabled: true
+            });
+        }
     }
 
     async copypasta_animation() {
@@ -312,7 +332,7 @@ export class OBSAnimations {
     async #gather_scene_and_source_info() {
         const scene = await this.#obs.call('GetCurrentProgramScene');
         const source_list = await this.#obs.call('GetSceneItemList', {sceneName: scene.currentProgramSceneName});
-        let facecam_id, main_screen_id, ads_text_id;
+        let facecam_id, main_screen_id, ads_text_id, mic_id;
         for (let i in source_list.sceneItems) {
             if (source_list.sceneItems[i].sourceName == "Facecam") {
                 facecam_id = source_list.sceneItems[i].sceneItemId;
@@ -324,6 +344,9 @@ export class OBSAnimations {
             if (source_list.sceneItems[i].sourceName == "Ads Text") {
                 ads_text_id = source_list.sceneItems[i].sceneItemId;
             }
+            if (source_list.sceneItems[i].sourceName == "Mic/Aux") {
+                mic_id = source_list.sceneItems[i].sceneITemId;
+            }
         }
         let facecam_info = await this.#obs.call('GetSceneItemTransform', {
             sceneName: scene.currentProgramSceneName, 
@@ -333,7 +356,7 @@ export class OBSAnimations {
             sceneName: scene.currentProgramSceneName, 
             sceneItemId: main_screen_id
         });
-        return [scene.currentProgramSceneName, facecam_info.sceneItemTransform, source_info.sceneItemTransform, facecam_id, main_screen_id, ads_text_id];
+        return [scene.currentProgramSceneName, facecam_info.sceneItemTransform, source_info.sceneItemTransform, facecam_id, main_screen_id, ads_text_id, mic_id];
     }
 
     async #filter_spawn(filter_name) {

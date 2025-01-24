@@ -45,8 +45,7 @@ export class ArduinoController {
 
         //trying a few different methods to see which one works the best for me
         this.#helper.writeToFile(`${date}: ${timecode}`, './data/vod_timestamps.txt', false);
-        let clip_url = await this.#twitch_api.createClip();
-        // this.#client.say('#pope_pontius', clip_url);
+        let clip_url = await this.#twitch_api.setStreamMarker();
 
         this.#discord_client.channels.cache.get(process.env.CHANNEL_ID).send(clip_url);
     }

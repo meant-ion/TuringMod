@@ -111,6 +111,7 @@ function execTheBot() {
 	//set the timer for the ad warning function so we can get the twitch_api object fully initialized
 	setTimeout(adsIntervalHandler, 15000);
 
+	setTimeout(updateRewards, 15000);
 
 	setTimeout(makeEventSub, 5000);
 
@@ -319,8 +320,6 @@ const func_obj = {
 	//--------------------------------------------------------------------------------------------------------------------------
 
 	'!test': async (_input_msg, user, target) => {
-		// await obs_anims.ads_warning();
-		// await twitch_api.sendAnnouncement();
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF TESTING COMMANDS
@@ -392,6 +391,10 @@ async function intervalMessages() {
 	let announcement = await commands_holder.getIntervalCommand(call_this_function_number);
 	await twitch_api.sendAnnouncement(announcement);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
+}
+
+async function updateRewards() {
+	await twitch_api.createRewards();
 }
 
 //hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
@@ -494,7 +497,7 @@ async function adsIntervalHandler() {
 				60 - time_since_midrolls_started;
 
 		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
-			const msg = "Midrolls are starting within one minute! I will be running 90 seconds of ads to keep prerolls off for as long as possible. " + 
+			const msg = "Midrolls are starting within one minute! I will be running three of ads to keep prerolls off for as long as possible. " + 
 				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
 			client.say('#pope_pontius', msg);
 			intervalTime = 360000;

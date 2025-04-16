@@ -84,7 +84,8 @@ let call_this_function_number = 0;
 //array to hold who voted to skip a song, helps to prevent someone voting more than once per song
 let skip_list = [];
 
-let ad_timer;
+let snoozes_left = 0;
+let ads_timeout_id;
 
 await helper.is_running("firefox.exe", async (truth) => {
 	if (!truth) {
@@ -124,16 +125,18 @@ const func_obj = {
 	//START OF ALL MOD/STREAMER ONLY COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 	//mods/streamer wish to give a shoutout to a chat member/streamer
-	'!so': (input_msg, user, target) => {
-		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
-			client.say(target, `/shoutout ${input_msg[1]}`);
+	'!so': async (input_msg, user, target) => {
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
+			await twitch_api.sendShoutout(input_msg[1], user.username);
 			client.say(target, `Please check out and follow this cool dude here! https://www.twitch.tv/${input_msg[1]}`);
+		}
 	}, 
 	//test command for seeing if the wave works as intended; TB migrated to a button press at some point
 	'!wave': async (input_msg, user, _target) => {
-		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) 
+		if (input_msg.length > 1 && helper.checkIfModOrStreamer(user, the_streamer)) {
 			obs_anims.changeCurrentScene('Turret Cam');
 			arduino_cntrlr.sendCommand(1);
+		}
 	},
 	//starts clip collection services
 	'!startcollect': (_input_msg, user, target) => {
@@ -199,6 +202,18 @@ const func_obj = {
 		if (helper.checkIfModOrStreamer(user, the_streamer)) {
 			await vlc.kill_audio();
 			await vlc.empty_playlist();
+		}
+	},
+	'!snooze': async (_input_msg, user, target) => {
+		if (helper.checkIfModOrStreamer(user, the_streamer)) {
+			if (snoozes_left > 0) {
+				const remaining_snoozes = await twitch_api.snoozeNextAd();
+				snoozes_left = remaining_snoozes;
+				client.say(target, `@${user.username}: Ads snoozed! There are ${remaining_snoozes} left`);
+				await adsIntervalHandler();
+			} else {
+				client.say(target, `@${user.username}: There are no more snoozes left. Try again in a bit`);
+			}
 		}
 	},
 	//--------------------------------------------------------------------------------------------------------------------------
@@ -310,10 +325,16 @@ const func_obj = {
 			client.say(target, helper.combineInput(input_msg, true));
 		}
 	},
-	//tells user how much time left before an adbreak runs
-	// '!adbreak': async (_input_msg, user, target) => {
-	// 	client.say(target, `${user.username}: ads will run roughly within ${getTimeLeftBeforeAds()} minutes`);
-	// },
+	'!ad': async (_input_msg, user, target) => {
+		const curr_time = await twitch_api.getNextAdRun();
+		if (curr_time < 0){ 
+			client.say(target, `@${user.username}: Next ad break begins in a moment`);
+		} else {
+			const remaining_secs = curr_time % 60;
+			const remaining_mins = Math.round(curr_time / 60);
+			client.say(target, `@${user.username}: Next ad break is in ${remaining_mins} minutes and ${remaining_secs} seconds`);
+		}
+	},
 	//--------------------------------------------------------------------------------------------------------------------------
 	//END OF UNIVERSALLY AVAILABLE COMMANDS
 	//START OF TESTING COMMANDS
@@ -337,8 +358,8 @@ async function onMessageHandler(target, user, msg, self) {
 
 	const banned_words = eventsubs.get_banned_words();
 
-	const found_banned_word = input_msg.some(value => banned_words.includes(value));
-	const first_banned_word = input_msg.filter(value => banned_words.includes(value));
+	const found_banned_word = input_msg.some(value => banned_words.includes(value.toLowerCase()));
+	const first_banned_word = input_msg.filter(value => banned_words.includes(value.toLowerCase()));
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {	
@@ -387,7 +408,6 @@ async function onMessageHandler(target, user, msg, self) {
 
 //sends out a message every so often, following through a list of possible messages/functions. 
 async function intervalMessages() {
-	//client.say('#pope_pontius', `${await commands_holder.getIntervalCommand(call_this_function_number)}`);
 	let announcement = await commands_holder.getIntervalCommand(call_this_function_number);
 	await twitch_api.sendAnnouncement(announcement);
 	call_this_function_number = await commands_holder.getLengthOfIntervals(call_this_function_number);
@@ -415,20 +435,25 @@ async function thresholdCalc(target, user) {
 }
 
 function bonk(input_msg, user) {
+
 	if (input_msg[1] != undefined) {
+
 		const revolt_chance = Math.floor(Math.random() * 10);
 		return revolt_chance == 1 ? `The bot got tired of doing whatever the meatbags want and bonked ${user.username} instead`
 						: `${input_msg[1]} has been bonked! BOP`;
+
 	}
+
 }
 
 //if the user types again as a lurker, we display that they unlurked from chat
 //@param   target   The chatroom that the message will be sent into
 //@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
+
 	const lurk_msg = lurk_list.removeLurker(user, false);
-	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) 
-		client.say(target, lurk_msg);
+	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) client.say(target, lurk_msg);
+
 }
 
 //appends a suggestion from a viewer to a suggestions file for later consideration
@@ -440,6 +465,7 @@ function writeSuggestionToFile(input_msg) {
 	helper.writeToFile(input_msg, './data/suggestions.txt', true);
 
 	return true;
+
 }
 
 //safely shuts down the bot when the shutdown command goes through
@@ -456,6 +482,7 @@ async function shutDownBot(target) {
 }
 
 async function makeEventSub() {
+
 	const tok = await commands_holder.getTwitchInfo(0);
 	const client_data = await commands_holder.getTwitchInfo(3);
 
@@ -467,62 +494,44 @@ async function makeEventSub() {
 //writes all collected Twitch clips onto an HTML file and stops collecting them
 //@param   target   The chat room we are getting clips from 
 function getClipsInOrder(target) {
+
 	twitch_api.getClipList();
 	clip_collector.writeClipsToHTMLFile();
 	collect_clips = false;
 	client.say(target, "All collected clips are written to file!");
-}
 
-function getTimeLeftBeforeAds() {
-	const time_since_last_ads = Math.round(ad_timer / 60);
-	return time_since_last_ads > 60 ? 60 - (time_since_last_ads % 60) : 60 - time_since_last_ads;
 }
 
 //handles automatically posting that ads will be coming soon
 async function adsIntervalHandler() {
-	const curr_time = await twitch_api.getUneditedStreamUptime();
-	ad_timer = curr_time;
-	const mins = Math.round(curr_time / 60);
-	let intervalTime = 0;
+	const [curr_time, snoozes] = await twitch_api.getNextAdRun();
+	if (!ads_timeout_id) {
+		clearTimeout(ads_timeout_id);
+		ads_timeout_id = undefined;
+	}
+	snoozes_left = snoozes;
+	let interval_time = 0;
 	//the mid-roll ads start very quickly after stream start (at least for me)
 	//so we start the interval command as soon as the bot boots
-	if (mins == 1) {//the function is called when the bot boots
+	if (curr_time <= 0) {
 
-		client.say('#pope_pontius', 'Mid-roll ads have started for the stream! All non-subscriptions will get midrolls in 1 hour');
-		intervalTime = 360000;//call this function again in 1 hour
+		client.say('#pope_pontius', 'Midrolls will begin any second now! Sorry again for the ads!');
+		interval_time = 360000;//call this function again in 1 hour
 
-	} else if (mins > 1) {//we called it after the ads have gone out from start of stream
-		const time_since_midrolls_started = mins - 1;
-		const remainder_to_hour = time_since_midrolls_started > 60 ? 60 - (time_since_midrolls_started % 60) : 
-				60 - time_since_midrolls_started;
+	} else {
 
-		if (remainder_to_hour == 0) {//we called it exactly within an hour mark
-			const msg = "Midrolls are starting within one minute! I will be running three of ads to keep prerolls off for as long as possible. " + 
-				"Please feel free to get up and stretch in the meantime, I'll be taking a break myself :)";
-			client.say('#pope_pontius', msg);
-			intervalTime = 360000;
-		} else {//not within the hour mark probably b/c had to restart the bot or some other issue happened
-			if (curr_time != NaN) {
-				client.say('#pope_pontius', `Midrolls will play in ${remainder_to_hour} minutes. You have been warned`);
-				intervalTime = remainder_to_hour * 60000;//call this function again in the time to the next hour
-			} else {
-				intervalTime = 60000;
-			}
-
-		}
-
-	} else if (1 - mins != NaN) {
-
-		const _mins = 1 - mins;
-		client.say('#pope_pontius', `Midrolls will be starting within the next few minutes. You have been warned`);
-		//we set a timer callback to this function so we can check again 
-		intervalTime = _mins * 60000;//needs to be in milliseconds, so quick conversions for both
+		const remaining_secs = curr_time % 60;
+		const remaining_mins = Math.round(curr_time / 60);
+	
+		const msg = `Midrolls will run ${remaining_mins} minutes and ${remaining_secs} seconds from now. You have been warned`
+		client.say('#pope_pontius', msg);
+		interval_time = curr_time * 1000;
 
 	}
 
 	//actually set up the callback to this function so the warning goes through
-	if (intervalTime <= 0 || intervalTime == NaN) console.log("Interval time not positive, error occurred");
-	else setTimeout(adsIntervalHandler, intervalTime);
+	if (interval_time <= 0 || interval_time == NaN) console.log("Interval time not positive, error occurred");
+	else ads_timeout_id = setTimeout(adsIntervalHandler, interval_time);
 	
 }
 

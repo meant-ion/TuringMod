@@ -1,4 +1,4 @@
-const int buttonPin = 53;
+const int buttonPin = 43;
 
 int buttonState = 0;
 
@@ -10,7 +10,7 @@ void setup() {
 void loop() {
   buttonState = digitalRead(buttonPin);
 
-  if (buttonState == HIGH) {
+  if (buttonState == LOW) {
     Serial.write("Clip\n");
     delay(250); //delay here or its gonna send data out like crazy
   }

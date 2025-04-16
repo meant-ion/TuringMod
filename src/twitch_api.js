@@ -26,9 +26,12 @@ export class TwitchAPI {
 			this.#hasTokenExpired();
 			let data = await this.#createTwitchDataHeader();
 			data.method = 'POST';
+			data.body = JSON.stringify({
+				"broadcaster_id": "7163229",
+			})
 
-			let chat_url = 'https://api.twitch.tv/helix/chat/messages?broadcaster_id=7163229';
-		} catch (err) { console.error(err); }
+			let chat_url = 'https://api.twitch.tv/helix/chat/messages';
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
     //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
@@ -121,7 +124,7 @@ export class TwitchAPI {
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 			return msg;
-		} catch (err) { console.error(err); }
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
 	//gets and returns the title of the stream
@@ -777,6 +780,50 @@ export class TwitchAPI {
 			});
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 		return msg;
+	}
+
+	async getNextAdRun() {
+
+		const ads_url = 'https://api.twitch.tv/helix/channels/ads?broadcaster_id=71631229';
+		let ads_info;
+
+		try {
+
+			this.#hasTokenExpired();
+			const ads_data = await this.#createTwitchDataHeader();
+
+			await fetch(ads_url, ads_data).then(result => result.json()).then(body => {
+				ads_info = body.data[0];
+			});
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+
+		const remaining_time = ads_info.next_ad_at - Math.round(Date.now() / 1000);
+		const snooze_count = ads_info.snooze_count;
+
+		return [remaining_time, snooze_count];
+
+	}
+
+	async snoozeNextAd() {
+
+		const snooze_url = 'https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=71631229';
+		let snoozes_left = 0;
+
+		try {
+
+			this.#hasTokenExpired();
+			const snooze_data = await this.#createTwitchDataHeader();
+			snooze_data.method = 'POST';
+
+			await fetch(snooze_url, snooze_data).then(result => result.json()).then(body => {
+				snoozes_left = body.data[0].snooze_count;
+			});
+
+		} catch (err) { return this.#generateAPIErrorResponse(err); }
+
+		return snoozes_left;
+
 	}
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------

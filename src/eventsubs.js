@@ -35,8 +35,8 @@ export class EventSubs {
             this.#client.say('#pope_pontius', `Please check out and follow this cool dude here! https://www.twitch.tv/${data.from_broadcaster_user_login}`);
         });
 
-        this.#twok.setEventSubHandler("channel.ad_break.begin", (data) => {
-            this.#warnAboutAds(data);
+        this.#twok.setEventSubHandler("channel.ad_break.begin", (_data) => {
+            this.#warnAboutAds();
         });
     
         this.#twok.setOnChannelPointRewardRedeem((data) => {
@@ -53,7 +53,7 @@ export class EventSubs {
         return Object.keys(this.#banned_words); 
     }
 
-    async #warnAboutAds(data) {
+    async #warnAboutAds() {
         await this.#vlc.play_audio('ad warn.wav');
         await this.updateChannelRedemptionStatus();
         await this.#obs.ads_warning();
@@ -123,8 +123,12 @@ export class EventSubs {
                 await this.#addBannedWord(parsed_data.user_input, parsed_data.user_name);
                 break;
             case 'Jumpscare':
-                console.log(`jumpscare_${Math.floor(Math.random() * (5-1+1) + 1)}.mp3`);
                 await this.#vlc.play_audio(`jumpscare_${Math.floor(Math.random() * (5-1+1) + 1)}.mp3`);
+                await this.#vlc.empty_playlist();
+                break;
+            case 'American Jumpscare':
+                await this.#vlc.play_audio('gunshot.mp3');
+                await this.#vlc.empty_playlist();
                 break;
         }
 

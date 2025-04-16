@@ -96,6 +96,8 @@ COMMANDS:
 
 	- !echo: A @desabotage command only; echos whatever is said after the command
 
+	- !ad: Uses the Twitch API to get the amount of time remaining before a new ad break begins
+
 
 MOD/STREAMER ONLY COMMANDS:
 

@@ -124,10 +124,12 @@ export class EventSubs {
                 break;
             case 'Jumpscare':
                 await this.#vlc.play_audio(`jumpscare_${Math.floor(Math.random() * (5-1+1) + 1)}.mp3`);
+                await this.#helper.sleep(2000);
                 await this.#vlc.empty_playlist();
                 break;
             case 'American Jumpscare':
                 await this.#vlc.play_audio('gunshot.mp3');
+                await this.#helper.sleep(2000);
                 await this.#vlc.empty_playlist();
                 break;
         }

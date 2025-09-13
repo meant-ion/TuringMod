@@ -83,7 +83,7 @@ export class EventSubs {
 
     async #addBannedWord(word, user_name) {
         let validation = word.split(" ");
-        if (validation.length <= 1) {
+        if (validation.length <= 1 && !validation.includes("")) {
             let today = new Date();
             let banned_date = String(String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getDate()).padStart(2, '0') + '/' + today.getFullYear();
             this.#banned_words[word] = banned_date;

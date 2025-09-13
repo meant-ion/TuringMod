@@ -288,12 +288,12 @@ export class TwitchAPI {
 			let marker_data = await this.#createTwitchDataHeader();
 			marker_data.method = 'POST';
 			marker_data.body = JSON.stringify({
-				"user_id": 71631229,
+				"user_id": 693520155,
 				"description": "Funni moment here streemur :-)"
 			});
 
 			await fetch(url, marker_data).then((res) => {
-				(res.status == 204) ? console.log(`Successfully made stream marker!`) : console.log(`Error, could not change title`);
+				(res.status == 204) ? console.log(`Successfully made stream marker!`) : console.log(`Error, could not set stream marker`);
 			}).catch(err => { return this.#generateAPIErrorResponse(err); });
 
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
@@ -358,7 +358,7 @@ export class TwitchAPI {
 
 			const user_url = `https://api.twitch.tv/helix/users?login=${user}`;
 
-			const mod_url = `https://api.twitch.tv/helix/users?login=${mod.username}`;
+			const mod_url = `https://api.twitch.tv/helix/users?login=${mod}`;
 
 			let channel_id, mod_id;
 
@@ -672,7 +672,7 @@ export class TwitchAPI {
 	async createRewards() {
 		const rewards = [
 			[ 'Australia', 500, '' ],
-			[ 'Ban A Word', 100000, 'Bans a SINGLE word for a single month' ],
+			[ 'Ban A Word', 100000, 'Bans a SINGLE word for a single month', true ],
 			[ 'Barrel Roll', 500, '' ],
 			[ 'Wide Pope', 500, '' ],
 			[
@@ -698,6 +698,7 @@ export class TwitchAPI {
 						is_enabled: true
 					};
 					if (rewards[r][2] != '') stringified_body.prompt = `${rewards[r][2]}`;
+					if (rewards[r][3]) stringified_body.is_user_input_required = rewards[r][3];
 					new_reward_data.body = JSON.stringify(stringified_body);
 					await fetch(rewards_url, new_reward_data).then(result => {
 						if (result.status == 200) console.log("* Successfully created " + stringified_body.title + " reward");
@@ -730,8 +731,6 @@ export class TwitchAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
-	// Due to fuckery on Twitch's part, the bot can't actually touch the redemptions since it didn't create them
-	// This command is being left in as reference in case Twitch decides to unscuff this part of their API
 	async setRedemptionStatus(reward_name) {
 		const s = await this.#data_base.getTwitchInfo(3);
 		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
@@ -823,6 +822,24 @@ export class TwitchAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 
 		return snoozes_left;
+
+	}
+
+	// gets twitch stats and info about a game and displays it in chat
+	async pingGame(name) {
+
+		const ping_url = `https://api.twitch.tv/helix/games?name=${name}`;
+
+		try {
+
+			this.#hasTokenExpired();
+			const game_data = await this.#createTwitchDataHeader();
+
+			
+
+		} catch (err) {
+
+		}
 
 	}
 

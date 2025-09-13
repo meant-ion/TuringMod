@@ -9,9 +9,8 @@ export class ArduinoController {
     #helper;
     #twitch_api;
     #client;
-    #discord_client;
 
-    constructor(o, h, t, c, d_c) {
+    constructor(o, h, t, c) {
         this.#port = new SerialPort({path:'COM7',baudRate:9600});
         this.#parser = this.#port.pipe(new ReadlineParser({ delimeter: '\n'}));
         this.#parser.on('data', (data) => this.#parseCommand(data));
@@ -21,7 +20,6 @@ export class ArduinoController {
         this.#helper = h;
         this.#twitch_api = t;
         this.#client = c;
-        this.#discord_client = d_c;
     }
 
     async #parseCommand(data) {
@@ -43,11 +41,16 @@ export class ArduinoController {
         const timecode = await this.#obs.getStreamTimestamp();
         const date = this.#helper.getCurrentDate();
 
+        const createTime = `${date}: ${timecode}`;
         //trying a few different methods to see which one works the best for me
-        this.#helper.writeToFile(`${date}: ${timecode}`, './data/vod_timestamps.txt', false);
-        let clip_url = await this.#twitch_api.setStreamMarker();
+        this.#helper.writeToFile(createTime, './data/vod_timestamps.txt', false);
+        try {
+            await this.#twitch_api.setStreamMarker();
+            this.#client.say('#pope_pontius', `Stream marker created at ${createTime}`);
+        } catch (err) {
+            console.error(err);
+        }
 
-        this.#discord_client.channels.cache.get(process.env.CHANNEL_ID).send(clip_url);
     }
 
 }

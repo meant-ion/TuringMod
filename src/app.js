@@ -358,8 +358,11 @@ async function onMessageHandler(target, user, msg, self) {
 
 	const banned_words = eventsubs.get_banned_words();
 
-	const found_banned_word = input_msg.some(value => banned_words.includes(value.toLowerCase()));
-	const first_banned_word = input_msg.filter(value => banned_words.includes(value.toLowerCase()));
+	const sanitized_input_msg = input_msg.map(msg => msg.replace(/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g, ''));
+
+	const found_banned_word = sanitized_input_msg.some(value => banned_words.includes(value.toLowerCase()));
+	const first_banned_word = sanitized_input_msg.filter(value => banned_words.includes(value.toLowerCase()));
+
 
 	//for the list of commands, we need to make sure that we don't catch the bot's messages or it will cause problems
 	if (user.username != 'Saint_Isidore_BOT') {	
@@ -367,7 +370,7 @@ async function onMessageHandler(target, user, msg, self) {
 		//check if the user typed a banned word, ignoring any commands attached to it
 		if (found_banned_word && !helper.isStreamer(user.username, "pope_pontius")) {
 
-			client.say(target, `@${user.username}: OOPS! You said the banned word "${first_banned_word}!" To the penal colony with you!`);
+			client.say(target, `@${user.username}: OOPS! You said the banned word "${first_banned_word[0]}!" To the penal colony with you!`);
 			await twitch_api.timeoutUser(user.username);
 
 		//check our function dictionary to see if it's a known, non-custom command

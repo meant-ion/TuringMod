@@ -15,11 +15,13 @@ export class Helper {
     constructor() {
         this.#dir_separator = "\/\/\/\/";
     }
-
-    //combines the input into a single string
-    //@param   input_msg          The message that needs to be combined into one string
-    //@param   need_white_space   Whether the string needs to have spaces between words
-    //@return                     A string made up of all elements of the inputMsg array
+                    
+    /**
+     * combines the input into a single string
+     * @param {string} input_msg The message that needs to be combined into one string
+     * @param {boolean} need_white_space Whether the string needs to have spaces between words
+     * @returns {string} A string made up of all elements of the inputMsg array
+     */
     combineInput(input_msg, need_white_space) {
         let combined_msg = '';
         for (let i = 0; i < input_msg.length; ++i) {
@@ -28,11 +30,13 @@ export class Helper {
         }
         return combined_msg;
     }
-
-    //function to get the time passed from one point to another
-    //@param   start_time   The time and date we are calculating time passed from
-    //@param   need_day     Tell if we need the number of days passed since the start
-    //@return              A message telling how much time has passed since the starting date to the current date
+         
+    /**
+     * function to get the time passed from one point to another
+     * @param {Date} start_time The time and date we are calculating time passed from
+     * @param {boolean} need_day Tell if we need the number of days passed since the start
+     * @returns {string} A message telling how much time has passed since the starting date to the current date
+     */
     getTimePassed(start_time, need_day) {
 
         const cur_time = new Date();
@@ -51,22 +55,28 @@ export class Helper {
         if (years > 0) date_str = `${years} years ` + date_str ;
         return date_str;
     }
-
-    //simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
-    //@param   user           The name of the chat member that typed in the command
-    //@param   the_streamer   The name of the channel owner
-    //@return                 True or false, depending on if the user is a mod or the streamer
+              
+    /**
+     * simple helper to see if the user is the channel owner (streamer) or a moderator of the channel
+     * @param {string} user username 
+     * @param {*} the_streamer channel owner username
+     * @returns {boolean} True or false, depending on if the user is a mod or the streamer
+     */
     checkIfModOrStreamer(user, the_streamer) { return user.mod || ('#' + user.username == the_streamer); }
-
-    //helper function that tells us only if the user is the streamer or not
-    //@param   user           The name of the chat member that typed in the command
-    //@param   the_streamer   The name of the channel owner
-    //@return                 True or false, depending on if the user is the streamer
+                 
+    /**
+     * helper function that tells us only if the user is the streamer or not
+     * @param {string} username
+     * @param {string} the_streamer The name of the channel owner
+     * @returns {boolean} True or false, depending on if the user is the streamer
+     */
     isStreamer(username, the_streamer) { return username == the_streamer; }
-
-    //checks the whole of a message to tell if there is a URL present. If so, it will return the url
-    //@param   input_msg   The message that is being read through to detect symbol spam
-    //@return             The URL, or an empty string if not valid
+           
+    /**
+     * checks the whole of a message to tell if there is a URL present. If so, it will return the url
+     * @param {string} input_msg The message that is being read through to detect symbol spam
+     * @returns {string} The URL, or an empty string if not valid
+     */
     checkIfURL(input_msg) {
         //do not have this be a forEach loop, it will not work lol
         for (let i = 0; i < input_msg.length; ++i) 
@@ -77,16 +87,21 @@ export class Helper {
         
         return "";
     }
-
-    //Tells if the message sent by the user is @-ing the streamer
-    //@param   input_msg      The whole message sent by the user
-    //@returns                T/F if the streamer is @'ed in the message
+              
+    /**
+     * Tells if the message sent by the user is @-ing the streamer
+     * @param {string} input_msg The whole message sent by the user
+     * @returns {boolean} T/F if the streamer is @'ed in the message
+     */
     isStreamerMentioned(input_msg) {
         input_msg = input_msg.map(item => item.toLowerCase());
         return input_msg.includes('@pope_pontius');
     }
 
-    //gets the current time in Central Standard Time in AM/PM configuration
+    /**
+     * gets the current time in Central Standard Time in AM/PM configuration
+     * @returns {string} the current time as a human-readable message
+     */
     getCurrentTime() {
         const cur_time = new Date();
         let is_AM = false;
@@ -118,6 +133,9 @@ export class Helper {
         return `${true_hours}:${cur_mins} ${is_AM ? "A.M." : "P.M."}`;
     }
 
+    /**
+     * @returns {string} mm/dd/yyyy formatted date string
+     */
     getCurrentDate() {
         const cur_date = new Date();
         const day = String(cur_date.getDate()).padStart(2, '0');
@@ -126,10 +144,11 @@ export class Helper {
         return month + '/' + day + '/' + year;
     }
 
-    //takes a number and rounds it out to two decimal points (for use as percentages)
-    //@param   num             The number we wish to round
-    //@param   is_percentage   Boolean to tell us if we are rounding a percentage or not
-    //@return                  The parameter passed in, but rounded to two decimal points
+    /**
+     * @param {Number} num the number we wish to round
+     * @param {boolean} is_percentage tell us if we are rounding a percentage or not
+     * @returns {number} num rounded to two decimals
+     */
     roundToTwoDecimals(num, is_percentage) {
         let neg = false;
         if (num < 0 && is_percentage) {
@@ -142,10 +161,12 @@ export class Helper {
         if (neg) num = (num * -1).toFixed(2);
         return num;
     }
-
-    //converts a JSON list of key-value pairs into an array of values
-    //@param   obj   The JSON object to be processed
-    //@return        An array of values from the JSON object
+       
+    /**
+     * converts a JSON list of key-value pairs into an array of values
+     * @param {object} obj The JSON object to be processed
+     * @returns {Array} An array of values from the JSON object
+     */
     getGitStatsArray(obj) {
         const keys = Object.keys(obj);
         const r = [];
@@ -153,6 +174,10 @@ export class Helper {
         return r;
     }
 
+    /**
+     * @param {boolean} run chooses what program must be ran
+     * @returns {string} CLI command to determine OS
+     */
     detect_platform(run) {
         let cmd = '';
         switch (process.platform) {
@@ -164,6 +189,10 @@ export class Helper {
         return cmd;
     }
 
+    /**
+     * @param {string} query what program to detect
+     * @param {Function} cb callback function to run after detection
+     */
     async is_running(query, cb) {
         let cmd = this.detect_platform(true);
         exec(cmd, (err, stdout, stderr) => {
@@ -171,6 +200,9 @@ export class Helper {
         });
     }
 
+    /**
+     * @param {string} program name of program to open
+     */
     async open_program(program) {
         const dot_count = (resolve(__dirname).match(new RegExp(this.#dir_separator, "g")) || []).length;
         const slash_count = dot_count - 1;
@@ -187,12 +219,21 @@ export class Helper {
         exec(exec_str);
     }
 
+    /**
+     * @param {string} input what to write to file
+     * @param {string} filename where to write the input to
+     * @param {boolean} need_combination whether inputs need to be combined before writing
+     */
     writeToFile(input, filename, need_combination) {
         appendFile(filename, (need_combination ? this.combineInput(input, true) : input) + '\n', (err) => {
             if (err) { console.error(err); }
         });
     }
 
+    /**
+     * @param {Number} ms time to sleep program in milliseconds 
+     * @returns {Promise} 
+     */
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }

@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
 import Helper from './helper.js';
-import open, {apps} from 'open';
+import open from 'open';
 import http from 'http';
+import CommandArray from './sqlite_db.js';
 
 export class TwitchAPI {
 
@@ -11,9 +11,12 @@ export class TwitchAPI {
 	#shoutout_queue;
 	#currently_shouting;
 
-	//@param   d_b   The bot's client for accessing its database
-    constructor(d_b) {
-        this.helper = new Helper();
+	/**
+	 * @param {CommandArray} d_b The bot's client for accessing its database
+	 * @param {Helper} h 
+	 */
+    constructor(d_b, h) {
+        this.helper = h;
         this.#data_base = d_b;
         this.#clip_list = [];
 		this.#shoutout_queue = [];
@@ -21,22 +24,89 @@ export class TwitchAPI {
         this.#getTwitchToken();
     }
 
+	/**
+	 * @param {string} message 
+	 * @returns {string} either an error message or the message ID
+	 */
 	async sendChatMessage(message) {
 		try {
-			this.#hasTokenExpired();
-			let data = await this.#createTwitchDataHeader();
-			data.method = 'POST';
-			data.body = JSON.stringify({
-				"broadcaster_id": "7163229",
-			})
 
-			let chat_url = 'https://api.twitch.tv/helix/chat/messages';
-		} catch (err) { return this.#generateAPIErrorResponse(err); }
+			this.#hasTokenExpired();
+
+			if (message == undefined || message.length == 0) {
+				return "Error: Cannot send an empty chat message";
+			}
+
+			// Twitch limits chat messages to 500 characters
+			if (message.length > 500) {
+				return "Error: Chat message cannot exceed 500 characters";
+			}
+
+			const data = await this.#createTwitchDataHeader();
+
+			data.method = 'POST';
+			data.headers['Content-Type'] = 'application/json';
+
+			data.body = JSON.stringify({
+				"broadcaster_id": "71631229",
+				"sender_id": "71631229",
+				"message": message
+			});
+
+			const chat_url = 'https://api.twitch.tv/helix/chat/messages';
+
+			const res = await fetch(chat_url, data);
+
+			// Twitch returns 200 when the request was successfully processed
+			if (res.status != 200) {
+				const error_body = await res.text();
+
+				console.error(`Failed to send chat message. Response code: ${res.status}`);
+				console.error(error_body);
+
+				return `Error: Could not send chat message (HTTP ${res.status})`;
+			}
+
+			const body = await res.json();
+
+			// Twitch can return HTTP 200 while the message itself was
+			// not sent, so we need to check is_sent as well.
+			if (
+				body.data == undefined ||
+				body.data.length == 0 ||
+				body.data[0].is_sent != true
+			) {
+				const drop_reason = body.data?.[0]?.drop_reason;
+
+				if (drop_reason != undefined) {
+					console.error(
+						`Chat message was not sent: ${drop_reason.code} - ${drop_reason.message}`
+					);
+
+					return `Error: Chat message was not sent - ${drop_reason.message}`;
+				}
+
+				return "Error: Chat message was not sent";
+			}
+
+			const message_id = body.data[0].message_id;
+
+			console.log(`* Successfully sent chat message: ${message}`);
+
+			return message_id;
+
+		} catch (err) {
+			return this.#generateAPIErrorResponse(err);
+		}
 	}
 
-    //returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
-	//a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
-	//@param   user           The name of the chat member that typed in the command
+
+	/**
+	 * returns the length of time the asking user has been following the channel. Currently needs to be said in chat rather than in
+	 * a whisper, need to have the bot verified for that and need to make sure that all necessary parameters are met for it also
+	 * @param {string} user username 
+	 * @returns {string} message either containing follow age, stating user is not following, or error message
+	 */
 	async getFollowAge(user) {
 		try {
 			this.#hasTokenExpired();
@@ -77,7 +147,10 @@ export class TwitchAPI {
 
 	}
 
-	//gets and returns the stream schedule for the week starting after the current stream in a human-readable format
+	/**
+	 * gets and returns the stream schedule for the week starting after the current stream in a human-readable format
+	 * @returns {string} human-readable message of the next stream times
+	 */
 	async getChannelSchedule() {
 
 		try {
@@ -103,7 +176,10 @@ export class TwitchAPI {
 
 	}
 
-	//gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
+	/**
+	 * gets and returns the total time the stream has been live. If channel isn't live, returns a message saying so
+	 * @returns {string} current uptime of the stream, message for stream not being live, or error message
+	 */
 	async getStreamUptime() {
 
 		try {
@@ -127,7 +203,9 @@ export class TwitchAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
-	//gets and returns the title of the stream
+	/**
+	 * @returns {string} current stream title
+	 */
 	async getStreamTitle() {
 
 		try {
@@ -145,8 +223,11 @@ export class TwitchAPI {
 
 	}
 
-	//gets an account's creation date, calculates its age, and then returns it to the chatroom
-	//@param   user     The name of the chat member that typed in the command
+	/**
+	 * gets an account's creation date, calculates its age, and then returns it to the chatroom
+	 * @param {string} user username
+	 * @returns {string} message containing account age
+	 */
 	async getUserAcctAge(user) {
 
 		try {
@@ -168,7 +249,10 @@ export class TwitchAPI {
 
 	}
 
-	//gets and returns the stream's category (what we are playing/doing for stream)
+	/**
+	 * gets and returns the stream's category (what we are playing/doing for stream)
+	 * @returns {string} current category message
+	 */
 	async getCategory() {
 		try {
 			this.#hasTokenExpired();
@@ -186,7 +270,10 @@ export class TwitchAPI {
 		} catch (err) { console.error(err); }
 	}
 
-	//gets and returns the streamer's channel summary
+	/**
+	 * gets and returns the streamer's channel summary
+	 * @returns {string} channel summary
+	 */
 	async getChannelSummary() {
 		try {
 			this.#hasTokenExpired();
@@ -205,8 +292,10 @@ export class TwitchAPI {
 		} catch (err) { console.error(err); }
 	}
 
-	//Gets info on a specific clip via its ID and sends that to a list of them
-	//@param   clip_id        The ID of the potential clip we want to get info on
+	/**
+	 * Gets info on a specific clip via its ID and sends that to a list of them
+	 * @param {string} clip_id The ID of the potential clip we want to get info on
+	 */
 	async getClipInformation(clip_id) {
 
 		try {
@@ -224,8 +313,11 @@ export class TwitchAPI {
 
 	getClipList() { return this.#clip_list; }
 
-	//edits the channel category/game to one specified by a moderator
-	//@param   game_name       The name of the category that we wish to change the stream over to
+	/**
+	 * edits the channel category/game to one specified by a moderator
+	 * @param {string} game_name the category/game name
+	 * @returns {string} success/failure message
+	 */
 	async editChannelCategory(game_name) {
 
 		try {
@@ -279,32 +371,49 @@ export class TwitchAPI {
 
 	}
 
+	/**
+	 * @returns {string || null} marker success message or nothing
+	 */
 	async setStreamMarker() {
 		try {
 
 			this.#hasTokenExpired();
-			const url = 'https://api.twitch.tv/helix/streams/markers';;
+			const url = 'https://api.twitch.tv/helix/streams/markers';
 
 			let marker_data = await this.#createTwitchDataHeader();
 			marker_data.method = 'POST';
+			marker_data.headers['Content-Type'] = 'application/json';
 			marker_data.body = JSON.stringify({
-				"user_id": 693520155,
+				"user_id": "71631229",
 				"description": "Funni moment here streemur :-)"
 			});
 
-			await fetch(url, marker_data).then((res) => {
-				(res.status == 204) ? console.log(`Successfully made stream marker!`) : console.log(`Error, could not set stream marker`);
-			}).catch(err => { return this.#generateAPIErrorResponse(err); });
+			const res = await fetch(url, marker_data);
 
-		} catch (err) { return this.#generateAPIErrorResponse(err); }
+			if (res.status == 200) {
+				const body = await res.json();
+				console.log(`Successfully made stream marker!`);
+				return body.data[0];
+			} else {
+				const error_body = await res.text();
+				console.error(`Error, could not set stream marker. Response code: ${res.status}`);
+				console.error(error_body);
+				return null;
+			}
+
+		} catch (err) {
+			return this.#generateAPIErrorResponse(err);
+		}
 	}
 
-	//edits the stream's title to one requested by streamer/moderator
-	//@param   title          The title we wish to now use on the stream
+
+	/**
+	 * @param {string} title The new stream title
+	 * @returns {string} success/failure message
+	 */
 	async editStreamTitle(title) {
 
 		if (title.length == 0 || title == " ") {//catch if the title is empty and prevent it from passing through
-			//this.client.say(target, "Cant change stream title to empty title");
 			return "Can't change stream title to empty string";
 		} else {
 			try {
@@ -340,16 +449,26 @@ export class TwitchAPI {
 		}
 	}
 
+	/**
+	 * @param {string} user username
+	 * @param {string} mod calling mod's username
+	 */
 	async sendTimedShoutout(user, mod) {
 		this.#shoutout_queue.push(user);
 		if (this.#shoutout_queue.length == 1 && !this.#currently_shouting) {
-			await this.sendShoutout(this.#shoutout_queue.shift(), mod);
+			this.sendShoutout(this.#shoutout_queue.shift(), mod);
 			this.#currently_shouting = !this.#currently_shouting;
 		} else {
 			setTimeout(this.sendShoutout, this.#shoutout_queue.length*2*60*1000, this.#shoutout_queue.shift(), mod);
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} user username 
+	 * @param {string} mod calling mod's username 
+	 * @returns {null || string} nothing or error message
+	 */
 	async sendShoutout(user, mod) {
 		try {
 
@@ -400,8 +519,10 @@ export class TwitchAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
-	//returns stream uptime for use in ad warning system
-	//@return    The uptime of the stream in seconds
+	/**
+	 * returns stream uptime for use in ad warning system
+	 * @returns {Number} The uptime of the stream in seconds
+	 */
 	async getUneditedStreamUptime() {
 		try {
 			
@@ -420,7 +541,10 @@ export class TwitchAPI {
 		} catch (err) { console.error(err); }
 	}
 
-	//gets and returns the list of tags currently applied to the stream
+	/**
+	 * gets and returns the list of tags currently applied to the stream
+	 * @returns {string} list of tags for stream in comma-separated list
+	 */
 	async getStreamTags() {
 		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 		let msg = "Tags for this stream are ";
@@ -443,9 +567,12 @@ export class TwitchAPI {
 			return msg;
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
-
-	//changes the tags of the stream to new ones. Cannot change automatic tags at all
-	//@param   list_of_tags   The list of tags we want to have be present in the stream 
+ 
+	/**
+	 * changes the tags of the stream to new ones. Cannot change automatic tags at all
+	 * @param {Array[string]} list_of_tags The list of tags we want to have be present in the stream 
+	 * @returns {string} success/failure message
+	 */
 	async replaceStreamTags(list_of_tags) {
 
 		const tags_url = `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
@@ -491,7 +618,7 @@ export class TwitchAPI {
 	async getCreatorGoals() {
 		const goals_url = 'https://api.twitch.tv/helix/goals?broadcaster_id=71631229';
 
-		const data = this.#createTwitchDataHeader();
+		const data = await this.#createTwitchDataHeader();
 
 		await fetch(goals_url, data).then(result => result.json()).then(body => {
 			const response = body.data[0];
@@ -509,82 +636,181 @@ export class TwitchAPI {
 		}).catch(err => { return this.#generateAPIErrorResponse(err); });
 	}
 
-	//deletes the last vod on the channel. Useful if something against Twitch's TOS happens accidentally and I 
-	//need to try to prevent my own ban from it
+	//deletes the last vod on the channel. Useful if something against Twitch's 
+	//TOS happens accidentally and I need to try to prevent my own ban from it
 	async deleteLastVOD() {
-		//Part 1: We get the id of the last vod
-
-		//we only want the last vod for the channel, so we set the type of vod to uploads and set 
-		//the number returned to 1
-		const vod_url = 'https://api.twitch.tv/helix/videos?user_id=71631229&first=1&type=upload';
-
-		const data = this.#createTwitchDataHeader();
-
-		let vod_id = "-1";
-
-		//get the id of the vod now. If we get back a bad result, then we send an error message and return
-		await fetch(vod_url, data).then(result => result.json()).then(body => {
-			if (body.data[0].id != undefined) 
-				vod_id = body.data[0].id;
-		}).catch(err => { return this.#generateAPIErrorResponse(err); });
-
-		if (vod_id == "-1")
-			return "Error in fetching VOD ID of last published vod";
-
-		//Part 2: We delete the vod
-
-		const delete_vod_url = `https://api.twitch.tv/helix/videos?id=${vod_id}`;
-
 		try {
-			const s = await this.#data_base.getIdAndSecret();
-			const data = {
-				'method': 'DELETE',
-				'headers': {
-					'client-id': `${s[0]}`,
-					'Authorization': `Bearer ${await this.#data_base.getTwitchInfo(0)}`
-				},
+			//Make sure our Twitch token is still valid
+			this.#hasTokenExpired();
+
+			//Part 1: We get the id of the last vod
+
+			//we only want the last uploaded video for the channel, so we set
+			//the type of vod to uploads and set the number returned to 1
+			const vod_url = 'https://api.twitch.tv/helix/videos?user_id=7163229&first=1&type=upload';
+
+			const data = await this.#createTwitchDataHeader();
+
+			const result = await fetch(vod_url, data);
+
+			//If Twitch didn't successfully return the videos, get the error
+			//response instead of trying to access body.data[0]
+			if (!result.ok) {
+				const error_body = await result.text();
+
+				console.error(`Error fetching last VOD. Twitch returned HTTP ${result.status}`);
+				console.error(error_body);
+
+				return `Error in fetching last published VOD (HTTP ${result.status})`;
 			}
 
-			let msg = '';
+			const body = await result.json();
 
-			await fetch(delete_vod_url, data).then(() => msg = "VOD successfully deleted");
+			//There are no uploaded videos
+			if (body.data == undefined || body.data.length == 0) {
+				return "Error: No uploaded VODs were found on the channel";
+			}
 
-			return msg;
+			const vod_id = body.data[0].id;
 
-		} catch (err) { return this.#generateAPIErrorResponse(err); }
+			if (vod_id == undefined) {
+				return "Error in fetching VOD ID of last published vod";
+			}
 
-	}
+			console.log(`Found last uploaded VOD: ${vod_id}`);
 
-	async createClip() {
-		const clip_url = 'https://api.twitch.tv/helix/clips?'
+			//Part 2: We delete the vod
 
-		const data = await this.#createTwitchDataHeader();
+			const delete_vod_url = `https://api.twitch.tv/helix/videos?id=${vod_id}`;
 
-		data.method = 'POST';
+			data.method = 'DELETE';
 
-		let clipping_started = false;
-		let clip_id;
-		let finished_clip_url = "";
+			const delete_result = await fetch(delete_vod_url, data);
 
-		// clipping is ansync process, so we just grab the Id it sends and confirm its started the clipping process
-		await fetch(clip_url + 'broadcaster_id=71631229', data).then(result => result.json().then(clipping_started = result.status)
-		).then(body => {
-			clip_id = body.data[0].id;
-		}).catch(err => console.error(err));
+			//Twitch returns 200 when the VOD was successfully deleted
+			if (!delete_result.ok) {
+				const error_body = await delete_result.text();
 
-		await this.helper.sleep(15000);
+				console.error(`Error deleting VOD ${vod_id}. Twitch returned HTTP ${delete_result.status}`);
+				console.error(error_body);
 
-		data.method = 'GET';
-		// poll the clip api after 15 seconds of calling it. If no response after 15 seconds, clipping failed
-		if (clipping_started) {
-			await fetch(clip_url + 'id=' + clip_id, data).then(result => result.json()).then(body => {
-				finished_clip_url = body.data[0].url;
-			}).catch(err => console.error(err));
+				return `Error: Could not delete VOD (HTTP ${delete_result.status})`;
+			}
+
+			const delete_body = await delete_result.json();
+
+			//Make sure Twitch actually reports that our VOD was deleted
+			if (
+				delete_body.data == undefined ||
+				delete_body.data.length == 0 ||
+				delete_body.data[0] != vod_id
+			) {
+				return `Error: Twitch did not confirm deletion of VOD ${vod_id}`;
+			}
+
+			console.log(`* VOD successfully deleted: ${vod_id}`);
+
+			return "VOD successfully deleted";
+
+		} catch (err) {
+			return this.#generateAPIErrorResponse(err);
 		}
-
-		return finished_clip_url;
 	}
 
+	/**
+	 * Creates a clip of the current stream and waits until Twitch
+	 * has finished processing it before returning the working clip URL.
+	 * @returns {string} URL of the created clip, or an error message
+	 */
+	async createClip() {
+
+		const clip_url = 'https://api.twitch.tv/helix/clips';
+		const broadcaster_id = '71631229';
+
+		try {
+
+			this.#hasTokenExpired();
+			const data = await this.#createTwitchDataHeader();
+			data.method = 'POST';
+
+			const create_response = await fetch(
+				`${clip_url}?broadcaster_id=${broadcaster_id}`,
+				data
+			);
+
+			// 202 on successful clip creation process start
+			if (create_response.status != 202) {
+				const error_body = await create_response.text();
+
+				console.error(`Failed to create clip. Response code: ${create_response.status}`);
+				console.error(error_body);
+
+				return `Error: Twitch could not create the clip (HTTP ${create_response.status})`;
+			}
+
+			const create_body = await create_response.json();
+
+			if (create_body.data == undefined || create_body.data.length == 0 || create_body.data[0].id == undefined) {
+				console.error('Twitch did not return a clip ID');
+				return 'Error: Twitch did not return a clip ID';
+			}
+
+			const clip_id = create_body.data[0].id;
+
+			console.log(`* Clip creation started: ${clip_id}`);
+
+			// Check every 500ms so we return the URL as soon as it is ready.
+			const max_attempts = 30;
+
+			for (let attempt = 0; attempt < max_attempts; ++attempt) {
+
+				await this.helper.sleep(500);
+
+				this.#hasTokenExpired();
+
+				const check_data = await this.#createTwitchDataHeader();
+
+				const check_url = `${clip_url}?id=${encodeURIComponent(clip_id)}`;
+
+				const check_response = await fetch(check_url, check_data);
+
+				if (check_response.status != 200) {
+					// No clip yet
+					if (check_response.status == 404) continue;
+
+					const error_body = await check_response.text();
+
+					console.error(`Error checking clip status. Response code: ${check_response.status}`);
+					console.error(error_body);
+
+					return `Error: Twitch could not retrieve the created clip (HTTP ${check_response.status})`;
+				}
+
+				const clip_body = await check_response.json();
+
+				if (clip_body.data != undefined && clip_body.data.length > 0 && clip_body.data[0].url != undefined) {
+					const finished_clip_url = clip_body.data[0].url;
+
+					console.log(`* Clip successfully created: ${finished_clip_url}`);
+
+					return finished_clip_url;
+				}
+			}
+
+			// Twitch did not finish creating the clip within our timeout.
+			console.error(`Clip ${clip_id} was not ready in time`);
+
+			return 'Error: Twitch took too long to finish creating the clip';
+
+		} catch (err) {
+			return this.#generateAPIErrorResponse(err);
+		}
+	}
+
+
+	/**
+	 * @returns {string} message of all content warnings for a stream
+	 */
 	async getContentLabels() {
 		const label_url= `https://api.twitch.tv/helix/channels?broadcaster_id=71631229`;
 		let msg = "Twitch's content warnings for this stream are: ";
@@ -612,7 +838,10 @@ export class TwitchAPI {
 
 		return msg;
 	}
-//693520155
+
+	/**
+	 * @param {string} announcement announcement message
+	 */
 	async sendAnnouncement(announcement) {
 		const s = await this.#data_base.getTwitchInfo(3);
 		const announcement_url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=71631229&moderator_id=71631229`;
@@ -632,6 +861,9 @@ export class TwitchAPI {
 		await fetch(announcement_url, data);
 	}
 
+	/**
+	 * @param {string} user username
+	 */
 	async timeoutUser(user) {
 		const s = await this.#data_base.getTwitchInfo(3);
 		const timeout_url = "https://api.twitch.tv/helix/moderation/bans?broadcaster_id=71631229&moderator_id=71631229";
@@ -676,42 +908,134 @@ export class TwitchAPI {
 			[ 'Barrel Roll', 500, '' ],
 			[ 'Wide Pope', 500, '' ],
 			[
-			  'Screen Saver Camera',
-			  1000,
-			  'Turn my face cam into a DVD screen saver'
+				'Screen Saver Camera',
+				1000,
+				'Turn my face cam into a DVD screen saver'
 			],
 			[ 'Long Pope', 500, '' ],
 			[ 'Bonk', 500, '' ],
 			[ 'Jumpscare', 5000, 'Just be funny when you hit this please' ]
-		  ];
-		  const rewards_url = 'https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229';
-		  try {
-			for (const r in rewards) {
-				const reward_exists = await this.getCustomReward(rewards[r][0]);
-				if (!reward_exists) {
-					let new_reward_data = await this.#createTwitchDataHeader();
-					new_reward_data.method = 'POST';
-					new_reward_data.headers['Content-Type'] = 'application/json';
-					let stringified_body = {
-						title: `${rewards[r][0]}`,
-						cost: `${rewards[r][1]}`,
-						is_enabled: true
-					};
-					if (rewards[r][2] != '') stringified_body.prompt = `${rewards[r][2]}`;
-					if (rewards[r][3]) stringified_body.is_user_input_required = rewards[r][3];
-					new_reward_data.body = JSON.stringify(stringified_body);
-					await fetch(rewards_url, new_reward_data).then(result => {
-						if (result.status == 200) console.log("* Successfully created " + stringified_body.title + " reward");
-						else console.log(`* Failed to generate new ${stringified_body.title} reward, response code ${result.status}`);
-					});
-				} else {
-					console.log(`* Reward "${rewards[r][0]}" already exists, skipping recreating it`);
-				}
-				
+		];
+
+		const rewards_url = 'https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229';
+
+		try {
+			this.#hasTokenExpired();
+
+			//Get all of the existing rewards once instead of making
+			//a separate API request for every reward
+			const reward_data = await this.#createTwitchDataHeader();
+			const reward_result = await fetch(rewards_url, reward_data);
+
+			if (!reward_result.ok) {
+				const error_body = await reward_result.text();
+
+				console.error(`* Failed to retrieve channel point rewards, response code ${reward_result.status}`);
+				console.error(error_body);
+
+				return `Error: Failed to retrieve channel point rewards (HTTP ${reward_result.status})`;
 			}
-		  } catch (err) { return this.#generateAPIErrorResponse(err); }
+
+			const reward_body = await reward_result.json();
+
+			if (reward_body.data == undefined) {
+				return "Error: Twitch returned an invalid channel point reward response";
+			}
+
+			for (const r of rewards) {
+				const reward_name = r[0];
+				const reward_cost = r[1];
+				const reward_prompt = r[2];
+				const user_input_required = r[3];
+
+				//Look for the reward in the rewards Twitch returned
+				let existing_reward = undefined;
+
+				for (const reward of reward_body.data) {
+					if (reward.title == reward_name) {
+						existing_reward = reward;
+						break;
+					}
+				}
+
+				//If the reward already exists, make sure it is enabled
+				if (existing_reward != undefined) {
+					if (existing_reward.is_enabled != true) {
+						console.log(`* Reward "${reward_name}" already exists but is disabled, enabling it`);
+
+						const update_data = await this.#createTwitchDataHeader();
+
+						update_data.method = 'PATCH';
+						update_data.headers['Content-Type'] = 'application/json';
+						update_data.body = JSON.stringify({
+							"is_enabled": true
+						});
+
+						const update_result = await fetch(
+							`${rewards_url}&id=${existing_reward.id}`,
+							update_data
+						);
+
+						if (!update_result.ok) {
+							const error_body = await update_result.text();
+
+							console.error(`* Failed to enable ${reward_name}, response code ${update_result.status}`);
+							console.error(error_body);
+
+							continue;
+						}
+
+						console.log(`* Successfully enabled ${reward_name}`);
+					} else {
+						console.log(`* Reward "${reward_name}" already exists and is enabled, skipping recreating it`);
+					}
+
+					continue;
+				}
+
+				//Reward doesn't exist, so create it
+				let new_reward_data = await this.#createTwitchDataHeader();
+
+				new_reward_data.method = 'POST';
+				new_reward_data.headers['Content-Type'] = 'application/json';
+
+				let stringified_body = {
+					title: `${reward_name}`,
+					cost: `${reward_cost}`,
+					is_enabled: true
+				};
+
+				if (reward_prompt != '') {
+					stringified_body.prompt = `${reward_prompt}`;
+				}
+
+				if (user_input_required) {
+					stringified_body.is_user_input_required = user_input_required;
+				}
+
+				new_reward_data.body = JSON.stringify(stringified_body);
+
+				const create_result = await fetch(rewards_url, new_reward_data);
+
+				if (create_result.status == 200) {
+					console.log("* Successfully created " + stringified_body.title + " reward");
+				} else {
+					const error_body = await create_result.text();
+
+					console.log(`* Failed to generate new ${stringified_body.title} reward, response code ${create_result.status}`);
+					console.error(error_body);
+				}
+			}
+
+		} catch (err) {
+			return this.#generateAPIErrorResponse(err);
+		}
 	}
 
+	/**
+	 * @param {string} reward_name 
+	 * @returns {boolean}
+	 */
 	async getCustomReward(reward_name) {
 		const s = await this.#data_base.getTwitchInfo(3);
 		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
@@ -731,6 +1055,10 @@ export class TwitchAPI {
 		} catch (err) { return this.#generateAPIErrorResponse(err); }
 	}
 
+	/**
+	 * @param {string} reward_name 
+	 * @returns {string} ad warning message with corrected time
+	 */
 	async setRedemptionStatus(reward_name) {
 		const s = await this.#data_base.getTwitchInfo(3);
 		const redemption_url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=71631229";
@@ -781,6 +1109,9 @@ export class TwitchAPI {
 		return msg;
 	}
 
+	/**
+	 * @returns {Array[Number, Number]} array with remaining time before next ad run and remaining skips available
+	 */
 	async getNextAdRun() {
 
 		const ads_url = 'https://api.twitch.tv/helix/channels/ads?broadcaster_id=71631229';
@@ -804,6 +1135,9 @@ export class TwitchAPI {
 
 	}
 
+	/**
+	 * @returns {Number} remaining snoozes for next ad run
+	 */
 	async snoozeNextAd() {
 
 		const snooze_url = 'https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=71631229';
@@ -825,23 +1159,49 @@ export class TwitchAPI {
 
 	}
 
-	// gets twitch stats and info about a game and displays it in chat
+	/**
+	 * gets twitch stats and info about a game and displays it in chat
+	 * @param {string} name name of the game
+	 * @returns {string} information about the requested game
+	 */
 	async pingGame(name) {
 
-		const ping_url = `https://api.twitch.tv/helix/games?name=${name}`;
+		const ping_url = `https://api.twitch.tv/helix/games?name=${encodeURIComponent(name)}`;
 
 		try {
 
 			this.#hasTokenExpired();
 			const game_data = await this.#createTwitchDataHeader();
 
-			
+			let msg = '';
+
+			await fetch(ping_url, game_data)
+				.then(result => result.json())
+				.then(body => {
+
+					// no game found = empty arr
+					if (body.data == undefined || body.data.length == 0) {
+						msg = `Could not find a game/category named "${name}"`;
+						return;
+					}
+
+					const game = body.data[0];
+
+					msg = `Game: ${game.name} | Twitch ID: ${game.id} | IGDB ID: ${game.igdb_id}`;
+
+				})
+				.catch(err => {
+					return this.#generateAPIErrorResponse(err);
+				});
+
+			return msg;
 
 		} catch (err) {
-
+			return this.#generateAPIErrorResponse(err);
 		}
 
 	}
+
 
     //-------------------------------------PRIVATE MEMBER FUNCTIONS------------------------------------------------
 
@@ -909,9 +1269,11 @@ export class TwitchAPI {
 		}).catch(err => { return this.#generateAPIErrorResponse(err) });;
 	}
 
-    //simple helper function for setting up a basic Helix API header using provided values
-	//made so I have to do less typing/make less redundant code
-	//@returns                A header object in the correct format for accessing the Helix API
+	/**
+	 * simple helper function for setting up a basic Helix API header using provided values
+	 * made so I have to do less typing/make less redundant code
+	 * @returns {object} A header object in the correct format for accessing the Helix API
+	 */             
 	async #createTwitchDataHeader() {
 		const s = await this.#data_base.getIdAndSecret();
 		return {
@@ -923,15 +1285,16 @@ export class TwitchAPI {
 		};
 	}
 
-    //simple helper for generating an error so I don't have to type as much
-	//@param   err      The error that has been generated
+	/**
+	 * @param {Error} err 
+	 * @returns {string} standard error string for Twitch API
+	 */
 	#generateAPIErrorResponse(err) {
 		console.error(err);
 		return 'Error: Twitch API currently not responding';
 	}
 
     //simple helper to tell us if the token is expired for one of our two main APIs
-	//@param   which_token   Bool that tells if we need to check the Twitch or Spotify tokens
 	#hasTokenExpired() {
 		
 		//get the difference between the time the token was accquired and right now at this call

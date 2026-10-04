@@ -70,12 +70,6 @@ COMMANDS:
 	- !tags: gets and returns all tags currently applied to the stream
 			 * Can edit the tags if the user is a mod or the streamer
 
-	- !song: returns the name and artist of the song currently playing on stream through Spotify
-
-	- !skipsong: collects requests to skip the current track and if it hits a threshold, skips the track itself
-
-	- !addsong: adds in a user requested song to the current Spotify playlist via search parameters given by the user
-
 	- !suggestionlist: gets the list of all ideas for the bot not yet implemented but suggested
 
 	- !gitchanges: gets statistics on how much changed from the current repo of this bot to the last one 

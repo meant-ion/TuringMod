@@ -1,5 +1,8 @@
 import { Twocket } from 'twocket';
 import { writeFile, readFile } from 'fs'
+import OBSAnimations from './obs_anims.js';
+import AudioPlayer from './audio.js';
+import { Client } from 'tmi.js';
 // import banned_words from './../data/banned_words.json' assert { type: "json" };
 
 export class EventSubs {
@@ -12,12 +15,13 @@ export class EventSubs {
     #banned_words;
     topics_list = ['channel.raid', 'channel.channel_points_custom_reward_redemption.add', 'channel.ad_break.begin', /**'channel.chat.message'**/];
 
-    //@param   o     The websocket connection for the turret cam
-    //@param   v     The web controller for playing audio through VLC
-    //@param   h     For the sleep and writeToFile functions
-    //@param   t     Twitch API handler object
+    /**
+     * @param {OBSAnimations} o OBS websocket connection
+     * @param {AudioPlayer} v VLC web controller
+     * @param {Helper} h helper function(s)
+     * @param {TwitchAPI} t Twitch's API handler
+     */
     constructor(o, v, h, t) {
-
         this.#obs = o;
         this.#vlc = v;
         this.#helper = h;
@@ -25,6 +29,11 @@ export class EventSubs {
         this.#readBannedWords();
     }
 
+    /**
+     * @param {string} user_id 
+     * @param {string} client_id 
+     * @param {string} access_token 
+     */
     start(user_id, client_id, access_token) {
 
         this.#twok = new Twocket(user_id, client_id, access_token, this.topics_list);
@@ -45,10 +54,16 @@ export class EventSubs {
 
     }
 
+    /**
+     * @param {Client} c Twitch chat client
+     */
     set_chat_client(c) {
         this.#client = c;
     }
 
+    /**
+     * @returns {Array<string>} list of all banned words
+     */
     get_banned_words() { 
         return Object.keys(this.#banned_words); 
     }
@@ -81,6 +96,10 @@ export class EventSubs {
         });
     }
 
+    /**
+     * @param {string} word the new word to ban 
+     * @param {string} user_name requesting user
+     */
     async #addBannedWord(word, user_name) {
         let validation = word.split(" ");
         if (validation.length <= 1 && !validation.includes("")) {
@@ -96,6 +115,9 @@ export class EventSubs {
         }
     }
 
+    /**
+     * @param {object} parsed_data 
+     */
     async #reward_handler(parsed_data) {
 
         switch(parsed_data.reward.title) {

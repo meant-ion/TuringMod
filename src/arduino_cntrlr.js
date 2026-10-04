@@ -1,5 +1,8 @@
 import {SerialPort} from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
+import OBSAnimations from './obs_anims.js';
+import TwitchAPI from './twitch_api.js';
+import { Client } from 'tmi.js';
 
 export class ArduinoController {
 
@@ -10,6 +13,12 @@ export class ArduinoController {
     #twitch_api;
     #client;
 
+    /**
+     * @param {OBSAnimations} o OBS animations handler
+     * @param {Helper} h helper functions object
+     * @param {TwitchAPI} t twitch API handler object
+     * @param {Client} c twitch chat client
+     */
     constructor(o, h, t, c) {
         this.#port = new SerialPort({path:'COM7',baudRate:9600});
         this.#parser = this.#port.pipe(new ReadlineParser({ delimeter: '\n'}));
@@ -22,6 +31,9 @@ export class ArduinoController {
         this.#client = c;
     }
 
+    /**
+     * @param {string} data command we're getting from the arduino
+     */
     async #parseCommand(data) {
         switch(data) {
             case "Clip":
@@ -33,6 +45,9 @@ export class ArduinoController {
         }
     }
 
+    /**
+     * @param {string} cmd arduino command string
+     */
     sendCommand(cmd) {
         this.#port.write(cmd);
     }
@@ -42,7 +57,7 @@ export class ArduinoController {
         const date = this.#helper.getCurrentDate();
 
         const createTime = `${date}: ${timecode}`;
-        //trying a few different methods to see which one works the best for me
+        // top method is functional, having issues getting API call method to work as expected
         this.#helper.writeToFile(createTime, './data/vod_timestamps.txt', false);
         try {
             await this.#twitch_api.setStreamMarker();

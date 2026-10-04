@@ -2,13 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env'});
 
 import { client as _client } from 'tmi.js';
-import { Client, GatewayIntentBits } from 'discord.js';
 import OBSWebSocket from 'obs-websocket-js';
 import Helper from './helper.js';
 import CommandArray from './sqlite_db.js';
 import LurkList from './lurker_list.js';
 import TwitchAPI from './twitch_api.js';
-import SpotifyAPI from './spotify_api.js';
 import MiscAPI from './misc_api.js';
 import Dice from './dice.js';
 import ClipCollector from './clipcollector.js';
@@ -17,7 +15,6 @@ import AudioPlayer from './audio.js';
 import EventSubs from './eventsubs.js';
 import ArduinoController from './arduino_cntrlr.js';
 
-const discord_client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages,] });
 
 const opts = {
 	identity: {
@@ -50,16 +47,15 @@ try {
 //generate the custom objects for the special commands and the !lurk/!unlurk features and other necessary classes
 const commands_holder = new CommandArray();
 const helper = new Helper();
-const lurk_list = new LurkList();
-const twitch_api = new TwitchAPI(commands_holder);
-const spotify_api = new SpotifyAPI(commands_holder);
-const misc_api = new MiscAPI(commands_holder);
-const dice = new Dice();
+const lurk_list = new LurkList(helper);
+const twitch_api = new TwitchAPI(commands_holder, helper);
+const misc_api = new MiscAPI(commands_holder, helper);
+const dice = new Dice(helper);
 const clip_collector = new ClipCollector(twitch_api);
 const obs_anims = new OBSAnimations(obs, helper);
 const vlc = new AudioPlayer();
 const eventsubs = new EventSubs(obs_anims, vlc, helper, twitch_api);
-const arduino_cntrlr = new ArduinoController(obs_anims, helper, twitch_api, client, discord_client);
+const arduino_cntrlr = new ArduinoController(obs_anims, helper, twitch_api, client);
 
 const the_streamer = opts.channels[0];
 
@@ -73,10 +69,6 @@ let collect_clips = false;
 
 //what we use to tell if quiet mode (i.e. no @-ing the streamer) is enabled
 let quiet_mode_enabled = false;
-
-//what we use to measure how many viewers/commenters wish to change the song currently playing (needs to be 5 and over)
-//relevant command: !skipsong
-let skip_threshold = 0;
 
 //separate variable to tell the program which function gets called
 let call_this_function_number = 0;
@@ -98,10 +90,6 @@ await helper.is_running("vlc.exe", async  (truth) => {
 });
 
 function execTheBot() {
-	const token = process.env.DISCORD_CLIENT_TOKEN;
-
-	//lets us know that bot is connected to the discord server we need it on
-	discord_client.once('ready', () => console.log(`* Logged in as ${discord_client.user.tag} through Discord!`));
 	client.connect();
 	client.on('message', onMessageHandler);
 	client.on('connected', (addy, prt) => console.log(`* Connected to ${addy}:${prt}`));
@@ -116,8 +104,6 @@ function execTheBot() {
 
 	setTimeout(makeEventSub, 5000);
 
-	//this goes last to prevent any issues on discord's end
-	discord_client.login(token);
 }
 
 //generic object holding the functions that the bot uses for commands
@@ -221,11 +207,11 @@ const func_obj = {
 	//START OF UNIVERSALLY AVAILABLE COMMANDS
 	//--------------------------------------------------------------------------------------------------------------------------
 	//the user wishes to enter lurk mode
-	'!lurk': (input_msg, user, target) => client.say(target, lurk_list.addLurker(user, input_msg)),
+	'!lurk': (input_msg, user, target) => client.say(target, lurk_list.addLurker(user.username, input_msg)),
 	//the user wishes to exit lurk mode
-	'!unlurk': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, false)),
+	'!unlurk': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user.username, false)),
 	//user is letting the stream know they're heading out for the stream
-	'!leave': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user, true)),
+	'!leave': (_input_msg, user, target) => client.say(target, lurk_list.removeLurker(user.username, true)),
 	//gets a list of all custom commands on the channel
 	'!customlist': async (_input_msg, user, target) => {
 		client.say(target, `@${user.username}: ${await commands_holder.postListOfCreatedCommands()}`);
@@ -280,12 +266,6 @@ const func_obj = {
 		} else 
 			client.say(target, `@${user.username}: ${await twitch_api.getStreamTags()}`);
 	},
-	//returns the song and artist playing through Spotify
-	'!song': async (_input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.getCurrentSongTitleFromSpotify()}`),
-	//tallies requests to change song and changes it at a threshold of those
-	'!skipsong': async (_input_msg, user, target) => thresholdCalc(target, user),
-	//user wants to add a song to the playlist queue
-	'!addsong': async (input_msg, user, target) => client.say(target, `@${user.username}: ${await spotify_api.addSongToQueue(input_msg)}`),
 	//a chatmember has a suggestion on what to add to the bot
 	'!sg': (input_msg, user, target) => {
 		client.say(target, 
@@ -420,23 +400,6 @@ async function updateRewards() {
 	await twitch_api.createRewards();
 }
 
-//hanldes the requests to skip songs from a user base and makes sure only one vote per user goes through
-//@param   target   The chatroom that the message will be sent into
-//@param   user     The chat member that typed in the command
-async function thresholdCalc(target, user) {
-	if (skip_threshold < 5) {
-		if (!skip_list.includes(user.username)) {
-			++skip_threshold;
-			skip_list.push(user.username);
-			client.say(target, `@${user.username}: Skip request recorded. ${skip_threshold}/5 requests put through`);
-        }
-	} else {
-		client.say(target, await spotify_api.skipToNextSong());
-		skip_threshold = 0;
-		skip_list = [];
-	}
-}
-
 function bonk(input_msg, user) {
 
 	if (input_msg[1] != undefined) {
@@ -454,7 +417,7 @@ function bonk(input_msg, user) {
 //@param   user     The chat member that typed in the command
 function lurkerHasTypedMsg(target, user) {
 
-	const lurk_msg = lurk_list.removeLurker(user, false);
+	const lurk_msg = lurk_list.removeLurker(user.username, false);
 	if (lurk_msg != `You needed to be lurking already in order to stop lurking @${user.username}`) client.say(target, lurk_msg);
 
 }
@@ -477,7 +440,6 @@ async function shutDownBot(target) {
 
 	//if we have the clip collection turned on, write everything to file and shut down
 	if (collect_clips) getClipsInOrder(target);
-	const auth_key = await commands_holder.getTwitchInfo(0);
 	client.say(target, "Shutting Down");
 	//now, we just kill execution of the program
 	process.exit(0);

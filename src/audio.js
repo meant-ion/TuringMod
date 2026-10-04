@@ -13,6 +13,9 @@ export class AudioPlayer {
         });
     }
 
+    /**
+     * @param {string} filename 
+     */
     async play_audio(filename) {
         await this.check_playlist();
         let filepath = path.resolve('./src/audio/' + filename);

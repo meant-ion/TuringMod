@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
 import Helper from './helper.js';
 import fs from 'fs';
+import CommandArray from './sqlite_db.js';
 
 export class MiscAPI {
 
@@ -8,11 +8,13 @@ export class MiscAPI {
 	#space_url;
     #data_base
 
-    //@param   c     The bot's Twitch client
-	//@param   d_b   The bot's client for accessing its database
-    constructor(d_b) {
+	/**
+	 * @param {CommandArray} d_b The bot's client for accessing its database
+	 * @param {Helper} h 
+	 */
+    constructor(d_b, h) {
         this.#data_base = d_b;
-		this.helper = new Helper();
+		this.helper = h;
         this.#nasa_get = undefined;//date object; undefined until we get a call to the NASA API
 		this.#space_url = "";
     }
@@ -41,25 +43,18 @@ export class MiscAPI {
 	}
 
 	//gets and returns the list of games on the Epic Store that have been marked down as completely free
-	//@param   target   The chat room we are posting the list into
 	async getFreeGamesOnEpicStore() {
 		//finally found the URL to get the list of games from this repo here: 
 		//https://github.com/kjanuska/EpicFreeGames/blob/main/check_games.js
 		const epic_url = 'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions';
 
-		//generic object that will hold the whole list of games returned by the URL
 		let games_arr;
-
-		//total count of games returned 
 		let games_count;
-
-		//list of all games that are available for free through the epic store
 		let complete_discounted_games_list = [];
 
 		try {
 
 			await fetch(epic_url).then(result => result.json()).then(body => {
-				//get the list of games and store them for safe keeping
 			 	games_arr = body.data.Catalog.searchStore.elements;
 			 	games_count = body.data.Catalog.searchStore.paging.total;
 			}).catch( err => {
@@ -98,8 +93,6 @@ export class MiscAPI {
 	}
 
 	//gets a random wikipedia article from the wikimedia API and delivers it to chat
-	//@param   user     The chat member that typed in the command
-	//@param   target   The chatroom that the message will be sent into
 	async getRandWikipediaArticle() {
 
 		const wiki_url = 'https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=1';
@@ -118,7 +111,6 @@ export class MiscAPI {
 	}
 
 	//Function that gathers data about the changes from this bot's GitHub repo and sends it to chat
-	//@param   target   The chatroom that the message will be sent in to
 	async getGithubRepoInfo() {
 		const github_url = 'https://api.github.com/repos/meant-ion/TuringMod/commits';
 		let current_repo_info, last_repo_info = undefined;//the URLS for the repos we need
@@ -183,7 +175,6 @@ export class MiscAPI {
 	}
 
 	//gets the NASA Space image of the day and sends it out to the chat room as a URL
-	//@param   target    The name of the chatroom we are posting the photo into
 	async getNASAPicOfTheDay() {
 
 		try {
@@ -214,9 +205,11 @@ export class MiscAPI {
 		
 	}
 
-    //simple helper for generating an error so I don't have to type as much
-	//@param   err      The error that has been generated
-	//@param   target   The name of the chatroom we are posting to
+	/**
+	 * simple helper for generating an error so I don't have to type as much
+	 * @param {err} err 
+	 * @returns error message string
+	 */
 	#generateAPIErrorResponse(err) {
 		console.error(err);
 		return "Error:  requested API currently not responding";

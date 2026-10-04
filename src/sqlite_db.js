@@ -1,26 +1,25 @@
-//the generated class for loading commands from file and creating new ones
-//trying something different with this one, in stuffing the relevant functions into a class
-//if this goes well, I'll probably do the same with calculator.js and dice.js
+// the generated class for loading commands from file and creating new ones
+// all returns are wrapped in promises, since getting data from DB is slower than from memory directly
 
 import sqlite3 from 'sqlite3';
 
 export class CommandArray {
 
-	#db;//the database holding all the custom commands
+	#db;
 
 	constructor() {
-
-		//connect the db to the program so we can access the little bugger
 		this.#db = new sqlite3.Database('G:/sqlite3/test.db', (err) => {
 			if (err) console.error(err);
 			console.log("* Connected to on-disk SQLite DB");
 		});
 	}
 
-	//allows for the mods and the streamer to create a command and then write it to file for safe keeping
-	//currently only allows for message commands, next iteration should allow for moderator commands if possible
-	//@param   user       The username of the chat member that typed in the command
-	//@param   inputMsg   The array of words sent in as a message to the chatroom
+	/**
+	 * allows for the mods and the streamer to create a command and then write it to file for safe keeping
+	 * @param {string} user username 
+	 * @param {string} input_msg message from the chatroom
+	 * @returns {Promise<string>} success/failure message
+	 */
 	createAndWriteCommandsToFile(user, input_msg) {
 
 		return new Promise((resolve, _reject) => {
@@ -46,9 +45,12 @@ export class CommandArray {
 		});
 	}
 
-	//removes a command from the list of custom commands
-	//@param   command      The command that needs to be deleted
-	//@param   is_interval   Tells us if the command that needs to be deleted is one that is called on an interval
+	/**
+	 * removes a command from the list of custom commands
+	 * @param {string} command 
+	 * @param {boolean} is_interval 
+	 * @returns {Promise<string>} message stating success/fail at deleting command
+	 */
 	removeCommand(command, is_interval) {
 
 		//determine if this command is freely callable or called on an interval (different tables for them)
@@ -57,12 +59,9 @@ export class CommandArray {
 		return new Promise((resolve, _reject) => {
 			this.#db.run(del_sql, command, (err) => {
 				if (err) {
-					// client.say(target, `@${user.username}: Could not find specific command to delete`);
-					// console.error(err);
 					resolve(`Could not find specific command to delete`);
 					console.error(err);
 				} else {
-					// client.say(target, `@${user.username}: Command successfully deleted from database`);
 					resolve(`Command successfully deleted from database`);
 				}
 			});
@@ -70,11 +69,11 @@ export class CommandArray {
 
 	}
 
-	//edits the message of the command
-	//@param   user         The name of the chat member that typed in the command
-	//@param   target       The chatroom that the message will be sent into
-	//@param   client       The Twitch chat client we will send the message through
-	//@param   command      The command that needs to be deleted
+	/**
+	 * edits command's message
+	 * @param {Array<string>} input_msg new message for command
+	 * @returns {Promise<string>} success/fail message
+	 */
 	editCommand(input_msg) {
 
 		return new Promise((resolve, _reject) => {
@@ -89,18 +88,19 @@ export class CommandArray {
 			//run the sql command and spit out the result
 			this.#db.run(update_sql, [msg, command_to_edit], (err) => {
 				if (err) {
-					//client.say(target, `@${user.username}: Could not find command to edit`);
 					console.error(err);
 					resolve('Could not find command to edit');
 				} else {
-					//client.say(target, `@${user.username}: Command successfully updated in database`);
 					resolve('Command successfully updated in database');
 				}
 			});
 		});
     }
 
-	//prints out a list of all custom created commands for use
+	/**
+	 * prints out a list of all custom created commands for use
+	 * @returns {Promise<string>} list of all command names in DB/fail message
+	 */
 	postListOfCreatedCommands() {
 		return new Promise((resolve, _reject) => {
 			let msg = 'These are the current custom commands available: ';
@@ -117,8 +117,11 @@ export class CommandArray {
 		});
 	}
 
-	//gets a command for the interval message loop with provided index
-	//@param   index   The provided index for getting the message
+	/**
+	 * gets a command for the interval message loop with provided index
+	 * @param {Number} index 
+	 * @returns {Promise<string>} interval command message
+	 */
 	getIntervalCommand(index) {
 		return new Promise((resolve, _reject) => {
 			this.#db.all(`SELECT msg FROM intervalcommands;`, (err, rows) => {
@@ -132,9 +135,11 @@ export class CommandArray {
 		})
 	}
 
-	//resets the index of the command we're getting for the interval messages
-	//@param   index   The index we're checking out
-	//@return          A promise containing the new index
+	/**
+	 * resets the index of the command we're getting for the interval messages
+	 * @param {Number} index 
+	 * @returns {Promise<Number>} command index number
+	 */
 	async getLengthOfIntervals(index) {
 
 		const length_sql = `SELECT COUNT(*) FROM intervalcommands;`;
@@ -151,7 +156,10 @@ export class CommandArray {
 		});
 	}
 
-	//gets and updates the amount of times my voice has cracked on stream
+	/**
+	 * gets and updates the amount of times my voice has cracked on stream
+	 * @returns {Promise<Number>} voice crack count
+	 */
 	getAndUpdateVoiceCracks() {
 		return new Promise((resolve, _reject) => {
 			this.#db.get('SELECT num FROM voicecracks;', (err, row) => {
@@ -178,8 +186,11 @@ export class CommandArray {
 		});
 	}
 
-	//updates the death count for when I play a difficult game and/or just bad at games
-	//syntactically similar to above function for voice cracks
+	/**
+	 * updates the death count for when I play a difficult game and/or just bad at games
+	 * syntactically similar to above function for voice cracks
+	 * @returns {Promise<Number>} death count 
+	 */
 	getAndUpdateDeathCount() {
 		return new Promise((resolve, _reject) => {
 			this.#db.get('SELECT deaths FROM death_count;', (err, row) => {
@@ -204,7 +215,10 @@ export class CommandArray {
 		});
 	}
 
-	//sets the death counts for a game back to zero
+	/**
+	 * sets the death counts for a game back to zero
+	 * @returns {Promise<string>} success/error message
+	 */
 	setDeathsToZero() {
 		return new Promise((resolve, _reject) => {
 			this.#db.get('UPDATE death_count SET deaths = 0;', (err) => {
@@ -218,15 +232,14 @@ export class CommandArray {
 		});
 	}
 
-	//fetches the custom commands stored in the database for posting in the chat room
-	//@param   command      The command we are searching the db for
+	/**
+	 * fetches the custom commands stored in the database for posting in the chat room
+	 * @param {string} command command's name 
+	 * @returns {Promise<string>} command message or empty string
+	 */
 	getCustomCommand(command) {
 		return new Promise((resolve, _reject) => {
-			//Go into the db and find what we are looking for here
-			//i.e. search each found row and post out the message it has
 			this.#db.get(`SELECT name, msg FROM stdcommands WHERE name = ?;`, [command], (err, row) => {
-				//error would be that command does not exist, so we don't print that
-				//otherwise the terminal would be crowded with those messages
 				if (err) resolve('');
 				else if (row == undefined) resolve('');
 				else resolve(row.msg);
@@ -234,9 +247,13 @@ export class CommandArray {
 		});
     }
 
-	//refreshing function, gets a specific item from the DB as we need it
-	//@param   index   Tells us what item we are needing from the DB specifically
-	//@return          Our requested item, packaged into a Promise
+	// TWITCH TOKEN REFRESH FUNCTIONS
+
+	/**
+	 * gets a specific item from the DB as we need it
+	 * @param {Number} index 
+	 * @returns {Promise<Array<string>> || Promise<string>} requested item(s)
+	 */
 	getTwitchInfo(index) {
 		let item;
 		switch(index) {
@@ -256,7 +273,6 @@ export class CommandArray {
 
 		const twitch_sql = `SELECT ${item} FROM twitch_auth;`;
 
-		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(twitch_sql, (err, row) => {
 				if(err) reject(err); else{
@@ -277,43 +293,10 @@ export class CommandArray {
 		
 	}
 
-	//gets all the info needed to get a key from Spotify's OAuth via the DB
-	//returns     An array with all the necessary items stuffed inside it
-	getSpotifyInfo(index) {
-		let item;
-		switch(index) {
-			case 0:
-				item = "access_token";
-				break;
-			case 1:
-				item = "refresh_token";
-				break;
-			case 2:
-				item = "client_id, client_secret, redirect_url, scope, state";
-				break;
-		}
-
-		const spotify_sql = `SELECT ${item} FROM spotify_auth;`;
-
-		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
-		return new Promise((resolve, reject) => {
-			this.#db.get(spotify_sql, (err, row) => {
-				if (err) reject(err); else {
-					let arr = ["","","","",""];
-					arr[0] = row["client_id"];
-					arr[1] = row["client_secret"];
-					arr[2] = row["redirect_url"];
-					arr[3] = row["scope"];
-					arr[4] = row["state"];
-					resolve(arr);
-				}
-
-			});
-		});
-	}
-
-	//refreshing function, gets the client id and secret of the bot so we can use the Helix API
-	//@return           An array of two items, the client secret and the client id
+	/**
+	 * gets the client id and secret of the bot so we can use the Helix API
+	 * @returns {Promise<Array<string>>} client id/secret array
+	 */
 	getIdAndSecret() {
 		const twitch_sql = `SELECT client_id, client_secret FROM twitch_auth;`;
 
@@ -331,9 +314,11 @@ export class CommandArray {
 		
 	}
 
-	//refreshing function, writes the new tokens to DB after they are gathered from the API
-	//@param   access_token    The new access token we need to access anything on the Helix API
-	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
+	/**
+	 * writes the new tokens to DB after they are gathered from the API
+	 * @param {string} access_token 
+	 * @param {string} refresh_token 
+	 */
 	writeTwitchTokensToDB(access_token, refresh_token) {
 		const update_sql = "UPDATE twitch_auth SET access_token = ?, refresh_token = ?;";
 
@@ -342,116 +327,21 @@ export class CommandArray {
 		});
 	}
 
-	//gets an API key for the requested API
-	//@param   key_to_get   Number that tells us which key we need at the moment
-	//@return               A new Promise containing the API key
-	getAPIKeys(key_to_get) {
-		let key;
-		switch(key_to_get) {
-			case 0:
-				key = 'open_ai';
-				break;
-			case 3:
-				key = 'nasa';
-				break;
-		}
+	// END TWITCH TOKEN REFRESH FUNCTIONS
 
-		const keys_sql = `SELECT ${key} FROM api_keys;`;
+	/**
+	 * gets an API key for the requested API. Currently holds NASA's API key only
+	 * @param {Number} key_to_get 
+	 * @returns {Promise<string>} API key
+	 */
+	getAPIKeys(key_to_get) {
+		const keys_sql = `SELECT ${key_to_get} FROM api_keys;`;
 
 		//wrap it inside of a new promise since getting it from a DB is slower than from memory (obviously)
 		return new Promise((resolve, reject) => {
 			this.#db.get(keys_sql, (err, row) => {
 				if(err) reject(err); else resolve(row[key]);
 			});
-		});
-	}
-
-	//refreshing function similar to writeTwitchTokensToDB, but for Spotify instead
-	//@param   access_token    The new access token we need to access anything on Spotify's Web API
-	//@param   refresh_token   The new refresh token we need to get a new access token when it expires eventually
-	writeSpotifyTokensToDB(access_token, refresh_token) {
-		const update_sql = "UPDATE spotify_auth SET access_token = ?, refresh_token = ?;";
-
-		this.#db.run(update_sql, [access_token, refresh_token], (err) => {
-			if (err) console.error(err); else console.log("* New Spotify Tokens Written Successfully!");
-		});
-	}
-
-	//looks for the finetune_id provided to the function inside of the db
-	//@param   id        The finetune_id for OpenAI's Fine Tuning API
-	//@param   channel   The name of the channel we may or may not have a fine tuning made for
-	//@returns           True/False depending on if the finetune_id is present in the db
-	searchForFineTuneID(id) {
-
-		const search_sql = `SELECT filename FROM fine_tune WHERE filename = ?;`;
-
-		return new Promise((resolve, reject) => {
-			this.#db.get(search_sql, [id],  (err, row) => {
-				if (err) reject(err);
-				else {
-					if (row != undefined)
-						if (row.filename != undefined) resolve(false);
-						else resolve(true);
-					else resolve(true);
-				}
-			});
-		});
-	}
-
-	//gets the file id for the fine tuning job for a specific channel
-	//@param   channel   The name of the channel we are making a model for
-	//@returns           Promise with the file id inside
-	getFineTuneFileID(channel) {
-
-		const search_sql = `SELECT filename FROM fine_tune WHERE channel = ?;`;
-
-		return new Promise((resolve, reject) => {
-			this.#db.get(search_sql, [channel], (err, row) => {
-				console.log(row);
-				if (err) reject(err);
-				else resolve(row.filename);
-			});
-		});
-	}
-
-	//adds the name of the fine tune model for the channel to the sqlite3 db
-	//@param    model_name   The named model for the channel
-	//@paramm   channel      The name of the channel we made the model for
-	addFineTuneModel(model_name, channel) {
-
-		const update_sql = `UPDATE fine_tune SET finetune_id = ? WHERE channel = ?`;
-
-		this.#db.run(update_sql, [model_name, channel], (err) => {
-			if (err) console.error(err); 
-			else console.log(`* Model successfully made for ${channel}`);
-		})
-	}
-
-	//adds/updates the id for the file that the fine tuning uses to train the model
-	//@param   id        The file's id according to OpenAI
-	//@param   channel   The name of the channel the file is attached to
-	addFineTuningFileID(id, channel) {
-		const update_sql = `UPDATE fine_tune SET filename = ? WHERE channel = ?;`;
-
-		this.#db.run(update_sql, [id, channel], (err) => {
-			if (err) console.error(err); else console.log(`* New file for ${channel} uploaded to OpenAI`);
-		});
-	}
-
-	//gets the key and secret for the Uberduck AI TTS API
-	getUberduckInfo() {
-		const user_sql = 'SELECT key, secret FROM uberduck;';
-
-		return new Promise((resolve, reject) => {
-			this.#db.get(user_sql, (err, row) => {
-				if (err) reject(err);
-				else {
-					let arr = [];
-					arr.push(row.secret);
-					arr.push(row.key);
-					resolve(arr);
-				}
-			})
 		});
 	}
 }
